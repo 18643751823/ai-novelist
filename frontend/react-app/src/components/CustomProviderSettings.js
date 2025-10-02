@@ -4,11 +4,11 @@ import NotificationModal from './NotificationModal';
 import ConfirmationModal from './ConfirmationModal';
 import './CustomProviderSettings.css';
 
-const CustomProviderSettings = ({ onSaveComplete }) => {
+const CustomProviderSettings = ({ onSaveComplete, editingProvider: initialEditingProvider }) => {
     const { getStoreValue, setStoreValue, reinitializeModelProvider } = useIpcRenderer();
     const [providers, setProviders] = useState([]);
-    const [editingProvider, setEditingProvider] = useState(null);
-    const [isEditing, setIsEditing] = useState(false);
+    const [editingProvider, setEditingProvider] = useState(initialEditingProvider || null);
+    const [isEditing, setIsEditing] = useState(!!initialEditingProvider);
     const [showNotification, setShowNotification] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
     const [showConfirmation, setShowConfirmation] = useState(false);
@@ -24,6 +24,14 @@ const CustomProviderSettings = ({ onSaveComplete }) => {
     useEffect(() => {
         loadProviders();
     }, [loadProviders]);
+
+    // 当传入的编辑提供商发生变化时更新状态
+    useEffect(() => {
+        if (initialEditingProvider) {
+            setEditingProvider(initialEditingProvider);
+            setIsEditing(true);
+        }
+    }, [initialEditingProvider]);
 
     const handleSave = async (providersToSave) => {
         await setStoreValue('customProviders', providersToSave);

@@ -1,8 +1,8 @@
-# 青烛 v1.0.0
+# 青烛 v2.0.1
 
 [English Version](README_en.md) | 中文版
 
-![项目截图](images/示例图片.png)
+![项目截图](images/示例图片.jpg)
 ## 项目介绍
 
 青烛（正式名） 是一个基于 Electron 框架构建的桌面应用程序，旨在做一个写作版ai ide。
@@ -19,11 +19,12 @@
 *   **Electron**: 用于构建跨平台的桌面应用程序，结合了Web技术（HTML、CSS、JavaScript）和原生能力。
 *   **React.js**: 前端用户界面框架，提供高效的组件化开发模式和出色的用户体验。
 *   **Node.js**: 后端服务运行时环境，负责处理与AI的交互、文件系统操作以及与前端的IPC通信。
-*   **AI API集成**: 目前已统一集成DeepSeek-v3和DeepSeek-r1模型API，实验性支持本地Ollama模型（存在较多适配问题）。
+*   **AI API集成**: 支持 DeepSeek、Open Router、Ollama、硅基流动模型提供商，提供统一的接口调用体验。
 *   **ChromaDB**: 开源向量数据库，用于RAG（检索增强生成）功能，提供语义搜索和知识库管理。
 *   **Redux**: 前端状态管理库，用于统一管理应用程序的复杂状态。
 *   **Tiptap**: 优秀的富文本编辑器。
 *   **electron-store**: 轻量级的Electron配置存储库，用于持久化应用程序设置，例如API Key。
+*   **LangChain**: 用于构建AI应用的工具链，目前已有简单应用，后续将进一步扩展LangChain功能实现。
 
 
 
@@ -35,6 +36,7 @@
 *   npm 或 yarn
 *   Python 3.8+ (用于 ChromaDB 向量数据库)
 *   ChromaDB Python 包 (通过 `pip install chromadb` 安装)
+*   **Windows 用户**: 需要在 Visual Studio Installer 中安装 "使用C++的桌面开发" 工作负载，以支持原生模块的编译
 
 ### 安装
 
@@ -61,6 +63,13 @@
     ```bash
     cd frontend/react-app
     npm install
+    ```
+
+5.  **构建前端应用**:
+    回到项目根目录 (`ai-novel/`) 并执行构建：
+    ```bash
+    cd ../..
+    npm run build
     ```
 
 ### 运行应用

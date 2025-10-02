@@ -12,6 +12,7 @@ import {
 } from '../store/slices/chatSlice';
 import useIpcRenderer from '../hooks/useIpcRenderer';
 import CustomProviderSettings from './CustomProviderSettings';
+import ConfirmationModal from './ConfirmationModal';
 import './ProviderSettingsPanel.css';
 
 const ProviderSettingsPanel = () => {
@@ -23,7 +24,9 @@ const ProviderSettingsPanel = () => {
   const [searchText, setSearchText] = useState('');
   const [customProviders, setCustomProviders] = useState([]);
   const [showCustomProviderForm, setShowCustomProviderForm] = useState(false);
+  const [editingProvider, setEditingProvider] = useState(null);
 
+  // 加载提供商列表
   // 加载提供商列表
   const loadProviders = useCallback(async () => {
     try {
@@ -60,6 +63,37 @@ const ProviderSettingsPanel = () => {
     }
   }, [invoke, selectedProvider, dispatch]);
 
+  // 处理编辑自定义提供商
+  const handleEditCustomProvider = (provider) => {
+    setEditingProvider(provider);
+    setShowCustomProviderForm(true);
+  };
+
+  // 处理删除自定义提供商
+  const handleDeleteCustomProvider = async (providerName) => {
+    try {
+      // 获取当前自定义提供商列表
+      const storedCustomProviders = await invoke('get-store-value', 'customProviders') || [];
+      
+      // 过滤掉要删除的提供商
+      const updatedProviders = storedCustomProviders.filter(p => p.providerName !== providerName);
+      
+      // 保存更新后的列表
+      await invoke('set-store-value', 'customProviders', updatedProviders);
+      
+      // 重新加载提供商列表
+      await loadProviders();
+      
+      // 如果删除的是当前选中的提供商，清除选中状态
+      if (selectedProvider === providerName) {
+        dispatch(setSelectedProvider(null));
+      }
+      
+      console.log(`已删除自定义提供商: ${providerName}`);
+    } catch (error) {
+      console.error('删除自定义提供商失败:', error);
+    }
+  };
   // 加载可用模型列表
   const loadAvailableModels = useCallback(async () => {
     try {
@@ -166,7 +200,10 @@ const ProviderSettingsPanel = () => {
                   <h3>添加自定义提供商</h3>
                   <button
                     className="close-form-btn"
-                    onClick={() => setShowCustomProviderForm(false)}
+                    onClick={() => {
+                      setShowCustomProviderForm(false);
+                      setEditingProvider(null);
+                    }}
                   >
                     ×
                   </button>
@@ -174,8 +211,10 @@ const ProviderSettingsPanel = () => {
                 <CustomProviderSettings
                   onSaveComplete={() => {
                     setShowCustomProviderForm(false);
+                    setEditingProvider(null);
                     loadProviders(); // 刷新提供商列表
                   }}
+                  editingProvider={editingProvider}
                 />
               </div>
             ) : selectedProvider ? (
@@ -200,6 +239,8 @@ const ProviderSettingsPanel = () => {
                   {isCustomProvider && (
                     <CustomProviderSettingsDetail
                       provider={customProviders.find(p => p.providerName === selectedProvider)}
+                      onEdit={handleEditCustomProvider}
+                      onDelete={handleDeleteCustomProvider}
                     />
                   )}
                 </div>
@@ -449,10 +490,35 @@ const AvailableModelsList = ({ models, currentProvider }) => {
 };
 
 // 自定义提供商设置详情组件
-const CustomProviderSettingsDetail = ({ provider }) => {
+// 自定义提供商设置详情组件
+const CustomProviderSettingsDetail = ({ provider, onEdit, onDelete }) => {
+  const { invoke } = useIpcRenderer();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
   if (!provider) {
     return <div className="no-provider-data">提供商数据不存在</div>;
   }
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(provider);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (onDelete) {
+      await onDelete(provider.providerName);
+    }
+    setShowDeleteConfirm(false);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+  };
 
   return (
     <div className="custom-provider-detail">
@@ -484,11 +550,19 @@ const CustomProviderSettingsDetail = ({ provider }) => {
       </div>
 
       <div className="setting-actions">
-        <button className="edit-btn">编辑</button>
-        <button className="delete-btn">删除</button>
+        <button className="edit-btn" onClick={handleEdit}>编辑</button>
+        <button className="delete-btn" onClick={handleDeleteClick}>删除</button>
       </div>
+
+      {/* 删除确认对话框 - 使用项目标准的 ConfirmationModal */}
+      {showDeleteConfirm && (
+        <ConfirmationModal
+          message={`确定要删除提供商 "${provider.providerName}" 吗？此操作不可撤销。`}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+        />
+      )}
     </div>
   );
 };
-
 export default ProviderSettingsPanel;

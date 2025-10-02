@@ -1,8 +1,8 @@
-# Qingzhu v1.0.0
+# Qingzhu v2.0.1
 
 [中文版](README.md) | English Version
 
-![Project Screenshot](images/示例图片.png)
+![Project Screenshot](images/示例图片.jpg)
 ## Project Introduction
 
 Qingzhu (Official Name) is a desktop application built on the Electron framework, aiming to provide users with an AI-assisted novel creation platform.
@@ -19,11 +19,12 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
 *   **Electron**: Used to build cross-platform desktop applications, combining web technologies (HTML, CSS, JavaScript) with native capabilities.
 *   **React.js**: Frontend user interface framework, providing efficient component-based development patterns and excellent user experience.
 *   **Node.js**: Backend service runtime environment, responsible for handling AI interactions, file system operations, and IPC communication with the frontend.
-*   **AI API Integration**: Currently supports unified integration of DeepSeek-v3 and DeepSeek-r1 model APIs, with experimental support for local Ollama models (with significant adaptation issues).
+*   **AI API Integration**: Supports DeepSeek, Open Router, Ollama, Silicon Flow model providers, providing a unified interface calling experience.
 *   **ChromaDB**: Open-source vector database for RAG (Retrieval-Augmented Generation) functionality, providing semantic search and knowledge base management.
 *   **Redux**: Frontend state management library, used to uniformly manage the application's complex state.
 *   **Tiptap**: Excellent rich text editor.
 *   **electron-store**: Lightweight Electron configuration storage library, used to persist application settings, such as API Key.
+*   **LangChain**: Toolchain for building AI applications, currently has simple applications, and will further expand LangChain functionality implementation in the future.
 
 
 
@@ -35,6 +36,7 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
 *   npm or yarn
 *   Python 3.8+ (for ChromaDB vector database)
 *   ChromaDB Python package (install via `pip install chromadb`)
+*   **Windows Users**: Need to install the "Desktop development with C++" workload in Visual Studio Installer to support native module compilation
 
 ### Installation
 
@@ -55,12 +57,19 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
     ```bash
     npm install
     ```
-
 4.  **Install frontend dependencies**:
     Navigate to the frontend directory (`ai-novel/frontend/react-app/`) and execute:
     ```bash
     cd frontend/react-app
     npm install
+    ```
+
+5.  **Build frontend application**:
+    Return to the project root directory (`ai-novel/`) and execute the build:
+    ```bash
+    cd ../..
+    npm run build
+    ```
     ```
 
 ### Running the Application
