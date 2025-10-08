@@ -125,3 +125,6 @@ pnpm-lock.yaml
 *.swo
 *~
 .~lock.*
+
+# Nested git repositories
+flowise-integration/
