@@ -40,7 +40,6 @@
     "electron-store": "^10.0.1",
     "fastest-levenshtein": "^1.0.16",
     "fzf": "^0.5.2",
-    "hnswlib-node": "^3.0.0",
     "https-proxy-agent": "^7.0.6",
     "langchain": "^0.3.31",
     "lodash": "^4.17.21",

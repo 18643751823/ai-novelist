@@ -1635,6 +1635,22 @@ function register(store) { // 接收 store 参数并设置全局实例
         // 强制写入磁盘
         await storeInstance.store;
         console.log(`[API设置调试] set-store-value: 数据已强制写入磁盘`);
+
+        // 定义需要触发热重载的配置项
+        const providerRelatedKeys = [
+          'deepseekApiKey', 'deepseekBaseUrl',
+          'ollamaBaseUrl',
+          'openrouterApiKey', 'openrouterBaseUrl',
+          'siliconflowApiKey', 'siliconflowBaseUrl',
+          'customProviders'
+        ];
+
+        // 如果修改的是这些关键配置，则重新初始化
+        if (providerRelatedKeys.includes(key)) {
+          console.log(`[API设置调试] 检测到提供商相关配置 '${key}' 已更新，正在重新初始化模型提供者...`);
+          await reinitializeModelProvider();
+          console.log(`[API设置调试] 模型提供者重新初始化完成。`);
+        }
         
         return { success: true, message: `值已保存: ${key}` };
     } catch (error) {
