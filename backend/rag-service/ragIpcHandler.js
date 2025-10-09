@@ -62,16 +62,16 @@ class RagIpcHandler {
      */
     async getEmbeddingStatus() {
         try {
-            const hasApiKey = !!this.collectionManager.aliyunApiKey;
+            const providerInfo = this.collectionManager.getEmbeddingProviderInfo();
             const isInitialized = !!this.collectionManager.embeddingFunction;
-            
+
             return {
                 success: true,
-                hasApiKey: hasApiKey,
                 isInitialized: isInitialized,
-                message: isInitialized ? '嵌入函数已初始化' : '嵌入函数未初始化'
+                provider: providerInfo?.provider || null,
+                message: isInitialized ? `嵌入函数已初始化 (${providerInfo?.provider || '未知提供商'})` : '嵌入函数未初始化'
             };
-            
+
         } catch (error) {
             console.error('[RagIpcHandler] 获取嵌入状态失败:', error);
             return { success: false, error: error.message };
@@ -93,23 +93,127 @@ class RagIpcHandler {
     }
 
     /**
+     * 设置嵌入配置
+     * @param {string} provider 提供商类型 ('aliyun' | 'ollama')
+     * @param {Object} config 配置对象
+     * @returns {Promise<Object>} 设置结果
+     */
+    async setEmbeddingConfig(provider, config) {
+        try {
+            console.log(`[RagIpcHandler] 设置嵌入配置: provider=${provider}`);
+
+            const result = await this.collectionManager.setEmbeddingConfig(provider, config);
+
+            console.log(`[RagIpcHandler] 嵌入配置设置完成:`, result);
+            return result;
+
+        } catch (error) {
+            console.error('[RagIpcHandler] 设置嵌入配置失败:', error);
+            return {
+                success: false,
+                error: `设置嵌入配置失败: ${error.message}`
+            };
+        }
+    }
+
+    /**
+     * 获取嵌入配置
+     * @returns {Promise<Object>} 配置信息
+     */
+    async getEmbeddingConfig() {
+        try {
+            const config = this.collectionManager.getEmbeddingConfigFromStore();
+            const providerInfo = this.collectionManager.getEmbeddingProviderInfo();
+
+            return {
+                success: true,
+                config: config,
+                currentProvider: providerInfo?.provider || null,
+                isInitialized: !!providerInfo
+            };
+
+        } catch (error) {
+            console.error('[RagIpcHandler] 获取嵌入配置失败:', error);
+            return {
+                success: false,
+                error: `获取嵌入配置失败: ${error.message}`
+            };
+        }
+    }
+
+    /**
+     * 测试Ollama连接
+     * @param {string} baseUrl Ollama服务器地址
+     * @param {string} modelName 模型名称
+     * @returns {Promise<Object>} 测试结果
+     */
+    async testOllamaConnection(baseUrl, modelName) {
+        try {
+            const OllamaEmbeddingFunction = require('./ollamaEmbeddingFunction');
+            const testEmbedding = new OllamaEmbeddingFunction(baseUrl, modelName);
+
+            console.log(`[RagIpcHandler] 测试Ollama连接: ${baseUrl}, model: ${modelName}`);
+
+            const result = await testEmbedding.testConnection();
+
+            console.log(`[RagIpcHandler] Ollama连接测试完成:`, result);
+            return result;
+
+        } catch (error) {
+            console.error('[RagIpcHandler] 测试Ollama连接失败:', error);
+            return {
+                success: false,
+                error: `测试Ollama连接失败: ${error.message}`
+            };
+        }
+    }
+
+    /**
+     * 获取Ollama可用模型列表
+     * @param {string} baseUrl Ollama服务器地址
+     * @returns {Promise<Object>} 模型列表
+     */
+    async getOllamaModels(baseUrl) {
+        try {
+            const OllamaEmbeddingFunction = require('./ollamaEmbeddingFunction');
+            const tempEmbedding = new OllamaEmbeddingFunction(baseUrl);
+
+            console.log(`[RagIpcHandler] 获取Ollama模型列表: ${baseUrl}`);
+
+            const models = await tempEmbedding.getAvailableModels();
+
+            return {
+                success: true,
+                models: models
+            };
+
+        } catch (error) {
+            console.error('[RagIpcHandler] 获取Ollama模型列表失败:', error);
+            return {
+                success: false,
+                error: `获取Ollama模型列表失败: ${error.message}`
+            };
+        }
+    }
+
+    /**
      * 获取所有知识库集合列表
      * @returns {Promise<Object>} 集合列表结果
      */
     async listKbCollections() {
         try {
             console.log("[RagIpcHandler] 获取知识库集合列表...");
-            
+
             // 使用CollectionManager的listCollections方法
             const collections = await this.collectionManager.listCollections();
-            
+
             console.log(`[RagIpcHandler] 获取到 ${collections.length} 个集合`);
-            
+
             return {
                 success: true,
                 collections: collections
             };
-            
+
         } catch (error) {
             console.error("[RagIpcHandler] 获取集合列表失败:", error);
             return {

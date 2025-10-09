@@ -1,6 +1,7 @@
 const { ChromaClient } = require("chromadb");
 const path = require('path');
 const AliyunEmbeddingFunction = require('./aliyunEmbeddingFunction');
+const OllamaEmbeddingFunction = require('./ollamaEmbeddingFunction');
 
 /**
  * 集合管理器类，负责管理多个ChromaDB集合
@@ -17,8 +18,9 @@ class CollectionManager {
         this.collectionMetadata = new Map(); // 集合元数据：collectionName -> metadata
         this.isInitialized = false;
         
-        // 初始化阿里云嵌入函数（先使用空值，后续通过setEmbeddingApiKey设置）
+        // 初始化嵌入函数（先使用空值，后续通过配置设置）
         this.embeddingFunction = null;
+        this.embeddingProvider = null; // 嵌入提供商类型
         this.storeInstance = null; // 用于存储 electron-store 实例
 
         CollectionManager.instance = this;
@@ -97,38 +99,104 @@ class CollectionManager {
      */
     initializeEmbeddingFunction() {
         try {
-            const currentApiKey = this.getCurrentApiKeyFromStore();
-            
-            if (!currentApiKey) {
-                console.warn("[CollectionManager] 阿里云API Key未设置，嵌入功能将不可用");
+            const embeddingConfig = this.getEmbeddingConfigFromStore();
+
+            if (!embeddingConfig) {
+                console.warn("[CollectionManager] 嵌入配置未设置，嵌入功能将不可用");
                 this.embeddingFunction = null;
+                this.embeddingProvider = null;
                 return;
             }
 
-            this.embeddingFunction = new AliyunEmbeddingFunction(
-                currentApiKey,
-                'text-embedding-v4',
-                1024
-            );
-            console.log("[CollectionManager] 嵌入函数初始化成功");
+            const { provider, config } = embeddingConfig;
+            this.embeddingProvider = provider;
+
+            switch (provider) {
+                case 'aliyun':
+                    const aliyunApiKey = config.apiKey;
+                    if (!aliyunApiKey) {
+                        console.warn("[CollectionManager] 阿里云API Key未设置，嵌入功能将不可用");
+                        this.embeddingFunction = null;
+                        return;
+                    }
+                    this.embeddingFunction = new AliyunEmbeddingFunction(
+                        aliyunApiKey,
+                        config.modelName || 'text-embedding-v4',
+                        config.dimensions || 1024
+                    );
+                    console.log("[CollectionManager] 阿里云嵌入函数初始化成功");
+                    break;
+
+                case 'ollama':
+                    this.embeddingFunction = new OllamaEmbeddingFunction(
+                        config.baseUrl || 'http://localhost:11434',
+                        config.modelName || 'nomic-embed-text'
+                    );
+                    console.log("[CollectionManager] Ollama嵌入函数初始化成功");
+                    break;
+
+                default:
+                    console.warn(`[CollectionManager] 不支持的嵌入提供商: ${provider}`);
+                    this.embeddingFunction = null;
+                    this.embeddingProvider = null;
+                    return;
+            }
+
+            console.log(`[CollectionManager] 嵌入函数初始化成功，提供商: ${provider}`);
         } catch (error) {
             console.error("[CollectionManager] 嵌入函数初始化失败:", error);
             this.embeddingFunction = null;
+            this.embeddingProvider = null;
         }
     }
 
     /**
-     * 从store获取当前的API Key
+     * 从store获取嵌入配置
+     * @returns {Object|null} 嵌入配置对象，如果没有设置则返回null
+     */
+    getEmbeddingConfigFromStore() {
+        if (!this.storeInstance) {
+            console.warn("[CollectionManager] store实例未设置，无法获取嵌入配置");
+            return null;
+        }
+
+        // 尝试获取新的配置格式
+        const embeddingConfig = this.storeInstance.get('embeddingConfig');
+        if (embeddingConfig && embeddingConfig.provider && embeddingConfig.config) {
+            console.log(`[CollectionManager] 使用新的嵌入配置格式，提供商: ${embeddingConfig.provider}`);
+            return embeddingConfig;
+        }
+
+        // 向后兼容：检查旧的阿里云API Key配置
+        const legacyAliyunKey = this.storeInstance.get('aliyunEmbeddingApiKey');
+        if (legacyAliyunKey && legacyAliyunKey.trim()) {
+            console.log("[CollectionManager] 检测到旧的阿里云配置，转换为新的配置格式");
+            return {
+                provider: 'aliyun',
+                config: {
+                    apiKey: legacyAliyunKey.trim(),
+                    modelName: 'text-embedding-v4',
+                    dimensions: 1024
+                }
+            };
+        }
+
+        console.log("[CollectionManager] 未找到嵌入配置");
+        return null;
+    }
+
+    /**
+     * 从store获取当前的API Key（向后兼容方法）
      * @returns {string} 当前的API Key，如果没有设置则返回空字符串
+     * @deprecated 使用 getEmbeddingConfigFromStore 替代
      */
     getCurrentApiKeyFromStore() {
-        if (!this.storeInstance) {
-            console.warn("[CollectionManager] store实例未设置，无法获取API Key");
-            return '';
+        console.warn("[CollectionManager] getCurrentApiKeyFromStore已弃用，请使用getEmbeddingConfigFromStore");
+        const config = this.getEmbeddingConfigFromStore();
+        if (config && config.provider === 'aliyun' && config.config.apiKey) {
+            return config.config.apiKey;
         }
-        
-        const storedApiKey = this.storeInstance.get('aliyunEmbeddingApiKey');
-        return storedApiKey && storedApiKey.trim() ? storedApiKey.trim() : '';
+        return '';
     }
 
     /**
@@ -172,9 +240,85 @@ class CollectionManager {
      */
     setStore(store) {
         this.storeInstance = store;
-        
+
         // 设置store实例，不再自动重新初始化嵌入函数
         console.log("[CollectionManager] store实例已设置");
+    }
+
+    /**
+     * 设置嵌入配置
+     * @param {string} provider 提供商类型 ('aliyun' | 'ollama')
+     * @param {Object} config 配置对象
+     * @returns {Promise<Object>} 设置结果
+     */
+    async setEmbeddingConfig(provider, config) {
+        try {
+            console.log(`[CollectionManager] 设置嵌入配置: provider=${provider}`);
+
+            // 验证提供商
+            if (!['aliyun', 'ollama'].includes(provider)) {
+                throw new Error(`不支持的嵌入提供商: ${provider}`);
+            }
+
+            // 验证配置
+            if (provider === 'aliyun') {
+                if (!config.apiKey || !config.apiKey.trim()) {
+                    throw new Error('阿里云API Key不能为空');
+                }
+            } else if (provider === 'ollama') {
+                if (!config.baseUrl || !config.baseUrl.trim()) {
+                    throw new Error('Ollama服务器地址不能为空');
+                }
+                if (!config.modelName || !config.modelName.trim()) {
+                    throw new Error('Ollama模型名称不能为空');
+                }
+            }
+
+            // 保存配置到store
+            const embeddingConfig = {
+                provider,
+                config: {
+                    ...config,
+                    // 设置默认值
+                    modelName: config.modelName || (provider === 'aliyun' ? 'text-embedding-v4' : 'nomic-embed-text'),
+                    dimensions: config.dimensions || (provider === 'aliyun' ? 1024 : undefined),
+                    baseUrl: config.baseUrl || (provider === 'ollama' ? 'http://localhost:11434' : undefined)
+                }
+            };
+
+            this.storeInstance.set('embeddingConfig', embeddingConfig);
+            console.log("[CollectionManager] 嵌入配置已保存到store");
+
+            // 重新初始化嵌入函数
+            this.reinitializeEmbeddingFunction();
+
+            return {
+                success: true,
+                message: `嵌入配置设置成功，提供商: ${provider}`
+            };
+
+        } catch (error) {
+            console.error('[CollectionManager] 设置嵌入配置失败:', error);
+            return {
+                success: false,
+                error: `设置嵌入配置失败: ${error.message}`
+            };
+        }
+    }
+
+    /**
+     * 获取当前嵌入提供商信息
+     * @returns {Object|null} 提供商信息
+     */
+    getEmbeddingProviderInfo() {
+        if (!this.embeddingFunction) {
+            return null;
+        }
+
+        return {
+            provider: this.embeddingProvider,
+            isInitialized: true
+        };
     }
 
 
@@ -298,7 +442,7 @@ class CollectionManager {
 
         // 检查嵌入函数是否可用
         if (!this.embeddingFunction) {
-            throw new Error('嵌入函数未初始化，请先设置阿里云API Key');
+            throw new Error('嵌入函数未初始化，请先在设置中配置RAG嵌入模型');
         }
 
         const collectionName = this.normalizeCollectionName(filename);
@@ -693,7 +837,7 @@ class CollectionManager {
     async addDocumentsToCollection(filename, documents, metadatas, ids) {
         // 检查嵌入函数是否可用
         if (!this.embeddingFunction) {
-            throw new Error('嵌入函数未初始化，无法添加文档');
+            throw new Error('嵌入函数未初始化，无法添加文档。请先在设置中配置RAG嵌入模型');
         }
 
         const collection = await this.getOrCreateCollection(filename);

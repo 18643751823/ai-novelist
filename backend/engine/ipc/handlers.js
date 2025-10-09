@@ -1744,6 +1744,26 @@ function register(store) { // 接收 store 参数并设置全局实例
     return await ragIpcHandler.listKbCollections();
   });
 
+  // 新增：设置嵌入配置处理器
+  ipcMain.handle('set-embedding-config', async (event, provider, config) => {
+    return await ragIpcHandler.setEmbeddingConfig(provider, config);
+  });
+
+  // 新增：获取嵌入配置处理器
+  ipcMain.handle('get-embedding-config', async () => {
+    return await ragIpcHandler.getEmbeddingConfig();
+  });
+
+  // 新增：测试Ollama连接处理器
+  ipcMain.handle('test-ollama-connection', async (event, baseUrl, modelName) => {
+    return await ragIpcHandler.testOllamaConnection(baseUrl, modelName);
+  });
+
+  // 新增：获取Ollama模型列表处理器
+  ipcMain.handle('get-ollama-models', async (event, baseUrl) => {
+    return await ragIpcHandler.getOllamaModels(baseUrl);
+  });
+
 
   // 新增：停止流式传输处理器
   ipcMain.handle('stop-streaming', async () => {
