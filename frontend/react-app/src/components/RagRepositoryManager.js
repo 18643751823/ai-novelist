@@ -1,18 +1,20 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faPlus, 
-  faSync, 
-  faBook, 
-  faTrash, 
-  faEdit, 
+import {
+  faPlus,
+  faSync,
+  faBook,
+  faTrash,
+  faEdit,
   faDatabase,
   faCog,
-  faFileImport
+  faFileImport,
+  faChevronDown
 } from '@fortawesome/free-solid-svg-icons';
 import ConfirmationModal from './ConfirmationModal';
 import NotificationModal from './NotificationModal';
+import EmbeddingModelSelector from './EmbeddingModelSelector';
 import useIpcRenderer from '../hooks/useIpcRenderer';
 import './RagRepositoryManager.css';
 
@@ -29,6 +31,8 @@ const RagRepositoryManager = forwardRef(({ onSaveComplete }, ref) => {
   const [fileToDelete, setFileToDelete] = useState(null);
   const [notification, setNotification] = useState(null);
   const [showCreateRepoModal, setShowCreateRepoModal] = useState(false);
+  const [availableEmbeddingModels, setAvailableEmbeddingModels] = useState([]);
+  const [loadingModels, setLoadingModels] = useState(false);
   const [newRepoConfig, setNewRepoConfig] = useState({
     name: '',
     embeddingModel: '',
@@ -229,6 +233,7 @@ const RagRepositoryManager = forwardRef(({ onSaveComplete }, ref) => {
   // 初始化加载
   useEffect(() => {
     loadRepositories();
+    loadEmbeddingModels();
   }, []);
 
   // 当选中仓库变化时加载文件
@@ -260,6 +265,40 @@ const RagRepositoryManager = forwardRef(({ onSaveComplete }, ref) => {
   const closeDeleteConfirm = () => {
     setDeleteModalOpen(false);
     setFileToDelete(null);
+  };
+
+  // 获取嵌入模型列表
+  const loadEmbeddingModels = async () => {
+    setLoadingModels(true);
+    try {
+      const result = await invoke('list-all-models');
+      if (result.success && result.models) {
+        // 过滤出嵌入模型（包含 'embedding' 或 'bge' 等关键词的模型）
+        const embeddingModels = result.models.filter(model => {
+          const modelId = model.id.toLowerCase();
+          return modelId.includes('embedding') ||
+                 modelId.includes('bge') ||
+                 modelId.includes('text2vec') ||
+                 modelId.includes('m3e') ||
+                 modelId.includes('e5');
+        });
+        setAvailableEmbeddingModels(embeddingModels);
+        console.log(`加载到 ${embeddingModels.length} 个嵌入模型`);
+      } else {
+        console.error('获取模型列表失败:', result.error);
+        setAvailableEmbeddingModels([]);
+      }
+    } catch (err) {
+      console.error('调用获取模型列表API失败:', err);
+      setAvailableEmbeddingModels([]);
+    } finally {
+      setLoadingModels(false);
+    }
+  };
+
+  // 处理嵌入模型选择
+  const handleEmbeddingModelChange = (modelId) => {
+    setNewRepoConfig(prev => ({ ...prev, embeddingModel: modelId }));
   };
 
   // 暴露保存方法给父组件
@@ -435,14 +474,17 @@ const RagRepositoryManager = forwardRef(({ onSaveComplete }, ref) => {
                   placeholder="输入仓库名称"
                 />
               </div>
+              {/* 嵌入模型选择器 - 平级布局 */}
               <div className="form-group">
                 <label>嵌入模型:</label>
-                <input
-                  type="text"
-                  value={newRepoConfig.embeddingModel}
-                  onChange={(e) => setNewRepoConfig(prev => ({ ...prev, embeddingModel: e.target.value }))}
-                  placeholder="输入嵌入模型名称"
-                />
+                <div className="model-selector-container">
+                  <EmbeddingModelSelector
+                    selectedModel={newRepoConfig.embeddingModel}
+                    availableModels={availableEmbeddingModels}
+                    onModelChange={handleEmbeddingModelChange}
+                    loading={loadingModels}
+                  />
+                </div>
               </div>
               <div className="form-row">
                 <div className="form-group">

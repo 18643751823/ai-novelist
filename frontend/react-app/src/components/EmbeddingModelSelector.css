@@ -1,6 +1,5 @@
 .embedding-model-selector-panel {
   width: 100%;
-  height: 100%;
   background: linear-gradient(135deg, #2D2D2D 0%, #252525 100%);
   border: 1px solid #404040;
   border-radius: 8px;
@@ -10,22 +9,16 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
-/* 筛选区域样式 */
-.embedding-model-filter-section {
-  padding: 20px;
-  background: linear-gradient(135deg, #3C3C3C 0%, #333333 100%);
-  border-bottom: 1px solid #404040;
-}
-
 /* 搜索容器 */
 .embedding-search-container {
   position: relative;
-  margin-bottom: 15px;
+  padding: 12px;
+  border-bottom: 1px solid #404040;
 }
 
 .embedding-search-icon {
   position: absolute;
-  left: 12px;
+  left: 24px;
   top: 50%;
   transform: translateY(-50%);
   color: #888;
@@ -34,94 +27,75 @@
 
 .embedding-search-input {
   width: 100%;
-  padding: 10px 40px;
-  background: #2D2D2D;
-  border: 1px solid #555555;
-  border-radius: 6px;
+  padding: 8px 12px 8px 35px;
+  background: #1E1E1E;
   color: #E0E0E0;
+  border: 1px solid #555555;
+  border-radius: 4px;
   font-size: 14px;
-  transition: all 0.3s ease;
+  outline: none;
 }
 
 .embedding-search-input:focus {
-  outline: none;
   border-color: #00AD62;
-  box-shadow: 0 0 0 2px rgba(0, 173, 98, 0.2);
 }
 
 .embedding-search-input::placeholder {
   color: #888;
 }
 
-/* 提供商筛选 */
-.embedding-provider-filter {
+/* 当前选中模型显示 */
+.embedding-selected-display {
+  padding: 12px;
+  border-bottom: 1px solid #404040;
+  background: #333333;
+}
+
+.selected-model-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-.embedding-filter-label {
-  color: #B0B0B0;
+.selected-model-text {
+  color: #E0E0E0;
   font-size: 14px;
   font-weight: 500;
-  white-space: nowrap;
 }
 
-.embedding-provider-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.embedding-provider-tag {
-  padding: 6px 12px;
-  background: #3C3C3C;
-  color: #B0B0B0;
-  border: 1px solid #555555;
-  border-radius: 16px;
-  cursor: pointer;
+.selected-model-provider {
   font-size: 12px;
-  transition: all 0.3s ease;
-  white-space: nowrap;
+  color: #B0B0B0;
+  background: #3C3C3C;
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid #444444;
 }
-
-.embedding-provider-tag:hover {
-  background: #4A4A4A;
-  border-color: #666;
-}
-
-.embedding-provider-tag.active {
-  background: linear-gradient(135deg, #00AD62 0%, #008C4F 100%);
-  border-color: #00AD62;
-  color: white;
-  box-shadow: 0 2px 8px rgba(0, 173, 98, 0.3);
-}
-
 .embedding-model-list-container {
-  flex: 1;
+  max-height: 400px;
   overflow-y: auto;
-  padding: 0;
-  margin: 0;
+  background: linear-gradient(135deg, #2D2D2D 0%, #252525 100%);
+  padding: 12px;
 }
 
 .embedding-model-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 15px;
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
 }
 
 .embedding-model-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 12px 16px;
   background: linear-gradient(135deg, #3C3C3C 0%, #333333 100%);
   border: 1px solid #444444;
-  border-radius: 8px;
+  border-radius: 6px;
   transition: all 0.3s ease;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .embedding-model-card:hover {
@@ -180,6 +154,26 @@
   margin-left: 10px;
 }
 
+.embedding-loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #808080;
+  font-style: italic;
+  background: linear-gradient(135deg, #3C3C3C 0%, #333333 100%);
+  border-radius: 12px;
+  border: 2px dashed #555555;
+  margin: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.embedding-loading-state svg {
+  font-size: 24px;
+  color: #00AD62;
+}
+
 .embedding-empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -197,6 +191,30 @@
   display: block;
   margin-bottom: 15px;
   opacity: 0.6;
+}
+
+.embedding-model-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.embedding-model-display-name {
+  font-size: 12px;
+  color: #A0A0A0;
+  font-style: italic;
+  background: #2D2D2D;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #444444;
+  display: inline-block;
+  max-width: fit-content;
+}
+
+.embedding-model-card.selected .embedding-model-display-name {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* 搜索结果信息 */
@@ -231,22 +249,14 @@
 /* 响应式设计 */
 @media (max-width: 768px) {
   .embedding-model-grid {
-    grid-template-columns: 1fr;
-    padding: 10px;
+    padding: 8px;
   }
   
-  .embedding-model-filter-section {
-    padding: 15px;
+  .embedding-model-card {
+    padding: 10px 12px;
   }
   
-  .embedding-provider-filter {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  
-  .embedding-provider-tags {
-    width: 100%;
-    justify-content: flex-start;
+  .embedding-model-list-container {
+    max-height: 300px;
   }
 }
