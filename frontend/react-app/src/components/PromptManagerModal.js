@@ -20,7 +20,7 @@ const PromptManagerModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
   const { customPrompts, modeFeatureSettings, additionalInfo } = useSelector((state) => state.chat);
   const { invoke } = useIpcRenderer();
-  const [activeTab, setActiveTab] = useState('basic'); // 'basic' 或 'memory'
+  // 不再使用标签页切换，两个面板同时显示
   const [localPrompts, setLocalPrompts] = useState({
     general: '',
     outline: '',
@@ -310,34 +310,26 @@ const fetchDefaultPrompts = async () => {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="prompt-manager-modal-overlay">
-      <div className="prompt-manager-modal-content">
-        <div className="prompt-manager-header">
-          <h2>对话设置</h2>
-          <button className="close-button" onClick={onClose}>
-            <FontAwesomeIcon icon={faTimes} />
-          </button>
-        </div>
-
-        {/* 标签页导航 */}
-        <div className="tab-navigation">
-          <button
-            className={`tab-button ${activeTab === 'basic' ? 'active' : ''}`}
-            onClick={() => setActiveTab('basic')}
-          >
-            <FontAwesomeIcon icon={faSlidersH} /> 基础AI设置
-          </button>
-          <button
-            className={`tab-button ${activeTab === 'memory' ? 'active' : ''}`}
-            onClick={() => setActiveTab('memory')}
-          >
-            <FontAwesomeIcon icon={faDatabase} /> 持久记忆
-          </button>
-        </div>
-
-        {/* 标签页内容 */}
-        {activeTab === 'basic' && (
+  <div className="prompt-manager-modal-content">
+    {/* 内容区域 */}
+    <div className="tab-content-container">
+      <div className="tab-content-actions">
+        <button className="save-button" onClick={handleSave}>
+          <FontAwesomeIcon icon={faSave} /> 保存所有
+        </button>
+        <button className="cancel-button" onClick={onClose}>
+          取消
+        </button>
+      </div>
+      
+      {/* 同时显示两个面板 */}
+      <div className="dual-panel-container">
+        {/* 基础AI设置面板 */}
+        <div className="panel-section">
+          <div className="panel-header">
+            <FontAwesomeIcon icon={faSlidersH} />
+            <span>基础AI设置</span>
+          </div>
           <div className="prompt-sections">
             {isLoadingPrompts ? (
               <div className="loading-prompts">
@@ -351,23 +343,13 @@ const fetchDefaultPrompts = async () => {
               Object.entries(defaultPrompts).map(([mode, defaultPrompt]) => (
               <div key={mode} className="prompt-section">
                 <h3>{getModeDisplayName(mode)}模式</h3>
-                
-                <div className="default-prompt">
-                  <h4>默认提示词:</h4>
-                  <textarea
-                    readOnly
-                    value={defaultPrompt}
-                    className="default-prompt-textarea"
-                    rows={6}
-                  />
-                </div>
 
                 <div className="custom-prompt">
                   <h4>自定义提示词:</h4>
                   <textarea
                     value={localPrompts[mode] || ''}
                     onChange={(e) => handlePromptChange(mode, e.target.value)}
-                    placeholder={`输入${getModeDisplayName(mode)}模式的自定义提示词...`}
+                    placeholder={defaultPrompt}
                     rows={6}
                   />
                   <button
@@ -409,9 +391,14 @@ const fetchDefaultPrompts = async () => {
             ))
             )}
           </div>
-        )}
-
-        {activeTab === 'memory' && (
+        </div>
+        
+        {/* 持久记忆面板 */}
+        <div className="panel-section">
+          <div className="panel-header">
+            <FontAwesomeIcon icon={faDatabase} />
+            <span>持久记忆</span>
+          </div>
           <div className="memory-tab-content">
             {/* 模式选择器 */}
             <div className="mode-selector">
@@ -476,15 +463,6 @@ const fetchDefaultPrompts = async () => {
               </div>
             </div>
           </div>
-        )}
-
-        <div className="modal-actions">
-          <button className="save-button" onClick={handleSave}>
-            <FontAwesomeIcon icon={faSave} /> 保存所有
-          </button>
-          <button className="cancel-button" onClick={onClose}>
-            取消
-          </button>
         </div>
       </div>
 
@@ -496,7 +474,7 @@ const fetchDefaultPrompts = async () => {
         />
       )}
     </div>
-  );
+  </div>
 };
 
 // 辅助函数：获取模式显示名称

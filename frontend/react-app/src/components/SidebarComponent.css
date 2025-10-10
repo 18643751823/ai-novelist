@@ -2,7 +2,7 @@
   position: relative;
   width: 50px; /* 固定宽度，只显示图标 */
   height: 100%;
-  background-color: var(--panel-bg-color-alt);
+  background-color: #000000; /* 纯黑色 */
   display: flex;
   flex-direction: column;
   overflow: hidden;

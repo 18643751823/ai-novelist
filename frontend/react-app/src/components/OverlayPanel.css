@@ -1,0 +1,214 @@
+.overlay-panel {
+  position: absolute;
+  top: 0;
+  background-color: rgba(0, 0, 0, 0.9); /* 半透明黑色背景 */
+  z-index: 1000; /* 确保覆盖在其他内容之上 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto; /* 允许与覆盖层交互 */
+}
+
+.overlay-content {
+  background-color: #000000; /* 纯黑色背景 */
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  overflow: hidden;
+  box-shadow: none;
+  color: #E0E0E0; /* 浅色文本 */
+}
+
+/* 确保覆盖层只覆盖除了右侧面板和侧边栏之外的所有内容 */
+.layout-container {
+  position: relative; /* 为绝对定位的覆盖层提供定位上下文 */
+}
+
+/* 覆盖层显示时，隐藏被覆盖区域的内容 */
+.overlay-panel ~ .main-layout .left-panel,
+.overlay-panel ~ .main-layout .middle-panel,
+.overlay-panel ~ .main-layout .divider-line,
+.overlay-panel ~ .main-layout .resize-handle {
+  opacity: 0.3; /* 降低被覆盖区域的不透明度 */
+  pointer-events: none; /* 禁用被覆盖区域的交互 */
+}
+
+/* 确保右侧面板和侧边栏不受影响 */
+.overlay-panel ~ .main-layout .right-panel,
+.overlay-panel ~ .main-layout .sidebar-panel-fixed {
+  opacity: 1; /* 保持正常显示 */
+  pointer-events: auto; /* 保持可交互 */
+  z-index: 1001; /* 确保在覆盖层之上 */
+}
+
+/* 特别确保侧边栏图标区域不被覆盖 */
+.overlay-panel ~ .main-layout .sidebar-panel-fixed .sidebar-items {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1002;
+}
+
+/* 覆盖层内容区域 */
+.overlay-content {
+  background-color: #000000; /* 纯黑色背景 */
+  border: 1px solid #333333; /* 深灰色边框 */
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 90%;
+  max-height: 80%;
+  overflow: auto;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  color: #E0E0E0; /* 浅色文本 */
+}
+
+/* 覆盖层内的按钮样式 */
+.overlay-content button {
+  background-color: #00AD62; /* 主题绿色 */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  margin: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.overlay-content button:hover {
+  background-color: #008C4F; /* 深绿色悬停效果 */
+}
+
+.overlay-content button:disabled {
+  background-color: #333333; /* 禁用状态 */
+  color: #808080;
+  cursor: not-allowed;
+}
+
+/* 覆盖层内的输入框样式 */
+.overlay-content input,
+.overlay-content textarea {
+  background-color: #000000; /* 黑色背景 */
+  color: #E0E0E0; /* 浅色文本 */
+  border: 1px solid #333333; /* 深灰色边框 */
+  border-radius: 4px;
+  padding: 8px;
+  margin: 5px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.overlay-content input:focus,
+.overlay-content textarea:focus {
+  outline: none;
+  border-color: #00AD62; /* 绿色焦点边框 */
+}
+
+/* 覆盖层内的标题样式 */
+.overlay-content h1,
+.overlay-content h2,
+.overlay-content h3 {
+  color: #E0E0E0;
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+/* 覆盖层内的段落样式 */
+.overlay-content p {
+  color: #B0B0B0;
+  line-height: 1.5;
+  margin-bottom: 15px;
+}
+
+/* 滚动条美化 */
+.overlay-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overlay-content::-webkit-scrollbar-track {
+  background: #000000;
+  border-radius: 10px;
+}
+
+.overlay-content::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 10px;
+}
+
+.overlay-content::-webkit-scrollbar-thumb:hover {
+  background: #00AD62;
+}
+
+/* 布局容器样式 */
+.layout-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* 覆盖层触发按钮样式 */
+.overlay-trigger-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1001; /* 确保在覆盖层之上 */
+  background-color: #00AD62;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.overlay-trigger-button:hover {
+  background-color: #008C4F;
+}
+
+/* 覆盖层示例内容样式 */
+.overlay-example-content {
+  text-align: center;
+}
+
+.overlay-example-content h2 {
+  color: #E0E0E0;
+  margin-bottom: 20px;
+}
+
+.overlay-example-content p {
+  color: #B0B0B0;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.overlay-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.overlay-actions button {
+  background-color: #00AD62;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.overlay-actions button:hover {
+  background-color: #008C4F;
+}
+
+.overlay-actions button:first-child {
+  background-color: #333333;
+}
+
+.overlay-actions button:first-child:hover {
+  background-color: #555555;
+}

@@ -262,7 +262,7 @@ const KnowledgeBasePanel = ({ onClose }) => {
           </div>
         ) : (
           files.map((file) => (
-            <div key={file.collectionName} className="kb-file-item">
+            <div key={file.tableName} className="kb-file-item">
               <div className="file-info">
                 <div className="file-name">{file.filename}</div>
                 <div className="file-details">

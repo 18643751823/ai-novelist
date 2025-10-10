@@ -6,6 +6,7 @@ import {
   setDeepseekApiKey,
   setOpenrouterApiKey,
   setSiliconflowApiKey,
+  setAliyunApiKey,
   setAliyunEmbeddingApiKey,
   setIntentAnalysisModel,
   setAvailableModels,
@@ -24,6 +25,7 @@ const ApiSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
     deepseekApiKey,
     openrouterApiKey,
     siliconflowApiKey,
+    aliyunApiKey,
     aliyunEmbeddingApiKey,
     intentAnalysisModel,
     availableModels,
@@ -41,6 +43,7 @@ const ApiSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
         storedOpenrouterKey,
         storedSiliconflowKey,
         storedAliyunKey,
+        storedAliyunEmbeddingKey,
         storedIntentModel,
         storedOllamaUrl
       ] = await Promise.all([
@@ -49,6 +52,7 @@ const ApiSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
         invoke('get-store-value', 'deepseekApiKey'),
         invoke('get-store-value', 'openrouterApiKey'),
         invoke('get-store-value', 'siliconflowApiKey'),
+        invoke('get-store-value', 'aliyunApiKey'),
         invoke('get-store-value', 'aliyunEmbeddingApiKey'),
         invoke('get-store-value', 'intentAnalysisModel'),
         invoke('get-store-value', 'ollamaBaseUrl')
@@ -71,7 +75,10 @@ const ApiSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
         dispatch(setSiliconflowApiKey(storedSiliconflowKey));
       }
       if (storedAliyunKey) {
-        dispatch(setAliyunEmbeddingApiKey(storedAliyunKey));
+        dispatch(setAliyunApiKey(storedAliyunKey));
+      }
+      if (storedAliyunEmbeddingKey) {
+        dispatch(setAliyunEmbeddingApiKey(storedAliyunEmbeddingKey));
       }
       if (storedIntentModel) {
         dispatch(setIntentAnalysisModel(storedIntentModel));
@@ -124,6 +131,7 @@ const ApiSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
         deepseekApiKey: deepseekApiKey ? '已设置(隐藏)' : '未设置',
         openrouterApiKey: openrouterApiKey ? '已设置(隐藏)' : '未设置',
         siliconflowApiKey: siliconflowApiKey ? '已设置(隐藏)' : '未设置',
+        aliyunApiKey: aliyunApiKey ? '已设置(隐藏)' : '未设置',
         aliyunEmbeddingApiKey: aliyunEmbeddingApiKey ? '已设置(隐藏)' : '未设置',
         ollamaBaseUrl,
         intentAnalysisModel
@@ -134,6 +142,7 @@ const ApiSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
         setStoreValue('deepseekApiKey', deepseekApiKey),
         setStoreValue('openrouterApiKey', openrouterApiKey),
         setStoreValue('siliconflowApiKey', siliconflowApiKey),
+        setStoreValue('aliyunApiKey', aliyunApiKey),
         setStoreValue('aliyunEmbeddingApiKey', aliyunEmbeddingApiKey),
         setStoreValue('ollamaBaseUrl', ollamaBaseUrl),
         setStoreValue('intentAnalysisModel', intentAnalysisModel),

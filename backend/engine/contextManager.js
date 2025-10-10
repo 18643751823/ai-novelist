@@ -55,7 +55,7 @@ class ContextManager {
     const contextType = isRagContext ? 'RAG上下文' : '对话上下文';
     const configInfo = contextConfig.type === 'tokens' && contextConfig.value === 'full'
       ? '满tokens'
-      : `${contextConfig.value}轮`;
+      : `附加${contextConfig.value}轮上下文`;
     console.log(`[ContextManager] ${contextType}限制配置: 模式=${mode}, 类型=${contextConfig.type}, 值=${configInfo}, 原始消息=${messages.length}条`);
     
     // 如果设置为满tokens，不进行截断
@@ -68,14 +68,14 @@ class ContextManager {
       const maxTurns = contextConfig.value;
 
       // 计算需要保留的消息数量
-      // 保留最近的maxTurns轮对话（每轮包含用户和AI的回复）
+      // 改为附加maxTurns轮上下文（保留最近maxTurns+1轮对话）
       const userMessages = messages.filter(msg => msg.role === 'user');
-      if (userMessages.length <= maxTurns) {
+      if (userMessages.length <= maxTurns + 1) {
         return messages; // 如果消息数量少于限制，返回全部
       }
 
-      // 找到需要保留的最早的用户消息
-      const earliestUserMessageToKeep = userMessages[userMessages.length - maxTurns];
+      // 找到需要保留的最早的用户消息（附加maxTurns轮上下文）
+      const earliestUserMessageToKeep = userMessages[userMessages.length - (maxTurns + 1)];
       
       // 直接使用数组索引而不是消息ID来定位截断点
       const userMessageIndex = messages.indexOf(earliestUserMessageToKeep);

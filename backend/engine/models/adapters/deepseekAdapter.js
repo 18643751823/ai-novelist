@@ -89,7 +89,9 @@ class DeepSeekAdapter extends BaseModelAdapter {
         tools: options.tools,
         tool_choice: options.tool_choice || "auto",
         stream: options.stream !== false, // 默认启用流式
-        temperature: options.temperature || 0.7,
+        temperature: options.temperature, // 使用前端传递的参数，不设置默认值
+        top_p: options.top_p,
+        n: options.n,
         max_tokens: options.max_tokens
       };
 

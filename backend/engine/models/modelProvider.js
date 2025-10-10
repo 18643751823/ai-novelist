@@ -3,6 +3,7 @@ const DeepSeekAdapter = require('./adapters/deepseekAdapter');
 const OllamaAdapter = require('./adapters/ollamaAdapter');
 const OpenRouterAdapter = require('./adapters/openrouterAdapter');
 const SiliconFlowAdapter = require('./adapters/siliconflowAdapter');
+const AliyunAdapter = require('./adapters/aliyunAdapter');
 const CustomProviderAdapter = require('./adapters/CustomProviderAdapter');
 
 let modelRegistryService = null;
@@ -160,6 +161,29 @@ async function initializeModelProvider() {
                     }
                 }
             }
+        }
+
+        // 阿里云百炼配置 - 总是注册，即使没有API key
+        const aliyunApiKey = storeInstance.get('aliyunApiKey');
+        const aliyunBaseUrl = storeInstance.get('aliyunBaseUrl') || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+        
+        console.log('[API设置调试] 从存储加载的阿里云百炼配置:', {
+            apiKey: aliyunApiKey ? '已设置' : '未设置',
+            baseUrl: aliyunBaseUrl
+        });
+
+        // 实例化并注册 阿里云百炼 适配器（总是注册）
+        try {
+            const aliyunAdapter = new AliyunAdapter({
+                apiKey: aliyunApiKey,
+                baseURL: aliyunBaseUrl
+            });
+            await modelRegistryService.registerAdapter('aliyun', aliyunAdapter);
+            console.log("AliyunAdapter 已注册。");
+        } catch (error) {
+            console.warn(`AliyunAdapter 注册失败: ${error.message}`);
+            // 即使注册失败，也创建一个占位符适配器以确保模型列表不为空
+            console.log("创建 阿里云百炼 占位符适配器以保持模型列表完整性");
         }
 
         console.log("ModelProvider 初始化完成，ModelRegistryService 已配置。");

@@ -11,6 +11,7 @@ import {
   setShowApiSettingsModal,
   setShowRagSettingsModal,
   setShowGeneralSettingsModal,
+  setShowWorkspacePanel, // 新增：导入设置工作区面板的action
   setDeepseekApiKey,
   setOpenrouterApiKey,
   setSiliconflowApiKey, // 新增：导入设置硅基流动API Key的action
@@ -36,6 +37,8 @@ import {
   setAdditionalInfoForAllModes, // 新增：导入批量设置附加信息的action
   setStreamingState, // 新增：导入设置流式状态的action
   stopStreaming, // 新增：导入停止流式传输的action
+  setAiParametersForAllModes, // 新增：导入设置所有模式AI参数的action
+  setAiParametersForMode, // 新增：导入设置特定模式AI参数的action
 } from '../store/slices/chatSlice';
 import { DEFAULT_SYSTEM_PROMPT } from '../store/slices/chatSlice'; // 导入默认系统提示词
 import { startDiff, acceptSuggestion, rejectSuggestion } from '../store/slices/novelSlice';
@@ -46,10 +49,8 @@ import NotificationModal from './NotificationModal';
 import ConfirmationModal from './ConfirmationModal';
 import CreationModeModal from './CreationModeModal';
 import PromptManagerModal from './PromptManagerModal'; // 新增：导入提示词管理模态框
-import ApiSettingsModal from './ApiSettingsModal'; // 新增：导入API设置模态框
-import RagSettingsModal from './RagSettingsModal'; // 新增：导入RAG设置模态框
-import GeneralSettingsModal from './GeneralSettingsModal'; // 新增：导入通用设置模态框
 import KnowledgeBasePanel from './KnowledgeBasePanel'; // 新增：导入知识库面板
+import ModeSelector from './ModeSelector'; // 新增：导入模式选择器
 import ModelSelectorPanel from './ModelSelectorPanel'; // 新增：导入模型选择面板
 import './ChatPanel.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -250,6 +251,7 @@ const ChatPanel = memo(() => {
     showApiSettingsModal,
     showRagSettingsModal,
     showGeneralSettingsModal,
+    showWorkspacePanel,
     deepseekApiKey,
     openrouterApiKey,
     siliconflowApiKey, // 新增：硅基流动API Key
@@ -267,6 +269,7 @@ const ChatPanel = memo(() => {
     isCreationModeEnabled,
     showCreationModal,
     isStreaming, // 新增：流式传输状态
+    aiParameters, // 新增：AI参数
   } = useSelector((state) => state.chat);
   
   // 使用 ref 来获取最新的状态值，避免闭包问题
@@ -290,7 +293,7 @@ const ChatPanel = memo(() => {
   const [notification, setNotification] = useState({ show: false, message: '' });
   const [editingText, setEditingText] = useState('');
   const [currentMode, setCurrentMode] = useState('general'); // 新增：当前创作模式
-  const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false); // 新增：模式下拉菜单状态
+  const [customModes, setCustomModes] = useState([]); // 新增：自定义模式列表
   const [showPromptManager, setShowPromptManager] = useState(false); // 新增：提示词管理模态框状态
   const [showKnowledgeBasePanel, setShowKnowledgeBasePanel] = useState(false); // 新增：知识库面板显示状态
   const [showModelSelectorPanel, setShowModelSelectorPanel] = useState(false); // 新增：模型选择面板显示状态
@@ -393,7 +396,6 @@ const ChatPanel = memo(() => {
         console.log('[值传递流程-2] 分发 setSelectedModel action: (空值)');
         console.log('未加载到模型，不设置默认模型');
       }
-
       // 加载当前模式设置
       const storedCurrentMode = await getStoreValue('currentMode');
       if (storedCurrentMode) {
@@ -403,6 +405,11 @@ const ChatPanel = memo(() => {
         setCurrentMode('general'); // 默认模式
         console.log('未加载到当前模式，使用默认模式: general');
       }
+
+      // 加载自定义模式
+      const storedCustomModes = await getStoreValue('customModes') || [];
+      setCustomModes(storedCustomModes);
+      console.log(`加载到的自定义模式: ${storedCustomModes.length}个`);
 
       // 加载每个模式的自定义提示词
       const storedCustomPrompts = await getStoreValue('customPrompts');
@@ -450,6 +457,54 @@ const ChatPanel = memo(() => {
           }
       } else {
           console.error('loadSettings: 获取可用模型列表失败:', modelsResult.error);
+      }
+
+      // 加载AI参数设置
+      const storedAiParameters = await getStoreValue('aiParameters');
+      if (storedAiParameters) {
+        // 直接使用从存储中获取的aiParameters，跳过有问题的迁移逻辑
+        console.log(`[DEBUG] 从存储加载的原始AI参数:`, JSON.stringify(storedAiParameters, null, 2));
+        
+        // 设置各个模式的AI参数（包括内置模式和自定义模式）
+        const allModes = new Set([
+          'general', 'outline', 'writing', 'adjustment', // 内置模式
+          ...storedCustomModes.map(mode => mode.id) // 自定义模式
+        ]);
+        
+        for (const mode of allModes) {
+          if (storedAiParameters[mode]) {
+            dispatch(setAiParametersForMode({ mode, parameters: storedAiParameters[mode] }));
+            console.log(`[DEBUG] 为模式 ${mode} 设置AI参数:`, storedAiParameters[mode]);
+          } else {
+            // 对于没有存储参数的模式，使用默认参数
+            const defaultParameters = {
+              temperature: 0.7,
+              top_p: 0.7,
+              n: 1
+            };
+            dispatch(setAiParametersForMode({ mode, parameters: defaultParameters }));
+            console.log(`[DEBUG] 为模式 ${mode} 初始化默认AI参数`);
+          }
+        }
+        console.log(`加载到的AI参数设置:`, JSON.stringify(storedAiParameters, null, 2));
+      } else {
+        console.log('未加载到AI参数设置，使用默认值');
+        // 如果没有存储的AI参数，为所有模式（包括自定义模式）初始化默认参数
+        const allModes = new Set([
+          'general', 'outline', 'writing', 'adjustment', // 内置模式
+          ...storedCustomModes.map(mode => mode.id) // 自定义模式
+        ]);
+        
+        const defaultParameters = {
+          temperature: 0.7,
+          top_p: 0.7,
+          n: 1
+        };
+        
+        for (const mode of allModes) {
+          dispatch(setAiParametersForMode({ mode, parameters: defaultParameters }));
+        }
+        console.log(`[DEBUG] 为所有模式初始化默认AI参数`);
       }
 
       // 加载流式传输设置并同步到后端
@@ -604,6 +659,13 @@ const ChatPanel = memo(() => {
         ragRetrievalEnabled: false
       };
 
+      // 获取当前模式的AI参数
+      const currentModeAiParameters = aiParameters[currentMode] || {
+        temperature: 0.7,
+        top_p: 0.7,
+        n: 1
+      };
+
       await invoke('process-command', {
         message: messageText,
         sessionId: currentSessionId,
@@ -611,9 +673,11 @@ const ChatPanel = memo(() => {
         mode: currentMode,
         customPrompt: customPrompt, // 添加自定义提示词参数
         ragRetrievalEnabled: currentModeFeatures.ragRetrievalEnabled, // 添加模式特定的RAG检索状态
-        model: selectedModel // 新增：传递当前选中的模型
+        model: selectedModel, // 新增：传递当前选中的模型
+        aiParameters: currentModeAiParameters // 新增：传递当前模式的AI参数
       });
       console.log(`[值传递流程-5] 已调用 invoke('process-command')，模型参数: ${selectedModel}`);
+      console.log(`[DEBUG][ChatPanel] 传递给后端的AI参数:`, JSON.stringify(currentModeAiParameters, null, 2));
     } catch (error) {
       console.error('Error sending message to AI:', error);
       dispatch(appendMessage({ sender: 'System', text: `发送消息失败: ${error.message}`, role: 'system', content: `发送消息失败: ${error.message}`, className: 'system-error' }));
@@ -755,6 +819,39 @@ const ChatPanel = memo(() => {
     console.log('ChatPanel: 组件挂载，开始加载设置和模型列表');
     loadSettings();
   }, [loadSettings]); // loadSettings 已经是 useCallback，依赖稳定
+
+  // 轮询监听存储中customModes的变化，实时更新状态
+  useEffect(() => {
+    let pollingInterval = null;
+    
+    const pollCustomModes = async () => {
+      try {
+        const storedCustomModes = await getStoreValue('customModes') || [];
+        setCustomModes(prevCustomModes => {
+          // 只有当customModes实际发生变化时才更新状态
+          if (JSON.stringify(prevCustomModes) !== JSON.stringify(storedCustomModes)) {
+            console.log('[ChatPanel] 检测到customModes存储变化，更新状态:', storedCustomModes);
+            return storedCustomModes;
+          }
+          return prevCustomModes;
+        });
+      } catch (error) {
+        console.error('[ChatPanel] 轮询customModes失败:', error);
+      }
+    };
+
+    // 每2秒轮询一次
+    pollingInterval = setInterval(pollCustomModes, 2000);
+    
+    // 立即执行一次
+    pollCustomModes();
+
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [getStoreValue]);
 
   // 新增：专门处理模型列表加载，确保模型选择器能正确显示
   useEffect(() => {
@@ -1143,36 +1240,12 @@ const ChatPanel = memo(() => {
 
         <div className="chat-input-group">
 
-          <div className="mode-selector-dropdown">
-            <button
-              className="mode-dropdown-toggle"
-              onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
-            >
-              {getModeDisplayName(currentMode)}模式 ▲
-            </button>
-            
-            {isModeDropdownOpen && (
-              <div className="mode-dropdown-menu">
-                <button
-                  className={currentMode === 'general' ? 'active' : ''}
-                  onClick={() => { console.log('切换到通用模式'); setCurrentMode('general'); setStoreValue('currentMode', 'general'); setIsModeDropdownOpen(false); }}
-                >通用</button>
-                <button
-                  className={currentMode === 'outline' ? 'active' : ''}
-                  onClick={() => { console.log('切换到细纲模式'); setCurrentMode('outline'); setStoreValue('currentMode', 'outline'); setIsModeDropdownOpen(false); }}
-                >细纲</button>
-                <button
-                  className={currentMode === 'writing' ? 'active' : ''}
-                  onClick={() => { console.log('切换到写作模式'); setCurrentMode('writing'); setStoreValue('currentMode', 'writing'); setIsModeDropdownOpen(false); }}
-                >写作</button>
-                <button
-                  className={currentMode === 'adjustment' ? 'active' : ''}
-                  onClick={() => { console.log('切换到调整模式'); setCurrentMode('adjustment'); setStoreValue('currentMode', 'adjustment'); setIsModeDropdownOpen(false); }}
-                >调整</button>
-                <div className="dropdown-divider"></div>
-              </div>
-            )}
-          </div>
+          <ModeSelector
+            currentMode={currentMode}
+            customModes={customModes}
+            onModeChange={handleModeSwitch}
+            setStoreValue={setStoreValue}
+          />
           <textarea
             id="chatInput"
             placeholder="输入指令..."
@@ -1213,23 +1286,6 @@ const ChatPanel = memo(() => {
         </div>
       </div>
 
-      {/* API设置模态框 */}
-      <ApiSettingsModal
-        isOpen={showApiSettingsModal}
-        onClose={() => dispatch(setShowApiSettingsModal(false))}
-      />
-
-      {/* RAG知识库设置模态框 */}
-      <RagSettingsModal
-        isOpen={showRagSettingsModal}
-        onClose={() => dispatch(setShowRagSettingsModal(false))}
-      />
-
-      {/* 通用设置模态框 */}
-      <GeneralSettingsModal
-        isOpen={showGeneralSettingsModal}
-        onClose={() => dispatch(setShowGeneralSettingsModal(false))}
-      />
 
       {showConfirmationModal && (
         <ConfirmationModal

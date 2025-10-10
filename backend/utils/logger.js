@@ -159,5 +159,17 @@ module.exports = {
         } catch (error) {
             await writeLog(`记录工具调用结果失败: ${error.message}`);
         }
+    },
+    info: (message) => {
+        console.log(`[INFO] ${message}`);
+        writeLog(`[INFO] ${message}`);
+    },
+    error: (message) => {
+        console.error(`[ERROR] ${message}`);
+        writeLog(`[ERROR] ${message}`);
+    },
+    warn: (message) => {
+        console.warn(`[WARN] ${message}`);
+        writeLog(`[WARN] ${message}`);
     }
 };

@@ -196,6 +196,7 @@ class ModelRegistryService {
     const prefixMap = {
       'openrouter': 'openrouter/',
       'ollama': 'ollama/',
+      'aliyun': 'aliyun/',
       'azure': 'azure/'
     };
 

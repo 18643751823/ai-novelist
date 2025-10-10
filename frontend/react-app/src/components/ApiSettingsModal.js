@@ -49,30 +49,21 @@ const ApiSettingsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <>
-      <div className="prompt-manager-modal-overlay">
-        <div className="prompt-manager-modal-content">
-          <div className="prompt-manager-header">
-            <h2>API设置</h2>
-            <div className="header-actions">
-              <button className="save-button" onClick={handleSave}>
-                保存
-              </button>
-              <button className="cancel-button" onClick={handleClose}>
-                关闭
-              </button>
-            </div>
-          </div>
-
-          {/* 标签页内容 */}
-          <div className="tab-content-container">
-            <ApiSettingsTab
-              ref={apiSettingsRef}
-              onSaveComplete={showNotification}
-            />
-          </div>
-
+    <div className="prompt-manager-modal-content">
+      {/* 内容区域 */}
+      <div className="tab-content-container">
+        <div className="tab-content-actions">
+          <button className="save-button" onClick={handleSave}>
+            保存
+          </button>
+          <button className="cancel-button" onClick={handleClose}>
+            关闭
+          </button>
         </div>
+        <ApiSettingsTab
+          ref={apiSettingsRef}
+          onSaveComplete={showNotification}
+        />
       </div>
 
       {/* 通知模态框 */}
@@ -82,7 +73,7 @@ const ApiSettingsModal = ({ isOpen, onClose }) => {
           onClose={handleNotificationClose}
         />
       )}
-    </>
+    </div>
   );
 };
 

@@ -7,6 +7,8 @@
     position: relative; /* 确保子元素的 absolute 定位相对于此 */
     background-color: #3b3a3a; /* 深色背景 */
     color: #abb2bf; /* 默认文字颜色 */
+    height: 100%; /* 确保完全填充父容器高度 */
+    width: 100%; /* 确保完全填充父容器宽度 */
 }
 
 #chatDisplay {
@@ -15,6 +17,7 @@
     padding: 10px;
     background-color: #333333; /* 聊天区背景色 */
     border-bottom: 1px solid #444444; /* 底部边框 */
+    min-height: 0; /* 允许flex子元素收缩 */
 }
 
 /* 重置聊天按钮样式 */
@@ -85,6 +88,7 @@
     padding: 10px;
     border-top: 1px solid #444444; /* 边框颜色 */
     background-color: #333333; /* 背景颜色 */
+    flex-shrink: 0; /* 防止输入区域被压缩 */
 }
 
 #chatInput {
@@ -1152,7 +1156,21 @@ input:checked + .slider:before {
   margin-bottom: 4px;
   z-index: 1000;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  max-height: 300px;
+  max-height: 500px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.model-selector-dropdown .embedding-model-selector-panel {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.model-selector-dropdown .embedding-model-list-container {
+  flex: 1;
   overflow-y: auto;
 }
 

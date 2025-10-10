@@ -69,17 +69,16 @@ class SiliconFlowAdapter extends BaseModelAdapter {
     const completionParams = {
       model: modelId,
       messages: messages,
-      temperature: options.temperature || 0.7,
+      temperature: options.temperature, // 使用前端传递的参数，不设置默认值
       max_tokens: options.max_tokens,
       stream: options.stream !== false, // 默认启用流式
       // 硅基流动特有参数
       // enable_thinking: options.enable_thinking || false, // 暂时注释，不向服务器发送此参数，未来开发"关闭思考模式"功能时再启用
-      thinking_budget: options.thinking_budget || 4096,
       min_p: options.min_p,
-      top_p: options.top_p || 0.7,
+      top_p: options.top_p,
       top_k: options.top_k,
       frequency_penalty: options.frequency_penalty,
-      n: options.n || 1,
+      n: options.n,
       response_format: options.response_format,
       stop: options.stop
     };

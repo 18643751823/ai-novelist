@@ -48,10 +48,6 @@ class OllamaAdapter extends BaseModelAdapter {
   async *generateCompletion(messages, options = {}) {
     const modelId = options.model?.replace(/^ollama\//, '') || 'llama2'; // 移除 "ollama/" 前缀，默认使用 llama2
     const stream = options.stream !== false; // 默认启用流式
-    const temperature = options.temperature || 0.7;
-    const top_p = options.top_p;
-    const max_tokens = options.max_tokens;
-    const stop = options.stop;
 
     // 注意：Ollama 的 OpenAI 兼容层目前可能不支持 `tools` 和 `tool_choice`
     // 我们按标准传递，但行为可能取决于具体模型和 Ollama 版本
@@ -62,10 +58,11 @@ class OllamaAdapter extends BaseModelAdapter {
       model: modelId,
       messages: messages,
       stream: stream,
-      temperature: temperature,
-      ...(top_p && { top_p }),
-      ...(max_tokens && { max_tokens }),
-      ...(stop && { stop }),
+      temperature: options.temperature, // 使用前端传递的参数，不设置默认值
+      top_p: options.top_p,
+      n: options.n,
+      ...(options.max_tokens && { max_tokens: options.max_tokens }),
+      ...(options.stop && { stop: options.stop }),
       ...(tools && { tools }),
       ...(tool_choice && { tool_choice }),
     };

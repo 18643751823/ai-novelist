@@ -183,7 +183,7 @@ const ModeContextSettings = ({ mode, modeName }) => {
         <div className="slider-container">
           <input
             type="range"
-            min="1"
+            min="0"
             max="51"
             value={chatConfig.type === 'tokens' ? 51 : chatConfig.value}
             onChange={(e) => handleSliderChange('chatContext', parseInt(e.target.value))}
@@ -194,7 +194,7 @@ const ModeContextSettings = ({ mode, modeName }) => {
           </span>
         </div>
         <div className="slider-description">
-          限制发送给AI的最近对话轮数 (1-50轮) 或 满tokens
+          附加给AI的对话上下文轮数 (1-50轮) 或 满tokens
         </div>
       </div>
 
@@ -203,7 +203,7 @@ const ModeContextSettings = ({ mode, modeName }) => {
         <div className="slider-container">
           <input
             type="range"
-            min="1"
+            min="0"
             max="51"
             value={ragConfig.type === 'tokens' ? 51 : ragConfig.value}
             onChange={(e) => handleSliderChange('ragContext', parseInt(e.target.value))}
@@ -214,7 +214,7 @@ const ModeContextSettings = ({ mode, modeName }) => {
           </span>
         </div>
         <div className="slider-description">
-          限制RAG检索的上下文轮数 (1-50轮) 或 满tokens
+          附加给RAG检索的上下文轮数 (1-50轮) 或 满tokens
         </div>
       </div>
 

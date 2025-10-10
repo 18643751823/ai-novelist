@@ -2,17 +2,15 @@ import React, { useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setShowRagSettingsModal } from '../store/slices/chatSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faSave, faBook, faDatabase } from '@fortawesome/free-solid-svg-icons';
-import RagKnowledgeBaseSettings from './RagKnowledgeBaseSettings';
-import MemorySettingsTab from './MemorySettingsTab';
+import { faTimes, faSave, faBook } from '@fortawesome/free-solid-svg-icons';
+import RagRepositoryManager from './RagRepositoryManager';
 import NotificationModal from './NotificationModal';
 import './PromptManagerModal.css'; // 复用标签页样式
 
 const RagSettingsModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
-  const ragSettingsRef = useRef(null);
-  const memorySettingsRef = useRef(null);
-  const [activeTab, setActiveTab] = useState('rag'); // 'rag', 'memory'
+  const ragRepositoryRef = useRef(null);
+  // 不再使用标签页切换，只显示RAG知识库面板
   const [notification, setNotification] = useState({
     isOpen: false,
     message: '',
@@ -39,15 +37,24 @@ const RagSettingsModal = ({ isOpen, onClose }) => {
     });
   };
 
-  // 保存处理函数
+  // 保存处理函数 - 只保存RAG仓库设置
   const handleSave = () => {
-    if (activeTab === 'rag' && ragSettingsRef.current && ragSettingsRef.current.handleSave) {
-      ragSettingsRef.current.handleSave();
-    } else if (activeTab === 'memory' && memorySettingsRef.current && memorySettingsRef.current.handleSave) {
-      memorySettingsRef.current.handleSave();
+    let saveSuccess = true;
+    
+    // 保存 RAG 仓库设置
+    if (ragRepositoryRef.current && ragRepositoryRef.current.handleSave) {
+      try {
+        ragRepositoryRef.current.handleSave();
+      } catch (error) {
+        console.error('RAG仓库保存失败:', error);
+        saveSuccess = false;
+      }
+    }
+    
+    if (saveSuccess) {
+      showNotification('RAG知识库设置保存成功');
     } else {
-      console.error('无法调用当前标签页的保存方法');
-      showNotification('保存失败：无法调用保存逻辑', false);
+      showNotification('RAG知识库设置保存失败，请检查控制台', false);
     }
   };
 
@@ -55,52 +62,31 @@ const RagSettingsModal = ({ isOpen, onClose }) => {
 
   return (
     <>
-      <div className="prompt-manager-modal-overlay">
-        <div className="prompt-manager-modal-content">
-          <div className="prompt-manager-header">
-            <h2>插入信息</h2>
-            <div className="header-actions">
-              <button className="save-button" onClick={handleSave}>
-                保存
-              </button>
-              <button className="cancel-button" onClick={handleClose}>
-                关闭
-              </button>
+      <div className="prompt-manager-modal-content">
+        {/* 内容区域 */}
+        <div className="tab-content-container">
+          <div className="tab-content-actions">
+            <button className="save-button" onClick={handleSave}>
+              保存
+            </button>
+            <button className="cancel-button" onClick={handleClose}>
+              关闭
+            </button>
+          </div>
+          
+          {/* 只显示RAG知识库面板 */}
+          <div className="single-panel-container">
+            <div className="panel-section">
+              <div className="panel-header">
+                <FontAwesomeIcon icon={faBook} />
+                <span>RAG知识库</span>
+              </div>
+              <RagRepositoryManager
+                ref={ragRepositoryRef}
+                onSaveComplete={showNotification}
+              />
             </div>
           </div>
-
-          {/* 标签页导航 */}
-          <div className="tab-navigation">
-            <button
-              className={`tab-button ${activeTab === 'rag' ? 'active' : ''}`}
-              onClick={() => setActiveTab('rag')}
-            >
-              <FontAwesomeIcon icon={faBook} /> RAG知识库
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'memory' ? 'active' : ''}`}
-              onClick={() => setActiveTab('memory')}
-            >
-              <FontAwesomeIcon icon={faDatabase} /> 持久记忆
-            </button>
-          </div>
-
-          {/* 标签页内容 */}
-          <div className="tab-content-container">
-            {activeTab === 'rag' && (
-              <RagKnowledgeBaseSettings
-                ref={ragSettingsRef}
-                onSaveComplete={showNotification}
-              />
-            )}
-            {activeTab === 'memory' && (
-              <MemorySettingsTab
-                ref={memorySettingsRef}
-                onSaveComplete={showNotification}
-              />
-            )}
-          </div>
-
         </div>
       </div>
 

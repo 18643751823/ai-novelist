@@ -6,6 +6,8 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0; /* 确保没有默认的内边距 */
+  /* 禁止 html,body 滚动，避免滚动条出现在标题栏右边 */
+  overflow: hidden;
 }
 
 body {

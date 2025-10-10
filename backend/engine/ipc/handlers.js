@@ -277,11 +277,16 @@ const checkAndAutoSendBatchResults = async () => {
            
            // **关键重构**: 调用新的流式生成器并处理其返回的块
            // **关键重构**: chatService 现在从其内部状态获取流式设置
+           // 从会话状态获取AI参数
+           const sessionAiParameters = sessionState.aiParameters || {};
+           console.log(`[DEBUG][handlers.js] 工具结果反馈 - 从会话状态获取AI参数:`, JSON.stringify(sessionAiParameters, null, 2));
+           
            const stream = chatService.sendToolResultToAI(
                resultsToSend,
                defaultModelId,
                null, // customSystemPrompt
-               sessionState.mode // mode
+               sessionState.mode, // mode
+               sessionAiParameters // aiParameters
            );
            let hasNewPendingTools = false;
            
@@ -554,11 +559,16 @@ const handleSendBatchToolResults = async (event, processedTools) => {
         const isGeneralMode = sessionState.mode === 'general';
         console.log(`[handleSendBatchToolResults] 会话状态: mode=${sessionState.mode}, 工具功能: ${isGeneralMode ? '启用(通用模式)' : '禁用(其他模式)'}`);
 
+        // 从会话状态获取AI参数
+        const sessionAiParameters = sessionState.aiParameters || {};
+        console.log(`[DEBUG][handlers.js] 批量工具结果反馈 - 从会话状态获取AI参数:`, JSON.stringify(sessionAiParameters, null, 2));
+        
         const aiResponseResult = await chatService.sendToolResultToAI(
             processedTools,
             defaultModelId,
             null, // customSystemPrompt
-            sessionState.mode // mode
+            sessionState.mode, // mode
+            sessionAiParameters // aiParameters
         ); // 修改并添加 modelId 参数
         state.pendingToolCalls = [];
         chatService._sendAiResponseToFrontend('batch_processing_complete', null); // 修改
@@ -571,9 +581,20 @@ const handleSendBatchToolResults = async (event, processedTools) => {
 };
 
 // 处理用户命令
-const handleProcessCommand = async (event, { message, sessionId, currentMessages, mode, customPrompt, toolUsageEnabled, ragRetrievalEnabled, model }) => {
-    console.log(`[handlers.js] handleProcessCommand: Received command: "${message}", Mode: ${mode}, Custom Prompt: "${customPrompt}", RAG Retrieval Enabled: ${ragRetrievalEnabled}, Model: ${model}`);
+const handleProcessCommand = async (event, { message, sessionId, currentMessages, mode, customPrompt, toolUsageEnabled, ragRetrievalEnabled, model, aiParameters }) => {
+    console.log(`[handlers.js] handleProcessCommand: Received command: "${message}", Mode: ${mode}, Custom Prompt: "${customPrompt}", RAG Retrieval Enabled: ${ragRetrievalEnabled}, Model: ${model}, AI Parameters:`, aiParameters);
     console.log(`[handlers.js] Custom Prompt type: ${typeof customPrompt}, length: ${customPrompt ? customPrompt.length : 0}`);
+    
+    // 新增：详细的AI参数调试日志
+    console.log(`[DEBUG][handlers.js] AI参数详细调试信息:`);
+    console.log(`  - 原始aiParameters对象:`, JSON.stringify(aiParameters, null, 2));
+    console.log(`  - temperature: ${aiParameters?.temperature ?? '未设置'}`);
+    console.log(`  - top_p: ${aiParameters?.top_p ?? '未设置'}`);
+    console.log(`  - n: ${aiParameters?.n ?? '未设置'}`);
+    console.log(`  - stream: ${aiParameters?.stream ?? '未设置'}`);
+    console.log(`  - aiParameters类型: ${typeof aiParameters}`);
+    console.log(`  - aiParameters是否为null: ${aiParameters === null}`);
+    console.log(`  - aiParameters是否为undefined: ${aiParameters === undefined}`);
     
     // 根据模式选择服务：通用模式使用chatService，其他模式使用simpleChatService
     const isGeneralMode = mode === 'general';
@@ -630,11 +651,12 @@ const handleProcessCommand = async (event, { message, sessionId, currentMessages
       mode: mode,
       ragRetrievalEnabled: ragRetrievalEnabled,
       model: finalModel,
-      customPrompt: customPrompt
+      customPrompt: customPrompt,
+      aiParameters: aiParameters
     });
     
     // 调用相应的服务处理消息
-    await targetService.processUserMessage(message, sessionId, currentMessages, mode, customPrompt, ragRetrievalEnabled, finalModel);
+    await targetService.processUserMessage(message, sessionId, currentMessages, mode, customPrompt, ragRetrievalEnabled, finalModel, aiParameters);
     return { success: true };
 };
 // 新的、修复后的用户问题回复处理器
@@ -678,11 +700,16 @@ const handleUserQuestionResponse = async (event, { response, toolCallId }) => {
         console.log(`[handleUserQuestionResponse] 会话状态: mode=${sessionState.mode}, 工具功能: ${isGeneralMode ? '启用(通用模式)' : '禁用(其他模式)'}`);
 
         // **关键修复**: 调用新的流式 sendToolResultToAI 并正确处理其输出
+        // 从会话状态获取AI参数
+        const sessionAiParameters = sessionState.aiParameters || {};
+        console.log(`[DEBUG][handlers.js] 用户问题回复 - 从会话状态获取AI参数:`, JSON.stringify(sessionAiParameters, null, 2));
+        
         const stream = chatService.sendToolResultToAI(
             toolResultsArray,
             defaultModelId,
             null, // customSystemPrompt
-            sessionState.mode // mode
+            sessionState.mode, // mode
+            sessionAiParameters // aiParameters
         );
 
         for await (const chunk of stream) {
@@ -1358,7 +1385,7 @@ const handleRedetectOllama = async () => {
 };
 
 // 注册所有IPC处理器
-function register(store) { // 接收 store 参数并设置全局实例
+function register(store, mainWindow) { // 接收 store 和 mainWindow 参数并设置全局实例
   storeInstance = store; // 设置全局存储实例
   console.log('[handlers.js] register: 开始注册 IPC 处理器...');
   console.log(`[DEBUG] register: storeInstance set, path: ${storeInstance.path}`);
@@ -1443,6 +1470,17 @@ function register(store) { // 接收 store 参数并设置全局实例
   // 新增：RAG检索状态设置处理器
   ipcMain.handle('set-rag-retrieval-enabled', handleSetRagRetrievalEnabled);
 
+  // 新增：RAG嵌入函数处理器
+  ipcMain.handle('reinitialize-embedding-function', ragIpcHandler.reinitializeEmbeddingFunction.bind(ragIpcHandler));
+
+  // 新增：RAG仓库管理处理器
+  ipcMain.handle('list-rag-repositories', ragIpcHandler.listRagRepositories.bind(ragIpcHandler));
+  ipcMain.handle('create-rag-repository', ragIpcHandler.createRagRepository.bind(ragIpcHandler));
+  ipcMain.handle('delete-rag-repository', ragIpcHandler.deleteRagRepository.bind(ragIpcHandler));
+  ipcMain.handle('list-repo-files', ragIpcHandler.listRepoFiles.bind(ragIpcHandler));
+  ipcMain.handle('add-file-to-rag-repository', ragIpcHandler.addFileToRagRepository.bind(ragIpcHandler));
+  ipcMain.handle('delete-file-from-rag-repository', ragIpcHandler.deleteFileFromRagRepository.bind(ragIpcHandler));
+
   // 新增：排序配置处理器
   ipcMain.handle('get-sort-config', handleGetSortConfig);
   ipcMain.handle('set-sort-enabled', handleSetSortEnabled);
@@ -1469,6 +1507,7 @@ function register(store) { // 接收 store 参数并设置全局实例
   //   }
   // });
   
+
   // Checkpoint Service Handlers
   ipcMain.handle('checkpoints:save', async (event, { taskId, message }) => {
     const { workspaceDir, shadowDir } = await getCheckpointDirs();

@@ -1,16 +1,3 @@
-.prompt-manager-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 50px; /* 从侧边栏右侧开始 */
-  right: 0;
-  bottom: 0;
-  background-color: #1e1e1e; /* 不透明背景，完全覆盖除侧边栏外的区域 */
-  display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
-  z-index: 1000;
-}
-
 .prompt-manager-modal-content {
   background-color: #1e1e1e;
   border-radius: 0;
@@ -27,34 +14,6 @@
   flex-direction: column;
 }
 
-.prompt-manager-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0;
-  border-bottom: 1px solid #444;
-  padding: 20px;
-  background-color: #2a2a2a;
-  flex-shrink: 0; /* 防止头部被压缩 */
-  gap: 15px; /* 添加间距 */
-}
-
-.prompt-manager-header h2 {
-  margin: 0;
-  color: #fff;
-  flex: 1; /* 让标题占据剩余空间 */
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.prompt-manager-header h2 {
-  margin: 0;
-  color: #fff;
-}
 
 .close-button {
   background: none;
@@ -99,7 +58,6 @@
   font-weight: 600;
 }
 
-.default-prompt-textarea,
 .custom-prompt textarea {
   width: 100%;
   background-color: #1e1e1e;
@@ -110,17 +68,17 @@
   font-family: monospace;
   font-size: 14px;
   resize: vertical;
-  min-height: 120px;
-}
-
-.default-prompt-textarea {
-  background-color: #2d2d30;
-  color: #888;
+  min-height: 320px;
 }
 
 .custom-prompt textarea:focus {
   outline: none;
   border-color: #4CAF50;
+}
+
+.custom-prompt textarea::placeholder {
+  color: #888;
+  font-style: italic;
 }
 
 .reset-button {
@@ -209,45 +167,12 @@
 }
 
 
-/* 标签页导航 */
-.tab-navigation {
-  display: flex;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #444;
-}
-
-.tab-button {
-  background: none;
-  border: none;
-  padding: 12px 20px;
-  color: #abb2bf;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s ease;
-}
-
-.tab-button:hover {
-  color: #fff;
-  background-color: #2a2a2a;
-}
-
-.tab-button.active {
-  color: #4CAF50;
-  border-bottom-color: #4CAF50;
-  background-color: #2a2a2a;
-}
-
-.tab-button svg {
-  margin-right: 8px;
-}
 
 /* 持久记忆标签页样式 */
 .memory-tab-content {
   background-color: #2a2a2a;
   border-radius: 8px;
-  padding: 20px;
+  padding: 0; /* 移除内边距，让内容完全撑满容器 */
   border: 1px solid #444;
 }
 
@@ -613,7 +538,7 @@
 }
 
 .provider-tab-content {
-  padding: 20px;
+  padding: 0; /* 移除内边距，让内容完全撑满容器 */
   background-color: #2a2a2a;
 }
 
@@ -643,16 +568,40 @@
   display: flex;
   flex-direction: column;
   padding: 0; /* 移除内边距，让内容填满整个模态框 */
+  position: relative;
 }
 
 .tab-content {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 20px; /* 恢复内边距 */
+  padding: 0; /* 移除内边距，让内容完全撑满容器 */
   overflow-y: auto; /* 允许内容区域滚动 */
   flex: 1; /* 确保内容区域填满可用空间 */
   min-height: 0; /* 防止弹性盒子溢出 */
+}
+
+/* 标签页内容操作按钮 */
+.tab-content-actions {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+}
+
+.tab-content-actions .save-button,
+.tab-content-actions .cancel-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.tab-content-actions .save-button:hover,
+.tab-content-actions .cancel-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .settings-section {
@@ -732,16 +681,6 @@
   background-color: var(--primary-color-dark);
 }
 
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-bottom: 20px; /* 移动到顶部，与标题齐平 */
-  padding: 20px;
-  border-bottom: 1px solid #444; /* 改为底部边框，与标题区域保持一致 */
-  background-color: #2a2a2a; /* 保持背景色一致 */
-  flex-shrink: 0; /* 防止按钮区域被压缩 */
-}
 
 .save-button {
   background-color: #4CAF50;
@@ -778,4 +717,67 @@
   background-color: #777;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+/* 双面板布局样式 */
+.dual-panel-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  height: 100%;
+  padding: 0; /* 移除内边距，让内容完全撑满容器 */
+  overflow-y: auto;
+}
+
+.panel-section {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  border: 1px solid #444;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  background-color: #333;
+  padding: 15px 20px;
+  border-bottom: 1px solid #444;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-header svg {
+  color: #4CAF50;
+}
+
+.panel-section > *:not(.panel-header) {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .dual-panel-container {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .panel-section {
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dual-panel-container {
+    padding: 0; /* 移除内边距，让内容完全撑满容器 */
+    padding-top: 70px;
+  }
+  
+  .panel-header {
+    padding: 12px 15px;
+    font-size: 14px;
+  }
 }

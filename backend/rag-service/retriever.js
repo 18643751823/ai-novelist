@@ -89,10 +89,10 @@ class Retriever {
      * @param {number} topK 返回的最相关结果数量
      * @param {boolean} enableAnalysis 是否启用意图分析
      * @param {string} mode 当前模式
-     * @param {Array} collectionNames 要查询的集合名称数组（空数组表示查询所有集合）
+     * @param {Array} tableNames 要查询的表名称数组（空数组表示查询所有表）
      * @returns {Promise<Array<string>>} 返回文档片段内容数组
      */
-    async retrieve(messages, topK = 3, enableAnalysis = true, mode = 'general', collectionNames = []) {
+    async retrieve(messages, topK = 3, enableAnalysis = true, mode = 'general', tableNames = null) {
         if (!this.isInitialized) {
             await this.initialize();
         }
@@ -151,8 +151,16 @@ class Retriever {
 
             console.log(`[Retriever] 正在执行查询: "${finalQuery}"`);
             
-            // 使用 knowledgeBaseManager 的查询方法，支持指定集合
-            const results = await knowledgeBaseManager.queryCollection(finalQuery, topK, collectionNames);
+            // 使用 knowledgeBaseManager 的查询方法，支持指定表
+            // 如果 tableNames 为 null 或 undefined，表示用户明确不选择任何表，跳过检索
+            // 如果 tableNames 为空数组，表示用户选择查询所有表
+            let results;
+            if (tableNames === null || tableNames === undefined) {
+                console.log(`[Retriever] 用户未选择任何表，跳过RAG检索`);
+                results = { documents: [] };
+            } else {
+                results = await knowledgeBaseManager.queryCollection(finalQuery, topK, tableNames);
+            }
 
             if (results && results.documents && results.documents.length > 0) {
                 console.log(`[Retriever] 检索到 ${results.documents.length} 个相关片段。`);

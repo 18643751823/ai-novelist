@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandl
 import { useDispatch, useSelector } from 'react-redux';
 import {
   setModeFeatureSetting,
-  setRagCollectionNames,
-  setAliyunEmbeddingApiKey,
+  setRagTableNames,
+  setEmbeddingModel,
   setIntentAnalysisModel,
   setAvailableModels,
   setShowRagSettingsModal
@@ -11,37 +11,39 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBook, faCheckSquare, faSquare, faSync } from '@fortawesome/free-solid-svg-icons';
 import useIpcRenderer from '../hooks/useIpcRenderer';
+import EmbeddingModelSelector from './EmbeddingModelSelector';
 
 const RagKnowledgeBaseSettings = forwardRef(({ onSaveComplete }, ref) => {
   const dispatch = useDispatch();
   const { invoke, setStoreValue } = useIpcRenderer();
   const {
     modeFeatureSettings,
-    aliyunEmbeddingApiKey,
+    embeddingModel,
     intentAnalysisModel,
     availableModels
   } = useSelector((state) => state.chat);
   
-  const [collections, setCollections] = useState([]);
+  const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [localSettings, setLocalSettings] = useState({});
-  const [localAliyunKey, setLocalAliyunKey] = useState('');
+  const [localEmbeddingModel, setLocalEmbeddingModel] = useState('');
   const [localIntentModel, setLocalIntentModel] = useState('');
+  const [showEmbeddingModelSelector, setShowEmbeddingModelSelector] = useState(false);
 
-  // 从后端获取所有集合列表
-  const fetchCollections = async () => {
+  // 从后端获取所有知识库文件列表
+  const fetchTables = async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await invoke('list-kb-collections');
+      const result = await invoke('list-kb-files');
       if (result.success) {
-        setCollections(result.collections || []);
+        setTables(result.files || []);
       } else {
-        setError(result.error || '获取集合列表失败');
+        setError(result.error || '获取知识库文件列表失败');
       }
     } catch (err) {
-      console.error('调用获取集合列表API失败:', err);
+      console.error('调用获取知识库文件列表API失败:', err);
       setError('调用API失败: ' + err.message);
     } finally {
       setLoading(false);
@@ -51,13 +53,13 @@ const RagKnowledgeBaseSettings = forwardRef(({ onSaveComplete }, ref) => {
   // 加载RAG相关设置
   const loadRagSettings = useCallback(async () => {
     try {
-      // 从存储加载阿里云API Key和意图分析模型
-      const [storedAliyunKey, storedIntentModel] = await Promise.all([
-        invoke('get-store-value', 'aliyunEmbeddingApiKey'),
+      // 从存储加载嵌入模型和意图分析模型
+      const [storedEmbeddingModel, storedIntentModel] = await Promise.all([
+        invoke('get-store-value', 'embeddingModel'),
         invoke('get-store-value', 'intentAnalysisModel')
       ]);
       
-      setLocalAliyunKey(storedAliyunKey || '');
+      setLocalEmbeddingModel(storedEmbeddingModel || '');
       setLocalIntentModel(storedIntentModel || '');
       
       // 加载可用模型列表
@@ -72,43 +74,57 @@ const RagKnowledgeBaseSettings = forwardRef(({ onSaveComplete }, ref) => {
 
   // 初始化加载设置和集合列表
   useEffect(() => {
-    // 从Redux状态初始化本地设置
-    setLocalSettings(modeFeatureSettings);
-    fetchCollections();
+    // 从Redux状态初始化本地设置，确保每个模式都有独立的状态
+    const initializedSettings = {};
+    ['general', 'outline', 'writing', 'adjustment'].forEach(mode => {
+      initializedSettings[mode] = {
+        ragRetrievalEnabled: modeFeatureSettings[mode]?.ragRetrievalEnabled || false,
+        ragTableNames: modeFeatureSettings[mode]?.ragTableNames || []
+      };
+    });
+    setLocalSettings(initializedSettings);
+    fetchTables();
     loadRagSettings();
   }, [modeFeatureSettings, loadRagSettings]);
 
-  // 处理集合选择变化
-  const handleCollectionChange = (mode, collectionName, checked) => {
+  // 处理文件选择变化 - 确保只修改当前模式的文件选择
+  const handleTableChange = (mode, tableName, checked) => {
     setLocalSettings(prev => {
-      const currentCollections = prev[mode]?.ragCollectionNames || [];
-      let newCollections;
+      const currentModeSettings = prev[mode] || {};
+      const currentTables = currentModeSettings.ragTableNames || [];
+      let newTables;
       
       if (checked) {
-        // 添加集合
-        newCollections = [...currentCollections, collectionName];
+        // 添加文件 - 确保不重复
+        if (!currentTables.includes(tableName)) {
+          newTables = [...currentTables, tableName];
+        } else {
+          newTables = currentTables; // 如果已存在，保持不变
+        }
       } else {
-        // 移除集合
-        newCollections = currentCollections.filter(name => name !== collectionName);
+        // 移除文件
+        newTables = currentTables.filter(name => name !== tableName);
       }
       
       return {
         ...prev,
         [mode]: {
-          ...prev[mode],
-          ragCollectionNames: newCollections
+          ...currentModeSettings,
+          ragTableNames: newTables
         }
       };
     });
   };
 
-  // 处理RAG检索开关变化
+  // 处理RAG检索开关变化 - 确保只修改当前模式的设置
   const handleRagToggle = (mode, enabled) => {
     setLocalSettings(prev => ({
       ...prev,
       [mode]: {
-        ...prev[mode],
-        ragRetrievalEnabled: enabled
+        ...(prev[mode] || {}),
+        ragRetrievalEnabled: enabled,
+        // 当关闭RAG检索时，不清空已选择的集合，只是隐藏选择界面
+        ragTableNames: prev[mode]?.ragTableNames || []
       }
     }));
   };
@@ -133,27 +149,31 @@ const RagKnowledgeBaseSettings = forwardRef(({ onSaveComplete }, ref) => {
             enabled: settings.ragRetrievalEnabled || false
           }));
           
-          // 保存集合选择
-          dispatch(setRagCollectionNames({
+          // 保存文件选择
+          // 如果用户没有选择任何文件，传递 null 而不是空数组
+          const tableNames = settings.ragTableNames && settings.ragTableNames.length > 0
+            ? settings.ragTableNames
+            : null;
+          dispatch(setRagTableNames({
             mode,
-            collectionNames: settings.ragCollectionNames || []
+            tableNames: tableNames
           }));
         }
       }
       
       // 保存RAG模型设置
-      dispatch(setAliyunEmbeddingApiKey(localAliyunKey));
+      dispatch(setEmbeddingModel(localEmbeddingModel));
       dispatch(setIntentAnalysisModel(localIntentModel));
       
       // 保存到持久化存储
       await Promise.all([
         invoke('set-store-value', 'modeFeatureSettings', localSettings),
-        setStoreValue('aliyunEmbeddingApiKey', localAliyunKey),
+        setStoreValue('embeddingModel', localEmbeddingModel),
         setStoreValue('intentAnalysisModel', localIntentModel)
       ]);
       
-      // 重新初始化阿里云嵌入函数
-      await invoke('reinitialize-aliyun-embedding');
+      // 重新初始化嵌入函数
+      await invoke('reinitialize-embedding-function');
       
       if (onSaveComplete) {
         onSaveComplete('RAG知识库设置保存成功！', true);
@@ -176,32 +196,92 @@ const RagKnowledgeBaseSettings = forwardRef(({ onSaveComplete }, ref) => {
     return names[mode] || mode;
   };
 
-  const isCollectionSelected = (mode, collectionName) => {
-    return localSettings[mode]?.ragCollectionNames?.includes(collectionName) || false;
+  const isTableSelected = (mode, tableName) => {
+    return localSettings[mode]?.ragTableNames?.includes(tableName) || false;
   };
+// 处理嵌入模型选择
+const handleEmbeddingModelChange = (modelId) => {
+  setLocalEmbeddingModel(modelId);
+  setShowEmbeddingModelSelector(false);
+};
 
-  // 暴露保存方法给父组件
-  useImperativeHandle(ref, () => ({
-    handleSave
-  }));
+// 获取当前选择的嵌入模型显示名称
+const getSelectedEmbeddingModelName = () => {
+  if (!localEmbeddingModel) return '选择嵌入模型';
+  const model = availableModels.find(m => m.id === localEmbeddingModel);
+  return model ? `${model.id} (${model.provider})` : localEmbeddingModel;
+};
+
+// 暴露保存方法给父组件
+useImperativeHandle(ref, () => ({
+  handleSave
+}));
 
   return (
     <div className="tab-content">
+      <style jsx>{`
+        .model-selector-container {
+          position: relative;
+          width: 100%;
+        }
+        
+        .model-selector-button {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          background: white;
+          text-align: left;
+          cursor: pointer;
+          font-size: 14px;
+          color: #333;
+        }
+        
+        .model-selector-button:hover {
+          border-color: #007acc;
+        }
+        
+        .model-selector-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          z-index: 1000;
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          margin-top: 4px;
+          max-height: 300px;
+          overflow: hidden;
+        }
+      `}</style>
       {/* RAG模型配置部分 */}
       <div className="settings-section">
         <h4>RAG模型配置</h4>
         
         <div className="setting-item">
-          <label htmlFor="aliyunEmbeddingApiKey">阿里云嵌入API Key:</label>
-          <input
-            type="password"
-            id="aliyunEmbeddingApiKey"
-            value={localAliyunKey || ''}
-            onChange={(e) => setLocalAliyunKey(e.target.value)}
-            placeholder="请输入您的阿里云嵌入API Key"
-          />
+          <label htmlFor="embeddingModel">嵌入模型:</label>
+          <div className="model-selector-container">
+            <button
+              className="model-selector-button"
+              onClick={() => setShowEmbeddingModelSelector(!showEmbeddingModelSelector)}
+            >
+              {getSelectedEmbeddingModelName()}
+            </button>
+            {showEmbeddingModelSelector && (
+              <div className="model-selector-dropdown">
+                <EmbeddingModelSelector
+                  selectedModel={localEmbeddingModel}
+                  availableModels={availableModels}
+                  onModelChange={handleEmbeddingModelChange}
+                  onClose={() => setShowEmbeddingModelSelector(false)}
+                />
+              </div>
+            )}
+          </div>
           <div className="setting-description">
-            用于RAG功能的文本嵌入模型，获取地址：<a href="https://www.aliyun.com/product/bailian" onClick={(e) => handleExternalLinkClick('https://www.aliyun.com/product/bailian', e)} style={{cursor: 'pointer', color: '#007acc', textDecoration: 'underline'}}>阿里云百炼</a>
+            用于RAG功能的文本嵌入模型
           </div>
         </div>
 
@@ -228,11 +308,11 @@ const RagKnowledgeBaseSettings = forwardRef(({ onSaveComplete }, ref) => {
       <div className="rag-settings-header">
         <button
           className="refresh-button"
-          onClick={fetchCollections}
+          onClick={fetchTables}
           disabled={loading}
         >
           <FontAwesomeIcon icon={faSync} spin={loading} />
-          {loading ? '加载中...' : '刷新集合列表'}
+          {loading ? '加载中...' : '刷新文件列表'}
         </button>
       </div>
 
@@ -242,9 +322,9 @@ const RagKnowledgeBaseSettings = forwardRef(({ onSaveComplete }, ref) => {
         </div>
       )}
 
-      {collections.length === 0 && !loading ? (
-        <div className="no-collections">
-          <p>暂无知识库集合，请先导入文件到知识库。</p>
+      {tables.length === 0 && !loading ? (
+        <div className="no-tables">
+          <p>暂无知识库文件，请先导入文件到知识库。</p>
         </div>
       ) : (
         <div className="rag-settings-sections">
@@ -268,37 +348,37 @@ const RagKnowledgeBaseSettings = forwardRef(({ onSaveComplete }, ref) => {
               </div>
 
               {localSettings[mode]?.ragRetrievalEnabled && (
-                <div className="collection-selection">
-                  <h4>选择要查询的知识库集合:</h4>
-                  <div className="collection-list">
-                    {collections.map((collection) => (
-                      <div key={collection.collectionName} className="collection-item">
+                <div className="table-selection">
+                  <h4>选择要查询的知识库文件:</h4>
+                  <div className="table-list">
+                    {tables.map((table) => (
+                      <div key={table.tableName} className="table-item">
                         <label>
                           <FontAwesomeIcon
-                            icon={isCollectionSelected(mode, collection.collectionName) ? faCheckSquare : faSquare}
-                            className="collection-checkbox"
+                            icon={isTableSelected(mode, table.tableName) ? faCheckSquare : faSquare}
+                            className="table-checkbox"
                             onClick={(e) => {
                               if (!localSettings[mode]?.ragRetrievalEnabled) return;
-                              handleCollectionChange(mode, collection.collectionName, !isCollectionSelected(mode, collection.collectionName));
+                              handleTableChange(mode, table.tableName, !isTableSelected(mode, table.tableName));
                             }}
                             style={{
                               cursor: localSettings[mode]?.ragRetrievalEnabled ? 'pointer' : 'not-allowed',
                               opacity: localSettings[mode]?.ragRetrievalEnabled ? 1 : 0.5
                             }}
                           />
-                          <span className="collection-info">
-                            <strong>{collection.filename}</strong>
-                            <span className="collection-details">
-                              ({collection.documentCount} 个片段) - {collection.collectionName}
+                          <span className="table-info">
+                            <strong>{table.filename}</strong>
+                            <span className="table-details">
+                              ({table.documentCount} 个片段) - {table.tableName}
                             </span>
                           </span>
                         </label>
                       </div>
                     ))}
                   </div>
-                  <div className="collection-help">
-                    <p>💡 提示：选择特定的集合可以提高检索精度，减少无关信息的干扰。</p>
-                    <p>如果不选择任何集合，将查询所有可用的知识库集合。</p>
+                  <div className="table-help">
+                    <p>💡 提示：选择特定的文件可以提高检索精度，减少无关信息的干扰。</p>
+                    <p>如果不选择任何文件，将查询所有可用的知识库文件。</p>
                   </div>
                 </div>
               )}

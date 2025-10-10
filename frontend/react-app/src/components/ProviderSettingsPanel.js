@@ -7,6 +7,7 @@ import {
   setDeepseekApiKey,
   setOpenrouterApiKey,
   setSiliconflowApiKey,
+  setAliyunApiKey,
   setOllamaBaseUrl,
   setAvailableModels
 } from '../store/slices/chatSlice';
@@ -35,7 +36,8 @@ const ProviderSettingsPanel = () => {
         { id: 'deepseek', name: 'DeepSeek', type: 'builtin', enabled: true },
         { id: 'openrouter', name: 'OpenRouter', type: 'builtin', enabled: true },
         { id: 'ollama', name: 'Ollama', type: 'builtin', enabled: true },
-        { id: 'siliconflow', name: '硅基流动', type: 'builtin', enabled: true }
+        { id: 'siliconflow', name: '硅基流动', type: 'builtin', enabled: true },
+        { id: 'aliyun', name: '阿里云百炼', type: 'builtin', enabled: true }
       ];
 
       // 获取自定义提供商
@@ -142,7 +144,7 @@ const ProviderSettingsPanel = () => {
     <div className="provider-settings-panel">
       <PanelGroup direction="horizontal" className="provider-panel-group">
         {/* 左侧提供商列表 */}
-        <Panel defaultSize={30} minSize={20} className="provider-list-panel">
+        <Panel defaultSize={25} minSize={0} maxSize={100} className="provider-list-panel">
           <div className="provider-list-container">
             <div className="provider-list-header">
               <h3>AI提供商</h3>
@@ -166,7 +168,6 @@ const ProviderSettingsPanel = () => {
                 >
                   <div className="provider-info">
                     <div className="provider-name">{provider.name}</div>
-                    <div className="provider-type">{provider.type === 'builtin' ? '内置' : '自定义'}</div>
                   </div>
                   <div className={`provider-status ${provider.enabled ? 'enabled' : 'disabled'}`}>
                     {provider.enabled ? '启用' : '禁用'}
@@ -192,7 +193,7 @@ const ProviderSettingsPanel = () => {
         </PanelResizeHandle>
 
         {/* 右侧设置面板 */}
-        <Panel minSize={40} className="provider-settings-panel">
+        <Panel minSize={0} maxSize={100} className="provider-settings-panel">
           <div className="provider-settings-container">
             {showCustomProviderForm ? (
               <div className="custom-provider-form-container">
@@ -221,9 +222,6 @@ const ProviderSettingsPanel = () => {
               <>
                 <div className="provider-settings-header">
                   <h3>{selectedProviderDetail.name} 设置</h3>
-                  <div className="provider-badge">
-                    {isCustomProvider ? '自定义' : '内置'}
-                  </div>
                 </div>
 
                 <div className="provider-settings-content">
@@ -265,6 +263,7 @@ const BuiltInProviderSettings = ({ providerId, onRedetectOllama }) => {
     deepseekApiKey,
     openrouterApiKey,
     siliconflowApiKey,
+    aliyunApiKey,
     ollamaBaseUrl,
     selectedModel,
     availableModels
@@ -272,6 +271,7 @@ const BuiltInProviderSettings = ({ providerId, onRedetectOllama }) => {
     deepseekApiKey: state.chat.deepseekApiKey,
     openrouterApiKey: state.chat.openrouterApiKey,
     siliconflowApiKey: state.chat.siliconflowApiKey,
+    aliyunApiKey: state.chat.aliyunApiKey,
     ollamaBaseUrl: state.chat.ollamaBaseUrl,
     selectedModel: state.chat.selectedModel,
     availableModels: state.chat.availableModels
@@ -299,6 +299,12 @@ const BuiltInProviderSettings = ({ providerId, onRedetectOllama }) => {
         placeholder: '请输入您的硅基流动 API Key',
         helpLink: 'https://siliconflow.cn/',
         helpText: '获取地址：硅基流动官网'
+      },
+      aliyun: {
+        label: 'API Key',
+        placeholder: '请输入您的阿里云百炼 API Key',
+        helpLink: 'https://dashscope.aliyun.com/',
+        helpText: '获取地址：阿里云百炼控制台'
       },
       ollama: {
         label: '服务地址',
@@ -338,6 +344,8 @@ const BuiltInProviderSettings = ({ providerId, onRedetectOllama }) => {
                   return openrouterApiKey || '';
                 case 'siliconflow':
                   return siliconflowApiKey || '';
+                case 'aliyun':
+                  return aliyunApiKey || '';
                 default:
                   return '';
               }
@@ -353,6 +361,9 @@ const BuiltInProviderSettings = ({ providerId, onRedetectOllama }) => {
                   break;
                 case 'siliconflow':
                   dispatch(setSiliconflowApiKey(e.target.value));
+                  break;
+                case 'aliyun':
+                  dispatch(setAliyunApiKey(e.target.value));
                   break;
                 default:
                   break;

@@ -132,12 +132,13 @@ function buildSystemPrompt(basePrompt, options = {}) {
     return prompt;
 }
 
-async function* chatWithAI(messages, modelId, customSystemPrompt, mode = 'general', ragRetrievalEnabled) {
+async function* chatWithAI(messages, modelId, customSystemPrompt, mode = 'general', ragRetrievalEnabled, aiParameters = {}) {
     console.log(`[SimpleChatService] 开始处理聊天请求:`, {
         modelId: modelId || '未指定',
         mode,
         ragRetrievalEnabled,
-        customPromptLength: customSystemPrompt ? customSystemPrompt.length : 0
+        customPromptLength: customSystemPrompt ? customSystemPrompt.length : 0,
+        aiParameters: aiParameters
     });
     
     try {
@@ -178,7 +179,7 @@ async function* chatWithAI(messages, modelId, customSystemPrompt, mode = 'genera
         
         // 获取对话模型的上下文配置用于日志显示
         const chatContextConfig = contextManager.getContextConfig(contextLimitSettings, mode, false);
-        console.log(`[SimpleChatService] 对话模型上下文约束: ${chatContextConfig.type === 'tokens' && chatContextConfig.value === 'full' ? '满tokens' : chatContextConfig.value + '轮'}, 原始消息 ${messages.length} 条, 过滤后 ${filteredMessages.length} 条`);
+        console.log(`[SimpleChatService] 对话模型上下文约束: ${chatContextConfig.type === 'tokens' && chatContextConfig.value === 'full' ? '满tokens' : '附加' + chatContextConfig.value + '轮上下文'}, 原始消息 ${messages.length} 条, 过滤后 ${filteredMessages.length} 条`);
 
         // 初始化RAG检索器（从handlers.js的storeInstance获取）
         try {
@@ -237,23 +238,25 @@ async function* chatWithAI(messages, modelId, customSystemPrompt, mode = 'genera
        
        // RAG检索控制：只有在启用时才执行检索
        if (lastUserMessage && lastUserMessage.content && ragRetrievalEnabled) {
-           // 获取当前模式的RAG集合选择设置
-           let ragCollectionNames = [];
+           // 获取当前模式的RAG表选择设置
+           let ragTableNames = null;
            try {
                const StoreModule = await import('electron-store');
                const Store = StoreModule.default;
                const storeInstance = new Store();
                const modeFeatureSettings = storeInstance.get('modeFeatureSettings') || {};
                const currentModeSettings = modeFeatureSettings[mode] || {};
-               ragCollectionNames = currentModeSettings.ragCollectionNames || [];
+               // 如果用户没有选择任何表，传递 null 而不是空数组
+               ragTableNames = currentModeSettings.ragTableNames || null;
                
-               console.log(`[SimpleChatService] RAG集合选择设置 - 模式: ${mode}, 选择的集合:`, ragCollectionNames);
+               console.log(`[SimpleChatService] RAG表选择设置 - 模式: ${mode}, 选择的表:`, ragTableNames);
            } catch (error) {
-               console.warn('[SimpleChatService] 获取RAG集合设置失败，使用所有集合:', error.message);
+               console.warn('[SimpleChatService] 获取RAG集合设置失败，跳过RAG检索:', error.message);
+               ragCollectionNames = null; // 出错时也跳过检索
            }
            
-           // 使用增强的检索功能，启用意图分析，并传递当前模式和选择的集合
-           const retrievalResult = await retriever.retrieve(messages, 3, true, mode, ragCollectionNames);
+           // 使用增强的检索功能，启用意图分析，并传递当前模式和选择的表
+           const retrievalResult = await retriever.retrieve(messages, 3, true, mode, ragTableNames);
             
             if (retrievalResult.documents && retrievalResult.documents.length > 0) {
                 retrievalInfo = retrievalResult;
@@ -349,17 +352,34 @@ ${retrievalResult.documents.map(doc => `- ${doc}`).join('\n')}\n`;
        // **新增**: 清理消息，移除非标准的OpenAI API字段
        const sanitizedMessages = sanitizeMessagesForAI(messagesToSend);
        console.log('[SimpleChatService] 消息清理完成，移除非标准字段');
-
+       // 合并默认参数和前端传递的参数
+       const defaultAiParameters = {
+           temperature: 0.7,
+           top_p: 0.7,
+           n: 1
+       };
+       
+       // 新增：详细的参数合并调试日志
+       console.log(`[DEBUG][SimpleChatService] 参数合并调试信息:`);
+       console.log(`  - 前端传入的aiParameters:`, JSON.stringify(aiParameters, null, 2));
+       console.log(`  - 默认参数defaultAiParameters:`, JSON.stringify(defaultAiParameters, null, 2));
+       
+       const mergedAiParameters = { ...defaultAiParameters, ...aiParameters };
+       
+       console.log(`  - 合并后的mergedAiParameters:`, JSON.stringify(mergedAiParameters, null, 2));
+       console.log(`  - 最终参数值:`);
+       console.log(`    * temperature: ${mergedAiParameters.temperature} (默认: ${defaultAiParameters.temperature})`);
+       console.log(`    * top_p: ${mergedAiParameters.top_p} (默认: ${defaultAiParameters.top_p})`);
+       console.log(`    * n: ${mergedAiParameters.n} (默认: ${defaultAiParameters.n})`);
+       
        // 完整的请求参数（服务层显示完整参数，但让适配器处理实际值）
        const requestOptions = {
            model: modelId,
            stream: serviceState.isStreaming, // 使用服务级别状态
-           temperature: 0.7,
-           top_p: 0.7,
-           n: 1,
-           enable_thinking: false,
-           thinking_budget: 4096
-       };
+           temperature: mergedAiParameters.temperature,
+           top_p: mergedAiParameters.top_p,
+           n: mergedAiParameters.n
+        };
        
        // 打印完整的请求参数（服务层显示）
        console.log('[SimpleChatService] 服务层请求参数:', JSON.stringify(requestOptions, null, 2));
@@ -447,7 +467,7 @@ ${retrievalResult.documents.map(doc => `- ${doc}`).join('\n')}\n`;
     }
 }
 
-async function processUserMessage(message, sessionId, currentMessages, mode, customPrompt, ragRetrievalEnabled, model) {
+async function processUserMessage(message, sessionId, currentMessages, mode, customPrompt, ragRetrievalEnabled, model, aiParameters = {}) {
     // This function will contain the core logic from handleProcessCommand
     state.conversationHistory = currentMessages || [];
     
@@ -495,7 +515,14 @@ async function processUserMessage(message, sessionId, currentMessages, mode, cus
         // 通知前端开始流式传输
         _sendAiResponseToFrontend('streaming_started', { sessionId: sessionId });
         
-        const stream = chatWithAI(validHistory, defaultModelId, customPrompt, mode, ragRetrievalEnabled);
+        // 新增：详细的AI参数调试日志
+        console.log(`[DEBUG][SimpleChatService] AI参数详细调试信息:`);
+        console.log(`  - 原始aiParameters对象:`, JSON.stringify(aiParameters, null, 2));
+        console.log(`  - temperature: ${aiParameters?.temperature ?? '未设置'}`);
+        console.log(`  - top_p: ${aiParameters?.top_p ?? '未设置'}`);
+        console.log(`  - n: ${aiParameters?.n ?? '未设置'}`);
+        
+        const stream = chatWithAI(validHistory, defaultModelId, customPrompt, mode, ragRetrievalEnabled, aiParameters);
         for await (const chunk of stream) {
             // 检查是否被中止
             if (abortController.signal.aborted) {

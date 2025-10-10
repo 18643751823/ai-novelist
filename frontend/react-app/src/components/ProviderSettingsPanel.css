@@ -21,12 +21,11 @@
 
 .provider-list-container {
   padding: 15px;
-  height: calc(100% - 20px);
+  height: 100%;
   display: flex;
   flex-direction: column;
   background-color: var(--panel-bg-color-alt);
   border-radius: var(--border-radius);
-  margin: 10px;
 }
 
 .provider-list-header {
@@ -97,10 +96,6 @@
   margin-bottom: 2px;
 }
 
-.provider-type {
-  font-size: 0.8em;
-  color: var(--text-color-light);
-}
 
 .provider-status {
   font-size: 0.8em;
@@ -178,13 +173,12 @@
 
 .provider-settings-container {
   padding: 20px;
-  height: calc(100% - 20px);
+  height: 100%;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   background-color: var(--panel-bg-color);
   border-radius: var(--border-radius);
-  margin: 10px;
 }
 
 .provider-settings-header {
@@ -202,14 +196,6 @@
   font-size: 1.3em;
 }
 
-.provider-badge {
-  padding: 4px 8px;
-  background-color: var(--primary-color);
-  color: white;
-  border-radius: 12px;
-  font-size: 0.8em;
-  font-weight: 500;
-}
 
 .provider-settings-content {
   flex: 1;
@@ -239,7 +225,6 @@
 
 .setting-group input {
   width: 100%;
-  padding: 10px 12px;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-small);
   background-color: var(--panel-bg-color-alt);
@@ -376,7 +361,6 @@
 .setting-group input,
 .model-selection-section select {
   width: 100%;
-  max-width: 600px;
 }
 
 /* 设置内容区域布局优化 */

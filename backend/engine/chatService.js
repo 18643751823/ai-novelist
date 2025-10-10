@@ -150,7 +150,7 @@ function _sendAiResponseToFrontend(type, payload) {
     }
 }
 
-async function* chatWithAI(messages, modelId, customSystemPrompt, mode = 'general', ragRetrievalEnabled) {
+async function* chatWithAI(messages, modelId, customSystemPrompt, mode = 'general', ragRetrievalEnabled, aiParameters = {}) {
     console.log(`[ChatService] 开始处理聊天请求:`, {
         modelId: modelId || '未指定',
         mode,
@@ -196,7 +196,7 @@ async function* chatWithAI(messages, modelId, customSystemPrompt, mode = 'genera
         
         // 获取对话模型的上下文配置用于日志显示
         const chatContextConfig = contextManager.getContextConfig(contextLimitSettings, mode, false);
-        console.log(`[ChatService] 对话模型上下文约束: ${chatContextConfig.type === 'tokens' && chatContextConfig.value === 'full' ? '满tokens' : chatContextConfig.value + '轮'}, 原始消息 ${messages.length} 条, 过滤后 ${filteredMessages.length} 条`);
+        console.log(`[ChatService] 对话模型上下文约束: ${chatContextConfig.type === 'tokens' && chatContextConfig.value === 'full' ? '满tokens' : '附加' + chatContextConfig.value + '轮上下文'}, 原始消息 ${messages.length} 条, 过滤后 ${filteredMessages.length} 条`);
 
         // 初始化RAG检索器（从handlers.js的storeInstance获取）
         try {
@@ -255,21 +255,23 @@ async function* chatWithAI(messages, modelId, customSystemPrompt, mode = 'genera
        
        // RAG检索控制：只有在启用时才执行检索
        if (lastUserMessage && lastUserMessage.content && ragRetrievalEnabled) {
-           // 获取当前模式的RAG集合选择设置
-           let ragCollectionNames = [];
+           // 获取当前模式的RAG表选择设置
+           let ragTableNames = [];
            try {
                const storeInstance = await getStoreInstance();
                const modeFeatureSettings = storeInstance.get('modeFeatureSettings') || {};
                const currentModeSettings = modeFeatureSettings[mode] || {};
-               ragCollectionNames = currentModeSettings.ragCollectionNames || [];
+               // 如果用户没有选择任何表，传递 null 而不是空数组
+               ragTableNames = currentModeSettings.ragTableNames || null;
                
-               console.log(`[ChatService] RAG集合选择设置 - 模式: ${mode}, 选择的集合:`, ragCollectionNames);
+               console.log(`[ChatService] RAG表选择设置 - 模式: ${mode}, 选择的表:`, ragTableNames);
            } catch (error) {
-               console.warn('[ChatService] 获取RAG集合设置失败，使用所有集合:', error.message);
+               console.warn('[ChatService] 获取RAG集合设置失败，跳过RAG检索:', error.message);
+               ragCollectionNames = null; // 出错时也跳过检索
            }
            
-           // 使用增强的检索功能，启用意图分析，并传递当前模式和选择的集合
-           const retrievalResult = await retriever.retrieve(messages, 3, true, mode, ragCollectionNames);
+           // 使用增强的检索功能，启用意图分析，并传递当前模式和选择的表
+           const retrievalResult = await retriever.retrieve(messages, 3, true, mode, ragTableNames);
             
             if (retrievalResult.documents && retrievalResult.documents.length > 0) {
                 retrievalInfo = retrievalResult;
@@ -372,29 +374,70 @@ ${retrievalResult.documents.map(doc => `- ${doc}`).join('\n')}\n`;
 
        console.log(`[ChatService] chatWithAI - 工具功能已强制启用`);
        
+       // 合并默认参数和前端传递的参数
+       const defaultAiParameters = {
+           temperature: 0.7,
+           top_p: 0.7,
+           n: 1
+       };
+       
+       // 新增：详细的参数合并调试日志
+       console.log(`[DEBUG][ChatService] 参数合并调试信息:`);
+       console.log(`  - 前端传入的aiParameters:`, JSON.stringify(aiParameters, null, 2));
+       console.log(`  - 默认参数defaultAiParameters:`, JSON.stringify(defaultAiParameters, null, 2));
+       
+       const mergedAiParameters = { ...defaultAiParameters, ...aiParameters };
+       
+       console.log(`  - 合并后的mergedAiParameters:`, JSON.stringify(mergedAiParameters, null, 2));
+       console.log(`  - 最终参数值:`);
+       console.log(`    * temperature: ${mergedAiParameters.temperature} (默认: ${defaultAiParameters.temperature})`);
+       console.log(`    * top_p: ${mergedAiParameters.top_p} (默认: ${defaultAiParameters.top_p})`);
+       console.log(`    * n: ${mergedAiParameters.n} (默认: ${defaultAiParameters.n})`);
+       
        // 完整的请求参数（服务层显示完整参数，但让适配器处理实际值）
        const requestOptions = {
            model: modelId,
            tools: tools, // 始终启用工具
            tool_choice: "auto", // 始终自动选择工具
            stream: serviceState.isStreaming, // 使用服务级别状态
-           temperature: 0.7,
-           top_p: 0.7,
-           n: 1,
-           enable_thinking: false,
-           thinking_budget: 4096
+           temperature: mergedAiParameters.temperature,
+           top_p: mergedAiParameters.top_p,
+           n: mergedAiParameters.n
        };
        
-       // 打印完整的请求参数（服务层显示）
-       console.log('[ChatService] 服务层请求参数:', JSON.stringify(requestOptions, null, 2));
+       console.log('[ChatService] AI参数设置:', mergedAiParameters);
+       console.log(`[DEBUG][ChatService] 服务层请求参数requestOptions:`, JSON.stringify(requestOptions, null, 2));
+       console.log(`[DEBUG][ChatService] 服务状态stream: ${serviceState.isStreaming}`);
+       
+       // 打印完整的消息内容（显示完整的AI请求体）
+       console.log('[ChatService] 完整的AI请求体 - 消息内容:');
+       sanitizedMessages.forEach((msg, index) => {
+           console.log(`[ChatService] 消息 ${index + 1} (${msg.role}):`);
+           if (msg.role === 'system') {
+               // 显示完整的系统消息内容，便于诊断问题
+               const content = msg.content || '';
+               console.log(`  完整内容: ${content}`);
+           } else {
+               console.log(`  内容: ${msg.content || '(空)'}`);
+           }
+           if (msg.tool_calls) {
+               console.log(`  工具调用: ${JSON.stringify(msg.tool_calls, null, 2)}`);
+           }
+           if (msg.tool_call_id) {
+               console.log(`  工具调用ID: ${msg.tool_call_id}`);
+           }
+           console.log(''); // 空行分隔
+       });
        
        // 实际传递给适配器的参数（让适配器处理默认值）
        const adapterOptions = {
            model: modelId,
            tools: tools,
            tool_choice: "auto",
-           stream: serviceState.isStreaming
-           // 其他参数由适配器处理默认值
+           stream: serviceState.isStreaming,
+           temperature: mergedAiParameters.temperature,
+           top_p: mergedAiParameters.top_p,
+           n: mergedAiParameters.n
        };
        
        const aiResponse = await adapter.generateCompletion(sanitizedMessages, adapterOptions);
@@ -570,7 +613,7 @@ ${retrievalResult.documents.map(doc => `- ${doc}`).join('\n')}\n`;
 }
 
 // **关键重构**: 将 sendToolResultToAI 改造为与 chatWithAI 类似的流式生成器
-async function* sendToolResultToAI(toolResultsArray, modelId, customSystemPrompt = null, mode = 'general') {
+async function* sendToolResultToAI(toolResultsArray, modelId, customSystemPrompt = null, mode = 'general', aiParameters = {}) {
     console.log(`[ChatService] 开始处理工具结果反馈 (模型: ${modelId}, 模式: ${mode})`);
     let currentSessionId;
     try {
@@ -752,29 +795,60 @@ async function* sendToolResultToAI(toolResultsArray, modelId, customSystemPrompt
 
         console.log(`[ChatService] sendToolResultToAI - 工具功能已强制启用`);
         
+        // 合并默认参数和前端传递的参数
+        const defaultAiParameters = {
+            temperature: 0.7,
+            top_p: 0.7,
+            n: 1
+        };
+        
+        const mergedAiParameters = { ...defaultAiParameters, ...aiParameters };
+        
         // 完整的请求参数（服务层显示完整参数，但让适配器处理实际值）
         const requestOptions = {
             model: modelId,
             tools: tools, // 始终启用工具
             tool_choice: "auto", // 始终自动选择工具
             stream: serviceState.isStreaming, // 使用服务级别状态
-            temperature: 0.7,
-            top_p: 0.7,
-            n: 1,
-            enable_thinking: false,
-            thinking_budget: 4096
+            temperature: mergedAiParameters.temperature,
+            top_p: mergedAiParameters.top_p,
+            n: mergedAiParameters.n
         };
+        
+        console.log('[ChatService] AI参数设置:', mergedAiParameters);
         
         // 打印完整的请求参数（服务层显示）
         console.log('[ChatService] 服务层请求参数:', JSON.stringify(requestOptions, null, 2));
+        
+        // 打印完整的消息内容（显示完整的AI请求体）
+        console.log('[ChatService] 完整的AI请求体 - 消息内容:');
+        sanitizedMessages.forEach((msg, index) => {
+            console.log(`[ChatService] 消息 ${index + 1} (${msg.role}):`);
+            if (msg.role === 'system') {
+                // 显示完整的系统消息内容，便于诊断问题
+                const content = msg.content || '';
+                console.log(`  完整内容: ${content}`);
+            } else {
+                console.log(`  内容: ${msg.content || '(空)'}`);
+            }
+            if (msg.tool_calls) {
+                console.log(`  工具调用: ${JSON.stringify(msg.tool_calls, null, 2)}`);
+            }
+            if (msg.tool_call_id) {
+                console.log(`  工具调用ID: ${msg.tool_call_id}`);
+            }
+            console.log(''); // 空行分隔
+        });
         
         // 实际传递给适配器的参数（让适配器处理默认值）
         const adapterOptions = {
             model: modelId,
             tools: tools,
             tool_choice: "auto",
-            stream: serviceState.isStreaming
-            // 其他参数由适配器处理默认值
+            stream: serviceState.isStreaming,
+            temperature: mergedAiParameters.temperature,
+            top_p: mergedAiParameters.top_p,
+            n: mergedAiParameters.n
         };
         
         const aiResponse = await adapter.generateCompletion(sanitizedMessages, adapterOptions);
@@ -921,7 +995,7 @@ async function* sendToolResultToAI(toolResultsArray, modelId, customSystemPrompt
     }
 }
 
-async function processUserMessage(message, sessionId, currentMessages, mode, customPrompt, ragRetrievalEnabled, model) {
+async function processUserMessage(message, sessionId, currentMessages, mode, customPrompt, ragRetrievalEnabled, model, aiParameters = {}) {
     // This function will contain the core logic from handleProcessCommand
     state.conversationHistory = currentMessages || [];
     
@@ -969,7 +1043,7 @@ async function processUserMessage(message, sessionId, currentMessages, mode, cus
         // 通知前端开始流式传输
         _sendAiResponseToFrontend('streaming_started', { sessionId: sessionId });
         
-        const stream = chatWithAI(validHistory, defaultModelId, customPrompt, mode, ragRetrievalEnabled);
+        const stream = chatWithAI(validHistory, defaultModelId, customPrompt, mode, ragRetrievalEnabled, aiParameters);
         for await (const chunk of stream) {
             // 检查是否被中止
             if (abortController.signal.aborted) {

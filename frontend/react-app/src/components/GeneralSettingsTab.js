@@ -8,22 +8,26 @@ import {
   setAdditionalInfoForMode,
   resetAdditionalInfoForMode,
   setContextLimitSettings,
-  setShowGeneralSettingsModal
+  setShowGeneralSettingsModal,
+  setAiParametersForMode,
+  resetAiParametersForMode
 } from '../store/slices/chatSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUndo, faSave } from '@fortawesome/free-solid-svg-icons';
 import useIpcRenderer from '../hooks/useIpcRenderer';
-import ModeContextSettings from './ModeContextSettings';
+import GeneralSettingsPanel from './GeneralSettingsPanel';
 
 const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
   const dispatch = useDispatch();
-  const { invoke, getStoreValue } = useIpcRenderer();
-  const { customPrompts, modeFeatureSettings, additionalInfo } = useSelector((state) => state.chat);
+  const { invoke, getStoreValue, setStoreValue } = useIpcRenderer();
+  const { customPrompts, modeFeatureSettings, additionalInfo, aiParameters } = useSelector((state) => state.chat);
   
   const [localPrompts, setLocalPrompts] = useState({});
   const [localFeatureSettings, setLocalFeatureSettings] = useState({});
   const [localAdditionalInfo, setLocalAdditionalInfo] = useState({});
+  const [localAiParameters, setLocalAiParameters] = useState({});
   const [defaultPrompts, setDefaultPrompts] = useState({});
+  const [customModes, setCustomModes] = useState([]);
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
 
   // 从后端获取默认提示词
@@ -48,6 +52,16 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
       setIsLoadingPrompts(false);
     }
   };
+  // 加载自定义模式
+  const loadCustomModes = async () => {
+    try {
+      const storedCustomModes = await getStoreValue('customModes') || [];
+      setCustomModes(storedCustomModes);
+      console.log('[GeneralSettingsTab] 加载自定义模式:', storedCustomModes);
+    } catch (error) {
+      console.error('[GeneralSettingsTab] 加载自定义模式失败:', error);
+    }
+  };
 
   // 直接从存储加载设置，避免Redux状态同步问题
   const loadSettingsFromStore = async () => {
@@ -55,26 +69,43 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
       console.log('[GeneralSettingsTab] 开始直接从存储加载设置...');
       
       // 从存储获取所有设置
-      const [storedCustomPrompts, storedModeFeatureSettings, storedAdditionalInfo] = await Promise.all([
+      const [storedCustomPrompts, storedModeFeatureSettings, storedAdditionalInfo, storedAiParameters] = await Promise.all([
         getStoreValue('customPrompts'),
         getStoreValue('modeFeatureSettings'),
-        getStoreValue('additionalInfo')
+        getStoreValue('additionalInfo'),
+        getStoreValue('aiParameters')
       ]);
       
       console.log('[GeneralSettingsTab] 从存储获取的设置:');
       console.log('[GeneralSettingsTab] customPrompts:', JSON.stringify(storedCustomPrompts, null, 2));
       console.log('[GeneralSettingsTab] modeFeatureSettings:', JSON.stringify(storedModeFeatureSettings, null, 2));
       console.log('[GeneralSettingsTab] additionalInfo:', JSON.stringify(storedAdditionalInfo, null, 2));
+      console.log('[GeneralSettingsTab] aiParameters:', JSON.stringify(storedAiParameters, null, 2));
       
       // 设置本地状态
       setLocalPrompts(storedCustomPrompts || {});
       setLocalFeatureSettings(storedModeFeatureSettings || {});
       
+      // 直接使用从存储中获取的AI参数，不进行迁移处理
+      const aiParametersData = storedAiParameters || {};
+      setLocalAiParameters(aiParametersData);
+      
+      // 同时更新Redux状态
+      for (const mode of Object.keys(aiParametersData)) {
+        const modeParameters = aiParametersData[mode];
+        if (typeof modeParameters === 'object' && modeParameters !== null) {
+          dispatch(setAiParametersForMode({ mode, parameters: modeParameters }));
+        }
+      }
+      
       // 处理附加信息的旧格式迁移
       const migratedAdditionalInfo = {};
       const additionalInfoData = storedAdditionalInfo || {};
       
-      for (const mode of ['general', 'outline', 'writing', 'adjustment']) {
+      // 获取所有模式（内置 + 自定义） - 使用不同的变量名
+      const allModesForAdditionalInfo = ['general', 'outline', 'writing', 'adjustment', ...customModes.map(m => m.id)];
+      
+      for (const mode of allModesForAdditionalInfo) {
         const modeInfo = additionalInfoData[mode];
         if (typeof modeInfo === 'string') {
           migratedAdditionalInfo[mode] = {
@@ -102,6 +133,7 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
       console.log('[GeneralSettingsTab] localPrompts:', JSON.stringify(storedCustomPrompts, null, 2));
       console.log('[GeneralSettingsTab] localFeatureSettings:', JSON.stringify(storedModeFeatureSettings, null, 2));
       console.log('[GeneralSettingsTab] migratedAdditionalInfo:', JSON.stringify(migratedAdditionalInfo, null, 2));
+      console.log('[GeneralSettingsTab] localAiParameters:', JSON.stringify(aiParametersData, null, 2));
       
     } catch (error) {
       console.error('[GeneralSettingsTab] 从存储加载设置失败:', error);
@@ -110,8 +142,28 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
       setLocalPrompts(customPrompts);
       setLocalFeatureSettings(modeFeatureSettings);
       
+      // 处理AI参数
+      const aiParametersData = {};
+      const allModesForRedux = ['general', 'outline', 'writing', 'adjustment', ...customModes.map(m => m.id)];
+      
+      for (const mode of allModesForRedux) {
+        // 从Redux状态获取AI参数
+        if (aiParameters && aiParameters[mode]) {
+          aiParametersData[mode] = aiParameters[mode];
+        } else {
+          // 如果没有，使用默认值
+          aiParametersData[mode] = {
+            temperature: 0.7,
+            top_p: 0.7,
+            n: 1
+          };
+        }
+      }
+      setLocalAiParameters(aiParametersData);
+      
       const migratedAdditionalInfo = {};
-      for (const mode of ['general', 'outline', 'writing', 'adjustment']) {
+      
+      for (const mode of allModesForRedux) {
         const modeInfo = additionalInfo[mode];
         if (typeof modeInfo === 'string') {
           migratedAdditionalInfo[mode] = {
@@ -137,8 +189,59 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
     }
   };
 
+  // 处理自定义模式操作
+  const handleAddCustomMode = async (newMode) => {
+    try {
+      const updatedCustomModes = [...customModes, newMode];
+      setCustomModes(updatedCustomModes);
+      await setStoreValue('customModes', updatedCustomModes);
+      console.log('[GeneralSettingsTab] 添加自定义模式:', newMode);
+    } catch (error) {
+      console.error('[GeneralSettingsTab] 添加自定义模式失败:', error);
+    }
+  };
+
+  const handleEditCustomMode = async (modeId, updatedMode) => {
+    try {
+      const updatedCustomModes = customModes.map(mode =>
+        mode.id === modeId ? updatedMode : mode
+      );
+      setCustomModes(updatedCustomModes);
+      await setStoreValue('customModes', updatedCustomModes);
+      console.log('[GeneralSettingsTab] 编辑自定义模式:', updatedMode);
+    } catch (error) {
+      console.error('[GeneralSettingsTab] 编辑自定义模式失败:', error);
+    }
+  };
+
+  const handleDeleteCustomMode = async (modeId) => {
+    try {
+      const updatedCustomModes = customModes.filter(mode => mode.id !== modeId);
+      setCustomModes(updatedCustomModes);
+      await setStoreValue('customModes', updatedCustomModes);
+      
+      // 删除相关的设置数据
+      const updatedPrompts = { ...localPrompts };
+      delete updatedPrompts[modeId];
+      setLocalPrompts(updatedPrompts);
+      
+      const updatedFeatureSettings = { ...localFeatureSettings };
+      delete updatedFeatureSettings[modeId];
+      setLocalFeatureSettings(updatedFeatureSettings);
+      
+      const updatedAdditionalInfo = { ...localAdditionalInfo };
+      delete updatedAdditionalInfo[modeId];
+      setLocalAdditionalInfo(updatedAdditionalInfo);
+      
+      console.log('[GeneralSettingsTab] 删除自定义模式:', modeId);
+    } catch (error) {
+      console.error('[GeneralSettingsTab] 删除自定义模式失败:', error);
+    }
+  };
+
   useEffect(() => {
     fetchDefaultPrompts();
+    loadCustomModes();
     loadSettingsFromStore();
   }, []); // 空依赖数组，只在组件挂载时执行一次
 
@@ -168,6 +271,18 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
         [field]: value
       }
     }));
+  };
+
+  // 处理AI参数变化（按模式）
+  const handleAiParametersChange = (mode, newParameters) => {
+    console.log(`[GeneralSettingsTab] 模式 ${mode} 的AI参数已更新:`, newParameters);
+    setLocalAiParameters(prev => ({
+      ...prev,
+      [mode]: newParameters
+    }));
+    
+    // 同时更新Redux状态
+    dispatch(setAiParametersForMode({ mode, parameters: newParameters }));
   };
 
   const handleReset = (mode) => {
@@ -223,11 +338,21 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
         dispatch(setAdditionalInfoForMode({ mode, info: localAdditionalInfo[mode] }));
       }
       
+      // 保存AI参数设置（按模式）
+      for (const mode of Object.keys(localAiParameters)) {
+        const parameters = localAiParameters[mode];
+        if (parameters && Object.keys(parameters).length > 0) {
+          console.log(`[GeneralSettingsTab] 保存模式 ${mode} 的AI参数设置:`, parameters);
+          dispatch(setAiParametersForMode({ mode, parameters }));
+        }
+      }
+      
       // 保存到持久化存储
       console.log('[GeneralSettingsTab] 保存到持久化存储...');
       await invoke('set-store-value', 'customPrompts', localPrompts);
       await invoke('set-store-value', 'modeFeatureSettings', localFeatureSettings);
       await invoke('set-store-value', 'additionalInfo', localAdditionalInfo);
+      await invoke('set-store-value', 'aiParameters', localAiParameters);
 
       console.log('[GeneralSettingsTab] 通用设置保存完成');
       
@@ -261,77 +386,23 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
 
   return (
     <div className="tab-content">
-      {isLoadingPrompts ? (
-        <div className="loading-prompts">
-          <p>正在加载默认提示词...</p>
-        </div>
-      ) : Object.keys(defaultPrompts).length === 0 ? (
-        <div className="no-prompts">
-          <p>无法加载默认提示词</p>
-        </div>
-      ) : (
-        <div className="prompt-sections">
-          {Object.entries(defaultPrompts).map(([mode, defaultPrompt]) => (
-            <div key={mode} className="prompt-section">
-              <h3>{getModeDisplayName(mode)}模式</h3>
-              
-              <div className="default-prompt">
-                <h4>默认提示词:</h4>
-                <textarea
-                  readOnly
-                  value={defaultPrompt}
-                  className="default-prompt-textarea"
-                  rows={4}
-                />
-              </div>
-
-              <div className="custom-prompt">
-                <h4>自定义提示词:</h4>
-                <textarea
-                  value={localPrompts[mode] || ''}
-                  onChange={(e) => handlePromptChange(mode, e.target.value)}
-                  placeholder={`输入${getModeDisplayName(mode)}模式的自定义提示词...`}
-                  rows={4}
-                />
-                <button
-                  className="reset-button"
-                  onClick={() => handleReset(mode)}
-                  disabled={!localPrompts[mode]}
-                >
-                  <FontAwesomeIcon icon={faUndo} /> 重置
-                </button>
-              </div>
-
-              <div className="feature-settings">
-                <h4>功能设置:</h4>
-                
-                {/* 工具功能状态说明 */}
-                {mode === 'general' ? (
-                  <div className="feature-info">
-                    <strong>工具功能：始终启用</strong>
-                    <div className="feature-description">
-                      通用模式下AI可以自动使用工具进行文件操作、代码编辑等
-                    </div>
-                  </div>
-                ) : (
-                  <div className="feature-info">
-                    <strong>工具功能：禁用</strong>
-                    <div className="feature-description">
-                      此模式下AI仅提供对话功能，无法使用工具
-                    </div>
-                  </div>
-                )}
-
-
-                {/* 单个模式的上下文设置 */}
-                <ModeContextSettings mode={mode} modeName={getModeDisplayName(mode)} />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-
+      <GeneralSettingsPanel
+        defaultPrompts={defaultPrompts}
+        localPrompts={localPrompts}
+        localFeatureSettings={localFeatureSettings}
+        localAdditionalInfo={localAdditionalInfo}
+        localAiParameters={localAiParameters}
+        customModes={customModes}
+        onPromptChange={handlePromptChange}
+        onFeatureSettingChange={handleFeatureSettingChange}
+        onAdditionalInfoChange={handleAdditionalInfoChange}
+        onAiParametersChange={handleAiParametersChange}
+        onReset={handleReset}
+        onAddCustomMode={handleAddCustomMode}
+        onEditCustomMode={handleEditCustomMode}
+        onDeleteCustomMode={handleDeleteCustomMode}
+        isLoadingPrompts={isLoadingPrompts}
+      />
     </div>
   );
 });

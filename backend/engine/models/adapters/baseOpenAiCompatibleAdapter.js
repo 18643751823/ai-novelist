@@ -197,19 +197,49 @@ class BaseOpenAiCompatibleAdapter extends BaseModelAdapter {
         const temperature = this.options.modelTemperature ?? this.defaultTemperature;
         const processedMessages = convertToOpenAiMessages(allMessages);
 
+        // 新增：适配器层参数调试日志
+        console.log(`[DEBUG][${this.providerName}Adapter] 适配器参数调试信息:`);
+        console.log(`  - 模型ID: ${model}`);
+        console.log(`  - 适配器温度设置: ${this.options.modelTemperature ?? '未设置'} (使用默认: ${this.defaultTemperature})`);
+        console.log(`  - 最终温度值: ${temperature}`);
+        console.log(`  - 消息数量: ${processedMessages.length}`);
+        console.log(`  - 传入的options参数:`, JSON.stringify(options, null, 2));
+        console.log(`  - options.tools数量: ${options.tools?.length ?? 0}`);
+        console.log(`  - options.tool_choice: ${options.tool_choice}`);
+        console.log(`  - options.stream: ${options.stream}`);
+        console.log(`  - options.temperature: ${options.temperature}`);
+        console.log(`  - options.top_p: ${options.top_p}`);
+        console.log(`  - options.n: ${options.n}`);
+
         const params = {
             model: model,
             max_tokens: modelInfo.maxTokens,
-            temperature: temperature,
+            temperature: options.temperature ?? temperature, // 前端参数优先
             messages: processedMessages,
             stream: true,
             tools: options.tools,
             tool_choice: options.tool_choice,
+            top_p: options.top_p,              // 新增：传递top_p
+            n: options.n,                      // 新增：传递n
             ...(this._isGrokXAI(this.baseURL) ? {} : { stream_options: { include_usage: true } }),
         };
 
+        console.log(`[DEBUG][${this.providerName}Adapter] 最终发送到API的参数:`);
+        console.log(`  - model: ${params.model}`);
+        console.log(`  - temperature: ${params.temperature}`);
+        console.log(`  - stream: ${params.stream}`);
+        console.log(`  - max_tokens: ${params.max_tokens}`);
+        console.log(`  - tools数量: ${params.tools?.length ?? 0}`);
+        console.log(`  - tool_choice: ${params.tool_choice}`);
+        console.log(`  - 其他参数:`, JSON.stringify({
+            top_p: options.top_p,
+            n: options.n
+        }, null, 2));
+
         const client = this._getClient();
+        console.log(`[DEBUG][${this.providerName}Adapter] 开始调用API...`);
         const stream = await client.chat.completions.create(params);
+        console.log(`[DEBUG][${this.providerName}Adapter] API调用成功，开始流式响应`);
 
         for await (const chunk of stream) {
             const delta = chunk.choices[0]?.delta;

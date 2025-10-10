@@ -13,7 +13,7 @@ const { spawn } = require('child_process');
 Object.assign(console, log.functions);
 
 // 捕获未处理的异常
-log.catchErrors();
+log.errorHandler.startCatching();
 
 // 您可以在以下路径找到日志文件:
 // on Linux: ~/.config/<app name>/logs/main.log
@@ -42,189 +42,8 @@ let mainWindow;
 let novelDirWatcher;
 let hasUnsavedChanges = false;
 let resolveQuitPromise; // 用于在 before-quit 中等待渲染进程的保存结果
-let chromaProcess = null; // ChromaDB 服务器进程
-let chromaServerReady = false; // ChromaDB 服务器就绪状态
 
-// ChromaDB 服务器管理函数
-async function startChromaServer() {
-    return new Promise(async (resolve, reject) => {
-        try {
-            console.log('[ChromaDB] 正在启动 ChromaDB 服务器...');
-            
-            // 检查Python环境是否存在
-            const portablePythonPath = path.join(__dirname, 'python_portable');
-            const chromaExePath = path.join(portablePythonPath, 'Scripts', 'chroma.exe');
-            
-            if (!require('fs').existsSync(chromaExePath)) {
-                console.warn('[ChromaDB] Python环境不存在，RAG功能将不可用');
-                console.warn('[ChromaDB] 请确保python_portable目录包含完整的Python环境和ChromaDB');
-                resolve(false);
-                return;
-            }
-            
-            const dbPath = path.join(__dirname, 'db', 'chroma_db');
-            // 确保数据库目录存在
-            fs.mkdir(dbPath, { recursive: true }).catch(() => {});
-            
-            // 使用便携式 Python 环境直接运行 ChromaDB（避免硬编码路径问题）
-            const pythonPath = path.join(__dirname, 'python_portable', 'python.exe');
-            console.log(`[ChromaDB] 启动服务器: ${pythonPath} -m chromadb.cli.cli run --path ${dbPath}`);
-            
-            // 使用原始字符串字面量确保路径正确传递
-            const escapedDbPath = dbPath.replace(/\\/g, '\\\\');
-            const pythonScript = `
-import chromadb.cli.cli as cli
-import sys
-sys.argv = ["chroma", "run", "--path", r"${escapedDbPath}"]
-cli.app()
-            `.trim();
-            
-            chromaProcess = spawn(pythonPath, ['-c', pythonScript], {
-                cwd: __dirname,
-                stdio: 'pipe',
-                detached: false, // 不要分离，以便可以正确关闭
-                env: { ...process.env, NODE_ENV: 'production', RUST_BACKTRACE: 'full' }
-            });
 
-            chromaProcess.stdout.on('data', (data) => {
-                const output = data.toString();
-                console.log(`[ChromaDB] ${output}`);
-                
-                // 检查服务器是否启动成功 (Python版本)
-                if (output.includes('Connect to Chroma at:') ||
-                    output.includes('Application startup complete') ||
-                    output.includes('Uvicorn running on')) {
-                    chromaServerReady = true;
-                    console.log('[ChromaDB] 服务器启动成功，监听端口 8000');
-                    resolve(true);
-                }
-            });
-
-            chromaProcess.stderr.on('data', (data) => {
-                const errorOutput = data.toString();
-                console.error(`[ChromaDB Error] ${errorOutput}`);
-                
-                // 如果是端口已被占用的错误，尝试使用其他端口
-                if (errorOutput.includes('address already in use')) {
-                    console.log('[ChromaDB] 端口 8000 被占用，尝试其他端口...');
-                    stopChromaServer();
-                    setTimeout(() => startChromaServerWithPort(8001), 1000);
-                }
-            });
-
-            chromaProcess.on('close', (code) => {
-                console.log(`[ChromaDB] 进程退出，代码 ${code}`);
-                chromaServerReady = false;
-                chromaProcess = null;
-                
-                if (code !== 0) {
-                    reject(new Error(`ChromaDB 进程异常退出，代码: ${code}`));
-                }
-            });
-
-            chromaProcess.on('error', (error) => {
-                console.error('[ChromaDB] 启动失败:', error);
-                chromaServerReady = false;
-                chromaProcess = null;
-                reject(error);
-            });
-
-            // 设置超时，防止服务器启动过久
-            setTimeout(() => {
-                if (!chromaServerReady) {
-                    console.warn('[ChromaDB] 服务器启动超时，但继续等待...');
-                }
-            }, 10000);
-
-        } catch (error) {
-            console.error('[ChromaDB] 启动异常:', error);
-            reject(error);
-        }
-    });
-}
-
-// 使用特定端口启动 ChromaDB
-function startChromaServerWithPort(port) {
-    return new Promise((resolve, reject) => {
-        try {
-            console.log(`[ChromaDB] 正在使用端口 ${port} 启动服务器...`);
-            
-            const dbPath = path.join(__dirname, 'db', 'chroma_db');
-            // 使用Python虚拟环境中的chroma命令（绝对路径，指定端口）
-            const chromaCommand = path.join(__dirname, 'chroma_env', 'Scripts', 'chroma.exe');
-            console.log(`[ChromaDB:${port}] 启动服务器: ${chromaCommand} run --path ${dbPath} --port ${port}`);
-            
-            chromaProcess = spawn(chromaCommand, ['run', '--path', dbPath, '--port', port.toString()], {
-                cwd: __dirname,
-                stdio: 'pipe',
-                detached: false
-            });
-
-            chromaProcess.stdout.on('data', (data) => {
-                const output = data.toString();
-                console.log(`[ChromaDB:${port}] ${output}`);
-                
-                // 检查服务器是否启动成功 (Python版本)
-                if (output.includes('Connect to Chroma at:') ||
-                    output.includes('Application startup complete') ||
-                    output.includes('Uvicorn running on')) {
-                    chromaServerReady = true;
-                    console.log(`[ChromaDB] 服务器启动成功，监听端口 ${port}`);
-                    // 更新 RAG 服务配置使用新端口
-                    updateChromaPort(port);
-                    resolve(true);
-                }
-            });
-
-            chromaProcess.stderr.on('data', (data) => {
-                console.error(`[ChromaDB:${port} Error] ${data}`);
-            });
-
-        } catch (error) {
-            console.error(`[ChromaDB:${port}] 启动失败:`, error);
-            reject(error);
-        }
-    });
-}
-
-// 更新 RAG 服务使用的端口
-function updateChromaPort(port) {
-    try {
-        const chromaConfig = require('./backend/utils/chromaConfig');
-        chromaConfig.setPort(port);
-        console.log(`[ChromaDB] RAG 服务已更新使用端口: ${port}`);
-        
-        // 重新初始化 RAG 服务以使用新端口
-        const knowledgeBaseManager = require('./backend/rag-service/knowledgeBaseManager');
-        if (knowledgeBaseManager.isInitialized) {
-            knowledgeBaseManager.isInitialized = false; // 强制重新初始化
-            console.log('[ChromaDB] RAG 服务已标记为需要重新初始化');
-        }
-    } catch (error) {
-        console.error('[ChromaDB] 更新端口配置失败:', error);
-    }
-}
-
-function stopChromaServer() {
-    if (chromaProcess) {
-        console.log('[ChromaDB] 正在停止服务器...');
-        // 发送 SIGTERM 信号优雅关闭
-        chromaProcess.kill('SIGTERM');
-        chromaProcess = null;
-        chromaServerReady = false;
-        console.log('[ChromaDB] 服务器已停止');
-    }
-}
-
-// 检查 ChromaDB 服务器状态
-function checkChromaServerStatus() {
-    return chromaServerReady;
-}
-
-// 注册 IPC 处理器
-ipcMain.handle('get-chroma-status', async () => {
-    return { ready: chromaServerReady };
-});
 
 ipcMain.handle('get-api-key', async () => {
     try {
@@ -279,20 +98,26 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 800,
+    backgroundColor: '#000000', // 设置背景为纯黑色
+    titleBarStyle: 'hidden', // 隐藏默认标题栏
+    titleBarOverlay: {
+      color: 'rgba(0,0,0,0)', // 控制按钮区域背景颜色（透明）
+      height: 35, // 控制按钮高度
+      symbolColor: 'white' // 控制按钮颜色
+    },
     webPreferences: {
       preload: path.join(__dirname, 'frontend/react-app/public/preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: true,
-      contentSecurityPolicy: "default-src 'self' app: 'unsafe-inline' data:; script-src 'self' app: 'unsafe-eval' 'unsafe-inline' blob:; style-src 'self' app: 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://localhost:3000; worker-src 'self' blob:;",
-    },
-    titleBarStyle: 'hidden',
-    titleBarOverlay: {
-      color: '#000000',
-      symbolColor: '#FFFFFF',
-      height: 30
+      allowRunningInsecureContent: false,
+      webviewTag: true,
+      contentSecurityPolicy: "default-src 'self' app: 'unsafe-inline' data: http://localhost:3001; script-src 'self' app: 'unsafe-eval' 'unsafe-inline' blob: http://localhost:3001; style-src 'self' app: 'unsafe-inline' http://localhost:3001; img-src 'self' data: http://localhost:3001; connect-src 'self' http://localhost:3000 http://localhost:3001; worker-src 'self' blob:;",
     },
   });
+
+  // 移除默认菜单栏（File Edit View Window Help）
+  mainWindow.setMenu(null);
 
   // 强制使用生产模式URL，避免依赖electron-is-dev检测
   const startUrl = `app://./index.html`;
@@ -388,10 +213,20 @@ function createWindow() {
     }
   });
 
-  // 移除自动打开开发者工具
-  // if (isDev) {
-  //   mainWindow.webContents.openDevTools();
-  // }
+  // 在开发模式下自动打开开发者工具
+  if (isDev) {
+    mainWindow.webContents.openDevTools();
+  }
+
+  // 添加切换开发者工具的 IPC 监听器
+  ipcMain.on('TOGGLE_DEVTOOLS', (event) => {
+    const isOpen = mainWindow.webContents.isDevToolsOpened();
+    if (isOpen) {
+      mainWindow.webContents.closeDevTools();
+    } else {
+      mainWindow.webContents.openDevTools();
+    }
+  });
 }
 
 const throttledGetChaptersAndUpdateFrontend = throttle(async (windowInstance) => {
@@ -418,27 +253,12 @@ app.whenReady().then(async () => {
     await initializeServices();
     console.log('[main] Services initialized successfully');
 
-    // 启动 ChromaDB 服务器（仅在未禁用时启动）
-    if (!process.env.CHROMA_DISABLED) {
-        console.log('[main] 正在启动 ChromaDB 服务器...');
-        try {
-            await startChromaServer();
-            console.log('[main] ChromaDB 服务器启动成功');
-        } catch (error) {
-            console.error('[main] ChromaDB 服务器启动失败:', error);
-            // 即使服务器启动失败，也继续运行应用，但禁用 RAG 功能
-            console.warn('[main] RAG 功能将不可用');
-        }
-    } else {
-        console.log('[main] ChromaDB 自动启动已禁用 (CHROMA_DISABLED=true)');
-        console.log('[main] RAG 功能将不可用，如需使用请手动启动ChromaDB服务器');
-    }
 
     createWindow();
     setMainWindow(mainWindow);
 
     console.log('[main] 注册 IPC 处理器...');
-    registerIpcHandlers(store); // 传递 store 对象
+    registerIpcHandlers(store, mainWindow); // 传递 store 和 mainWindow 对象
     console.log('[main] IPC 处理器注册完成。');
 
     const novelDirPath = path.join(__dirname, 'novel');
@@ -464,23 +284,4 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
-});
-
-// 应用退出前停止 ChromaDB 服务器
-app.on('before-quit', (event) => {
-  console.log('[main] 应用正在退出，停止 ChromaDB 服务器...');
-  stopChromaServer();
-});
-
-// 处理应用异常退出
-process.on('SIGINT', () => {
-  console.log('[main] 收到 SIGINT 信号，停止 ChromaDB 服务器...');
-  stopChromaServer();
-  process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-  console.log('[main] 收到 SIGTERM 信号，停止 ChromaDB 服务器...');
-  stopChromaServer();
-  process.exit(0);
 });

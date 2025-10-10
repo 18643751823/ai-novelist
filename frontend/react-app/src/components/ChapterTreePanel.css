@@ -12,7 +12,7 @@
 .main-chapter-area {
     display: flex;
     flex-direction: column;
-    height: 80%; /* 占据 80% 高度 */
+    height: 85%; /* 占据 85% 高度 */
     flex-shrink: 0; /* 防止被压缩 */
     background-color: rgb(40, 40, 40);
     width: 100%; /* 确保占据父容器的全部宽度 */
@@ -20,12 +20,11 @@
 
 /* 章节树面板头部 */
 .chapter-tree-panel-header {
-    padding: 10px;
     display: flex;
     justify-content: flex-end; /* 按钮靠右 */
     gap: 10px; /* 按钮间距 */
     border-bottom: 1px solid #3e4451;
-    height: 10%; /* 占据顶部 10% 高度 */
+    height: 5%; /* 占据顶部 5% 高度 */
     flex-shrink: 0; /* 防止被压缩 */
     align-items: center; /* 垂直居中按钮 */
     background-color: rgb(40, 40, 40);
