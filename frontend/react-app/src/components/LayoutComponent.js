@@ -9,6 +9,7 @@ import ApiSettingsModal from './ApiSettingsModal'; // 引入API设置模态框
 import RagSettingsModal from './RagSettingsModal'; // 引入RAG设置模态框
 import GeneralSettingsModal from './GeneralSettingsModal'; // 引入通用设置模态框
 import WorkspacePanel from './WorkspacePanel'; // 引入工作区面板
+import PersistentMemoryPanel from './PersistentMemoryPanel'; // 引入持久记忆面板
 
 function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
   const { splitView } = useSelector((state) => state.novel);
@@ -21,10 +22,11 @@ function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
   const showRagSettingsModal = useSelector(state => state.chat.showRagSettingsModal);
   const showGeneralSettingsModal = useSelector(state => state.chat.showGeneralSettingsModal);
   const showWorkspacePanel = useSelector(state => state.chat.showWorkspacePanel);
+  const showPersistentMemoryPanel = useSelector(state => state.chat.showPersistentMemoryPanel);
   
   // 如果有任何模态框打开，就显示覆盖层
   const showOverlay = showApiSettingsModal || showRagSettingsModal ||
-                     showGeneralSettingsModal || showWorkspacePanel;
+                     showGeneralSettingsModal || showWorkspacePanel || showPersistentMemoryPanel;
 
   // 处理左侧面板尺寸变化
   const handleLeftPanelChange = (size) => {
@@ -101,6 +103,9 @@ function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
         )}
         {showWorkspacePanel && (
           <WorkspacePanel isOpen={showWorkspacePanel} />
+        )}
+        {showPersistentMemoryPanel && (
+          <PersistentMemoryPanel />
         )}
       </OverlayPanel>
     </div>

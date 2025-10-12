@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import './App.css';
 import LayoutComponent from './components/LayoutComponent';
 import EditorPanel from './components/EditorPanel';

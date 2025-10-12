@@ -60,6 +60,7 @@ const chatSlice = createSlice({
     showGeneralSettingsModal: false,
     showHomePage: true, // 新增：控制主页面显示状态
     showWorkspacePanel: false, // 新增：控制工作区面板显示状态
+    showPersistentMemoryPanel: false, // 新增：控制持久记忆面板显示状态
     availableModels: [], // 新增：用于存储所有可用模型列表
     // 新增：Flowise 集成状态
     flowiseIntegration: {
@@ -331,6 +332,9 @@ const chatSlice = createSlice({
     },
     setShowWorkspacePanel: (state, action) => { // 新增：设置工作区面板显示状态
       state.showWorkspacePanel = action.payload;
+    },
+    setShowPersistentMemoryPanel: (state, action) => { // 新增：设置持久记忆面板显示状态
+      state.showPersistentMemoryPanel = action.payload;
     },
     setDeepseekApiKey: (state, action) => {
       state.deepseekApiKey = action.payload;
@@ -870,6 +874,7 @@ export const {
   setShowGeneralSettingsModal,
   setShowHomePage, // 新增：导出 setShowHomePage
   setShowWorkspacePanel, // 新增：导出 setShowWorkspacePanel
+  setShowPersistentMemoryPanel, // 新增：导出 setShowPersistentMemoryPanel
   setDeepseekApiKey,
   setOpenaiApiKey, // 新增
   setOpenrouterApiKey,

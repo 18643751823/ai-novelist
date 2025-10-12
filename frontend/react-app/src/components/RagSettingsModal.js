@@ -2,17 +2,14 @@ import React, { useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setShowRagSettingsModal } from '../store/slices/chatSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faSave, faBook, faDatabase } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faSave, faBook } from '@fortawesome/free-solid-svg-icons';
 import RagKnowledgeBaseSettings from './RagKnowledgeBaseSettings';
-import MemorySettingsTab from './MemorySettingsTab';
 import NotificationModal from './NotificationModal';
 import './PromptManagerModal.css'; // 复用标签页样式
 
 const RagSettingsModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
   const ragSettingsRef = useRef(null);
-  const memorySettingsRef = useRef(null);
-  // 不再使用标签页切换，两个面板同时显示
   const [notification, setNotification] = useState({
     isOpen: false,
     message: '',
@@ -39,7 +36,7 @@ const RagSettingsModal = ({ isOpen, onClose }) => {
     });
   };
 
-  // 保存处理函数 - 同时保存两个面板
+  // 保存处理函数 - 保存 RAG 知识库设置
   const handleSave = () => {
     let saveSuccess = true;
     
@@ -49,16 +46,6 @@ const RagSettingsModal = ({ isOpen, onClose }) => {
         ragSettingsRef.current.handleSave();
       } catch (error) {
         console.error('RAG知识库保存失败:', error);
-        saveSuccess = false;
-      }
-    }
-    
-    // 保存持久记忆设置
-    if (memorySettingsRef.current && memorySettingsRef.current.handleSave) {
-      try {
-        memorySettingsRef.current.handleSave();
-      } catch (error) {
-        console.error('持久记忆保存失败:', error);
         saveSuccess = false;
       }
     }
@@ -86,29 +73,16 @@ const RagSettingsModal = ({ isOpen, onClose }) => {
             </button>
           </div>
           
-          {/* 同时显示两个面板 */}
-          <div className="dual-panel-container">
-            <div className="panel-section">
-              <div className="panel-header">
-                <FontAwesomeIcon icon={faBook} />
-                <span>RAG知识库</span>
-              </div>
-              <RagKnowledgeBaseSettings
-                ref={ragSettingsRef}
-                onSaveComplete={showNotification}
-              />
+          {/* 显示 RAG 知识库面板 */}
+          <div className="panel-section">
+            <div className="panel-header">
+              <FontAwesomeIcon icon={faBook} />
+              <span>RAG知识库</span>
             </div>
-            
-            <div className="panel-section">
-              <div className="panel-header">
-                <FontAwesomeIcon icon={faDatabase} />
-                <span>持久记忆</span>
-              </div>
-              <MemorySettingsTab
-                ref={memorySettingsRef}
-                onSaveComplete={showNotification}
-              />
-            </div>
+            <RagKnowledgeBaseSettings
+              ref={ragSettingsRef}
+              onSaveComplete={showNotification}
+            />
           </div>
         </div>
       </div>
