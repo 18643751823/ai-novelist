@@ -1499,9 +1499,6 @@ function register(store, mainWindow) { // 接收 store 和 mainWindow 参数并�
   //   }
   // });
   
-  // Flowise Service Handlers
-  const FlowiseIpcHandler = require('../../flowise-service/flowiseIpcHandler');
-  FlowiseIpcHandler.registerIpcHandlers(ipcMain, mainWindow);
 
   // Checkpoint Service Handlers
   ipcMain.handle('checkpoints:save', async (event, { taskId, message }) => {
