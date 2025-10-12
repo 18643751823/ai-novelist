@@ -42,7 +42,7 @@ python_portable/
 db/
 
 # Static assets (unless they are source files)
-# public/ - Commented out to allow frontend/react-app/public files
+public/
 
 # Build outputs and temporary files
 *.tmp
@@ -67,6 +67,9 @@ Thumbs.db
 *~
 
 # Configuration files (user-specific)
+
+# Node-gyp cache directory
+.node-gyp-cache/
 
 # Temporary installation files
 get-pip.py

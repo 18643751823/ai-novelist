@@ -1473,14 +1473,6 @@ function register(store, mainWindow) { // 接收 store 和 mainWindow 参数并�
   // 新增：RAG嵌入函数处理器
   ipcMain.handle('reinitialize-embedding-function', ragIpcHandler.reinitializeEmbeddingFunction.bind(ragIpcHandler));
 
-  // 新增：RAG仓库管理处理器
-  ipcMain.handle('list-rag-repositories', ragIpcHandler.listRagRepositories.bind(ragIpcHandler));
-  ipcMain.handle('create-rag-repository', ragIpcHandler.createRagRepository.bind(ragIpcHandler));
-  ipcMain.handle('delete-rag-repository', ragIpcHandler.deleteRagRepository.bind(ragIpcHandler));
-  ipcMain.handle('list-repo-files', ragIpcHandler.listRepoFiles.bind(ragIpcHandler));
-  ipcMain.handle('add-file-to-rag-repository', ragIpcHandler.addFileToRagRepository.bind(ragIpcHandler));
-  ipcMain.handle('delete-file-from-rag-repository', ragIpcHandler.deleteFileFromRagRepository.bind(ragIpcHandler));
-
   // 新增：排序配置处理器
   ipcMain.handle('get-sort-config', handleGetSortConfig);
   ipcMain.handle('set-sort-enabled', handleSetSortEnabled);
@@ -1507,6 +1499,9 @@ function register(store, mainWindow) { // 接收 store 和 mainWindow 参数并�
   //   }
   // });
   
+  // Flowise Service Handlers
+  const FlowiseIpcHandler = require('../../flowise-service/flowiseIpcHandler');
+  FlowiseIpcHandler.registerIpcHandlers(ipcMain, mainWindow);
 
   // Checkpoint Service Handlers
   ipcMain.handle('checkpoints:save', async (event, { taskId, message }) => {

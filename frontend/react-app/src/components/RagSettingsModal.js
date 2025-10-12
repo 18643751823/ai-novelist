@@ -2,15 +2,17 @@ import React, { useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setShowRagSettingsModal } from '../store/slices/chatSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faSave, faBook } from '@fortawesome/free-solid-svg-icons';
-import RagRepositoryManager from './RagRepositoryManager';
+import { faTimes, faSave, faBook, faDatabase } from '@fortawesome/free-solid-svg-icons';
+import RagKnowledgeBaseSettings from './RagKnowledgeBaseSettings';
+import MemorySettingsTab from './MemorySettingsTab';
 import NotificationModal from './NotificationModal';
 import './PromptManagerModal.css'; // 复用标签页样式
 
 const RagSettingsModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
-  const ragRepositoryRef = useRef(null);
-  // 不再使用标签页切换，只显示RAG知识库面板
+  const ragSettingsRef = useRef(null);
+  const memorySettingsRef = useRef(null);
+  // 不再使用标签页切换，两个面板同时显示
   const [notification, setNotification] = useState({
     isOpen: false,
     message: '',
@@ -37,24 +39,34 @@ const RagSettingsModal = ({ isOpen, onClose }) => {
     });
   };
 
-  // 保存处理函数 - 只保存RAG仓库设置
+  // 保存处理函数 - 同时保存两个面板
   const handleSave = () => {
     let saveSuccess = true;
     
-    // 保存 RAG 仓库设置
-    if (ragRepositoryRef.current && ragRepositoryRef.current.handleSave) {
+    // 保存 RAG 知识库设置
+    if (ragSettingsRef.current && ragSettingsRef.current.handleSave) {
       try {
-        ragRepositoryRef.current.handleSave();
+        ragSettingsRef.current.handleSave();
       } catch (error) {
-        console.error('RAG仓库保存失败:', error);
+        console.error('RAG知识库保存失败:', error);
+        saveSuccess = false;
+      }
+    }
+    
+    // 保存持久记忆设置
+    if (memorySettingsRef.current && memorySettingsRef.current.handleSave) {
+      try {
+        memorySettingsRef.current.handleSave();
+      } catch (error) {
+        console.error('持久记忆保存失败:', error);
         saveSuccess = false;
       }
     }
     
     if (saveSuccess) {
-      showNotification('RAG知识库设置保存成功');
+      showNotification('设置保存成功');
     } else {
-      showNotification('RAG知识库设置保存失败，请检查控制台', false);
+      showNotification('部分设置保存失败，请检查控制台', false);
     }
   };
 
@@ -74,15 +86,26 @@ const RagSettingsModal = ({ isOpen, onClose }) => {
             </button>
           </div>
           
-          {/* 只显示RAG知识库面板 */}
-          <div className="single-panel-container">
+          {/* 同时显示两个面板 */}
+          <div className="dual-panel-container">
             <div className="panel-section">
               <div className="panel-header">
                 <FontAwesomeIcon icon={faBook} />
                 <span>RAG知识库</span>
               </div>
-              <RagRepositoryManager
-                ref={ragRepositoryRef}
+              <RagKnowledgeBaseSettings
+                ref={ragSettingsRef}
+                onSaveComplete={showNotification}
+              />
+            </div>
+            
+            <div className="panel-section">
+              <div className="panel-header">
+                <FontAwesomeIcon icon={faDatabase} />
+                <span>持久记忆</span>
+              </div>
+              <MemorySettingsTab
+                ref={memorySettingsRef}
                 onSaveComplete={showNotification}
               />
             </div>

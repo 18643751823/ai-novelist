@@ -58,10 +58,19 @@ const chatSlice = createSlice({
     showApiSettingsModal: false,
     showRagSettingsModal: false,
     showGeneralSettingsModal: false,
-    showAdditionalInfoModal: false, // 新增：控制额外信息面板显示状态
     showHomePage: true, // 新增：控制主页面显示状态
     showWorkspacePanel: false, // 新增：控制工作区面板显示状态
     availableModels: [], // 新增：用于存储所有可用模型列表
+    // 新增：Flowise 集成状态
+    flowiseIntegration: {
+      serviceStatus: 'stopped', // stopped, starting, running, error
+      servicePort: 3001, // 使用 3001 端口，避免与 React 开发服务器冲突
+      baseURL: 'http://localhost:3001',
+      currentWorkflow: null,
+      workflows: [],
+      embeddedViewUrl: 'http://localhost:3001',
+      lastError: null
+    },
     customSystemPrompt: DEFAULT_SYSTEM_PROMPT, // 新增：自定义系统提示词（旧版，用于通用模式）
     customPrompts: { // 新增：每个模式的自定义提示词
       general: '',
@@ -317,9 +326,6 @@ const chatSlice = createSlice({
     setShowGeneralSettingsModal: (state, action) => {
       state.showGeneralSettingsModal = action.payload;
     },
-    setShowAdditionalInfoModal: (state, action) => { // 新增：设置额外信息面板显示状态
-      state.showAdditionalInfoModal = action.payload;
-    },
     setShowHomePage: (state, action) => { // 新增：设置主页面显示状态
       state.showHomePage = action.payload;
     },
@@ -505,6 +511,23 @@ const chatSlice = createSlice({
           n: 1
         };
       }
+    },
+    // 新增：Flowise 集成相关 reducer
+    setFlowiseServiceStatus: (state, action) => {
+      const { status, port, baseURL, lastError } = action.payload;
+      state.flowiseIntegration.serviceStatus = status;
+      if (port) state.flowiseIntegration.servicePort = port;
+      if (baseURL) state.flowiseIntegration.baseURL = baseURL;
+      if (lastError !== undefined) state.flowiseIntegration.lastError = lastError;
+    },
+    setFlowiseWorkflows: (state, action) => {
+      state.flowiseIntegration.workflows = action.payload;
+    },
+    setCurrentFlowiseWorkflow: (state, action) => {
+      state.flowiseIntegration.currentWorkflow = action.payload;
+    },
+    setFlowiseEmbeddedViewUrl: (state, action) => {
+      state.flowiseIntegration.embeddedViewUrl = action.payload;
     },
     // 新增：批量设置所有模式的AI参数
     setAiParametersForAllModes: (state, action) => {
@@ -845,7 +868,6 @@ export const {
   setShowApiSettingsModal,
   setShowRagSettingsModal,
   setShowGeneralSettingsModal,
-  setShowAdditionalInfoModal, // 新增：导出 setShowAdditionalInfoModal
   setShowHomePage, // 新增：导出 setShowHomePage
   setShowWorkspacePanel, // 新增：导出 setShowWorkspacePanel
   setDeepseekApiKey,
@@ -881,6 +903,11 @@ export const {
   setAiParametersForAllModes, // 新增：导出 setAiParametersForAllModes
   setStreamingState, // 新增：导出 setStreamingState
   stopStreaming, // 新增：导出 stopStreaming
+  // 新增：Flowise 集成相关 action
+  setFlowiseServiceStatus,
+  setFlowiseWorkflows,
+  setCurrentFlowiseWorkflow,
+  setFlowiseEmbeddedViewUrl,
   deleteMessage,
   startEditing,
   // submitEdit,

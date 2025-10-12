@@ -8,7 +8,6 @@ import OverlayPanel from './OverlayPanel'; // 引入覆盖层组件
 import ApiSettingsModal from './ApiSettingsModal'; // 引入API设置模态框
 import RagSettingsModal from './RagSettingsModal'; // 引入RAG设置模态框
 import GeneralSettingsModal from './GeneralSettingsModal'; // 引入通用设置模态框
-import AdditionalInfoModal from './AdditionalInfoModal'; // 引入额外信息模态框
 import WorkspacePanel from './WorkspacePanel'; // 引入工作区面板
 
 function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
@@ -21,12 +20,11 @@ function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
   const showApiSettingsModal = useSelector(state => state.chat.showApiSettingsModal);
   const showRagSettingsModal = useSelector(state => state.chat.showRagSettingsModal);
   const showGeneralSettingsModal = useSelector(state => state.chat.showGeneralSettingsModal);
-  const showAdditionalInfoModal = useSelector(state => state.chat.showAdditionalInfoModal);
   const showWorkspacePanel = useSelector(state => state.chat.showWorkspacePanel);
   
   // 如果有任何模态框打开，就显示覆盖层
   const showOverlay = showApiSettingsModal || showRagSettingsModal ||
-                     showGeneralSettingsModal || showAdditionalInfoModal || showWorkspacePanel;
+                     showGeneralSettingsModal || showWorkspacePanel;
 
   // 处理左侧面板尺寸变化
   const handleLeftPanelChange = (size) => {
@@ -100,9 +98,6 @@ function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
         )}
         {showGeneralSettingsModal && (
           <GeneralSettingsModal isOpen={showGeneralSettingsModal} />
-        )}
-        {showAdditionalInfoModal && (
-          <AdditionalInfoModal isOpen={showAdditionalInfoModal} />
         )}
         {showWorkspacePanel && (
           <WorkspacePanel isOpen={showWorkspacePanel} />

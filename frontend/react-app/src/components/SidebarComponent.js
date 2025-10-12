@@ -4,7 +4,6 @@ import {
   setShowApiSettingsModal,
   setShowRagSettingsModal,
   setShowGeneralSettingsModal,
-  setShowAdditionalInfoModal,
   setShowHomePage,
   setShowWorkspacePanel
 } from '../store/slices/chatSlice';
@@ -14,8 +13,7 @@ import {
   faBook,
   faRobot,
   faPencil,
-  faBriefcase,
-  faInfoCircle
+  faBriefcase
 } from '@fortawesome/free-solid-svg-icons';
 import './SidebarComponent.css';
 
@@ -27,7 +25,6 @@ const SidebarComponent = () => {
   const showApiSettingsModal = useSelector(state => state.chat.showApiSettingsModal);
   const showRagSettingsModal = useSelector(state => state.chat.showRagSettingsModal);
   const showGeneralSettingsModal = useSelector(state => state.chat.showGeneralSettingsModal);
-  const showAdditionalInfoModal = useSelector(state => state.chat.showAdditionalInfoModal);
   const showHomePage = useSelector(state => state.chat.showHomePage);
   const showWorkspacePanel = useSelector(state => state.chat.showWorkspacePanel);
 
@@ -36,7 +33,6 @@ const SidebarComponent = () => {
     dispatch(setShowApiSettingsModal(false));
     dispatch(setShowRagSettingsModal(false));
     dispatch(setShowGeneralSettingsModal(false));
-    dispatch(setShowAdditionalInfoModal(false));
     dispatch(setShowWorkspacePanel(false));
     dispatch(setShowHomePage(true));
   };
@@ -69,7 +65,6 @@ const SidebarComponent = () => {
           dispatch(setShowApiSettingsModal(false));
           dispatch(setShowRagSettingsModal(false));
           dispatch(setShowGeneralSettingsModal(false));
-          dispatch(setShowAdditionalInfoModal(false));
           dispatch(setShowWorkspacePanel(true));
           setActiveItem('workspace');
         }
@@ -91,7 +86,6 @@ const SidebarComponent = () => {
           dispatch(setShowWorkspacePanel(false));
           dispatch(setShowRagSettingsModal(false));
           dispatch(setShowGeneralSettingsModal(false));
-          dispatch(setShowAdditionalInfoModal(false));
           dispatch(setShowApiSettingsModal(true));
           setActiveItem('api-settings');
         }
@@ -113,7 +107,6 @@ const SidebarComponent = () => {
           dispatch(setShowWorkspacePanel(false));
           dispatch(setShowApiSettingsModal(false));
           dispatch(setShowGeneralSettingsModal(false));
-          dispatch(setShowAdditionalInfoModal(false));
           dispatch(setShowRagSettingsModal(true));
           setActiveItem('rag-settings');
         }
@@ -135,31 +128,8 @@ const SidebarComponent = () => {
           dispatch(setShowWorkspacePanel(false));
           dispatch(setShowApiSettingsModal(false));
           dispatch(setShowRagSettingsModal(false));
-          dispatch(setShowAdditionalInfoModal(false));
           dispatch(setShowGeneralSettingsModal(true));
           setActiveItem('general-settings');
-        }
-      }
-    },
-    {
-      id: 'additional-info',
-      icon: faInfoCircle,
-      label: '额外信息',
-      action: () => {
-        if (showAdditionalInfoModal) {
-          // 如果当前已经打开，则关闭
-          dispatch(setShowAdditionalInfoModal(false));
-          dispatch(setShowHomePage(true));
-          setActiveItem(null);
-        } else {
-          // 如果当前未打开，则关闭其他模态框并打开当前模态框
-          dispatch(setShowHomePage(false));
-          dispatch(setShowWorkspacePanel(false));
-          dispatch(setShowApiSettingsModal(false));
-          dispatch(setShowRagSettingsModal(false));
-          dispatch(setShowGeneralSettingsModal(false));
-          dispatch(setShowAdditionalInfoModal(true));
-          setActiveItem('additional-info');
         }
       }
     }
@@ -177,8 +147,6 @@ const SidebarComponent = () => {
       setActiveItem('rag-settings');
     } else if (showGeneralSettingsModal) {
       setActiveItem('general-settings');
-    } else if (showAdditionalInfoModal) {
-      setActiveItem('additional-info');
     } else if (showWorkspacePanel) {
       setActiveItem('workspace');
     } else if (showHomePage) {
@@ -186,7 +154,7 @@ const SidebarComponent = () => {
     } else {
       setActiveItem(null);
     }
-  }, [showApiSettingsModal, showRagSettingsModal, showGeneralSettingsModal, showAdditionalInfoModal, showWorkspacePanel, showHomePage]);
+  }, [showApiSettingsModal, showRagSettingsModal, showGeneralSettingsModal, showWorkspacePanel, showHomePage]);
 
   return (
     <div className="sidebar">

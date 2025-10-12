@@ -11,7 +11,7 @@ import { faSave } from '@fortawesome/free-solid-svg-icons';
 import useIpcRenderer from '../hooks/useIpcRenderer';
 import FileSearch from './FileSearch';
 
-const AdditionalInfoTab = forwardRef(({ onSaveComplete }, ref) => {
+const MemorySettingsTab = forwardRef(({ onSaveComplete }, ref) => {
   const dispatch = useDispatch();
   const { invoke } = useIpcRenderer();
   const { additionalInfo } = useSelector((state) => state.chat);
@@ -108,13 +108,13 @@ const AdditionalInfoTab = forwardRef(({ onSaveComplete }, ref) => {
 
       // 通知保存成功
       if (onSaveComplete) {
-        onSaveComplete('额外信息设置保存成功！', true);
+        onSaveComplete('持久记忆设置保存成功！', true);
       }
     } catch (error) {
-      console.error('保存额外信息设置失败:', error);
+      console.error('保存持久记忆设置失败:', error);
       // 通知保存失败
       if (onSaveComplete) {
-        onSaveComplete('额外信息设置保存失败，请重试。', false);
+        onSaveComplete('持久记忆设置保存失败，请重试。', false);
       }
     }
   };
@@ -152,10 +152,10 @@ const AdditionalInfoTab = forwardRef(({ onSaveComplete }, ref) => {
         </select>
       </div>
 
-      {/* 额外信息编辑器 */}
+      {/* 持久记忆编辑器 */}
       <div className="memory-editor">
         <h4 style={{ margin: '0 0 15px 0', color: '#ddd', fontSize: '18px', borderBottom: '2px solid #555', paddingBottom: '10px' }}>
-          {getModeDisplayName(selectedMode)}模式额外信息:
+          {getModeDisplayName(selectedMode)}模式持久记忆:
         </h4>
         
         <div className="memory-field" style={{ marginBottom: '20px' }}>
@@ -219,4 +219,4 @@ const AdditionalInfoTab = forwardRef(({ onSaveComplete }, ref) => {
   );
 });
 
-export default AdditionalInfoTab;
+export default MemorySettingsTab;

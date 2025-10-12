@@ -24,12 +24,14 @@ async function initializeServices() {
   const stateService = require('./state-manager');
   const engine = require('./engine'); // 直接导入对象，不再尝试将其作为函数调用
   const filesystemClient = new MCPService(path.join(process.cwd(), 'novel'));
+  const flowiseService = require('./flowise-service');
 
   _services = {
     toolService,
     stateService,
     engine,
     filesystem: filesystemClient,
+    flowiseService,
     logService: {
       writeLog: (msg) => console.log('[LOG]', msg)
     }

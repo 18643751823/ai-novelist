@@ -663,7 +663,7 @@ const ChatPanel = memo(() => {
       const currentModeAiParameters = aiParameters[currentMode] || {
         temperature: 0.7,
         top_p: 0.7,
-        n: 1
+        n: 1,
       };
 
       await invoke('process-command', {
