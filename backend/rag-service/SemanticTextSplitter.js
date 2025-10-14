@@ -47,9 +47,19 @@ class SemanticTextSplitter {
             }
             
             console.log(`[SemanticTextSplitter] 加载后的分段参数: chunkSize=${this.options.chunkSize}, chunkOverlap=${this.options.chunkOverlap}`);
+            
+            // 更新分割器配置
+            this.updateSplitter();
         }
     }
 
+    /**
+     * 重新加载分段参数（用于store值更新后）
+     */
+    reloadSettings() {
+        console.log(`[SemanticTextSplitter] 重新加载分段参数...`);
+        this.loadSettingsFromStore();
+    }
     /**
      * 设置存储实例以便获取配置
      * @param {Object} store electron-store实例

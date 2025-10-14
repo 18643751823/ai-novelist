@@ -9,11 +9,14 @@ class RagIpcHandler {
     }
 
     /**
-     * 设置存储实例以便TableManager使用
+     * 设置存储实例以便TableManager和KnowledgeBaseManager使用
      * @param {Object} store electron-store实例
      */
     setStore(store) {
         this.tableManager.setStore(store);
+        // 同时设置KnowledgeBaseManager的store实例，确保SemanticTextSplitter能获取最新配置
+        const KnowledgeBaseManager = require('./knowledgeBaseManager');
+        KnowledgeBaseManager.setStore(store);
     }
 
     /**
@@ -164,6 +167,13 @@ class RagIpcHandler {
             // 保存到store
             this.tableManager.storeInstance.set('ragChunkSize', chunkSize);
             this.tableManager.storeInstance.set('ragChunkOverlap', chunkOverlap);
+            
+            // 重新加载KnowledgeBaseManager中的SemanticTextSplitter参数
+            const KnowledgeBaseManager = require('./knowledgeBaseManager');
+            if (KnowledgeBaseManager.textSplitter && KnowledgeBaseManager.textSplitter.reloadSettings) {
+                KnowledgeBaseManager.textSplitter.reloadSettings();
+                console.log(`[RagIpcHandler] SemanticTextSplitter参数已重新加载`);
+            }
             
             return {
                 success: true,
