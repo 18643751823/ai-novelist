@@ -1,12 +1,11 @@
 import React, { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import './App.css';
 import LayoutComponent from './components/LayoutComponent';
-import EditorPanel from './components/EditorPanel';
-import ChatPanel from './components/ChatPanel';
-import ChapterTreePanel from './components/ChapterTreePanel';
+import EditorPanel from './components/editor/EditorPanel';
+import ChatPanel from './components/chat/ChatPanel';
+import ChapterTreePanel from './components/chapter/ChapterTreePanel';
 import { registerMainIpcListeners } from './ipc/mainIpcHandler'; // 导入新的 IPC 处理模块
-import flowiseIpcHandler from './ipc/flowiseIpcHandler'; // 导入 Flowise IPC 处理器
 import { setNovelContent, setCurrentFile, triggerChapterRefresh } from './store/slices/novelSlice';
 import useIpcRenderer from './hooks/useIpcRenderer';
 import {
@@ -52,13 +51,6 @@ function App() {
   useEffect(() => {
     const cleanupListeners = registerMainIpcListeners(dispatch); // 注册 IPC 监听器
 
-    // 初始化 Flowise IPC 处理器
-    flowiseIpcHandler.initialize(dispatch);
-
-    // 项目启动时自动检查 Flowise 服务状态
-    setTimeout(() => {
-      flowiseIpcHandler.getServiceStatus();
-    }, 2000);
 
     // 项目启动时加载所有设置
     const loadAppSettings = async () => {
@@ -166,7 +158,6 @@ function App() {
 
     return () => {
       cleanupListeners(); // 清理监听器
-      flowiseIpcHandler.cleanup(); // 清理 Flowise IPC 处理器
     };
   }, [dispatch, getStoreValue]); // 依赖 dispatch 和 getStoreValue
 

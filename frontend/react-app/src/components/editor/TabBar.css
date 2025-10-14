@@ -1,0 +1,137 @@
+.tab-bar {
+  display: flex;
+  background-color: #252526;
+  border-bottom: 1px solid #3c3c3c;
+  padding: 0 5px;
+  user-select: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scroll-behavior: smooth;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-right: 1px solid #3c3c3c;
+  color: #9e9e9e;
+  background-color: #2d2d2d;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tab-item:hover {
+  background-color: #3e3e3e;
+}
+
+.tab-item.active {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border-bottom: 2px solid #007acc; /* Active tab indicator */
+}
+
+.tab-title {
+  margin-right: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.dirty-indicator {
+  font-weight: bold;
+  color: #007acc;
+  margin-left: -4px;
+  margin-right: 8px;
+}
+
+.close-tab-button {
+  background: none;
+  border: none;
+  color: #9e9e9e;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.close-tab-button:hover {
+  background-color: #555;
+  color: #fff;
+}
+
+/* 已删除标签页的样式 */
+.tab-item.deleted {
+  opacity: 0.6;
+  background-color: #3a1f1f;
+  color: #ff6b6b;
+}
+
+.tab-item.deleted .tab-title {
+  text-decoration: line-through;
+}
+
+.deleted-indicator {
+  margin-left: 4px;
+  margin-right: 8px;
+  font-size: 12px;
+}
+
+
+/* 隐藏滚动条样式 */
+.tab-bar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tab-bar::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+
+.tab-bar::-webkit-scrollbar-thumb {
+  background: #5a5a5a;
+  border-radius: 3px;
+}
+
+.tab-bar::-webkit-scrollbar-thumb:hover {
+  background: #7a7a7a;
+}
+
+/* 拖动排序样式 */
+.tab-item.dragging {
+  opacity: 0.5;
+  background-color: #3a3a3a !important;
+}
+
+.tab-item.drag-over-left {
+  border-left: 2px solid #007acc;
+}
+
+.tab-item.drag-over-right {
+  border-right: 2px solid #007acc;
+}
+
+/* 标签栏操作按钮 */
+.tab-actions {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  border-left: 1px solid #3c3c3c;
+}
+
+.split-view-toggle {
+  background: #3c3c3c;
+  border: none;
+  color: #cccccc;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.split-view-toggle:hover {
+  background: #4a4a4a;
+  color: #ffffff;
+}

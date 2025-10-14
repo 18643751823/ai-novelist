@@ -262,6 +262,59 @@ validateConfig(config) {
 }
 
   /**
+   * 获取嵌入模型的维度
+   * @param {string} modelId - 模型ID
+   * @returns {Promise<number>} 嵌入维度
+   */
+  async getEmbeddingDimensions(modelId) {
+    try {
+      const client = this._getClient();
+      if (!client) {
+        throw new Error('SiliconFlow 客户端未初始化，请检查 API 密钥配置');
+      }
+
+      // 检查是否为嵌入模型
+      if (!this.isEmbeddingModel(modelId)) {
+        throw new Error(`模型 ${modelId} 不是嵌入模型`);
+      }
+
+      // 构建请求体
+      const requestBody = {
+        model: modelId,
+        input: 'test',
+        encoding_format: 'float'
+      };
+
+      // 发送测试请求获取嵌入向量
+      const response = await global.fetch(`${this.baseURL}/embeddings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`硅基流动API请求失败: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      // 从响应中提取嵌入向量长度
+      if (data.data && data.data.length > 0 && data.data[0].embedding) {
+        return data.data[0].embedding.length;
+      } else {
+        throw new Error('无法从响应中获取嵌入向量');
+      }
+    } catch (error) {
+      console.error(`获取 SiliconFlow 模型 ${modelId} 嵌入维度失败:`, error);
+      throw this._standardizeError(error, '获取嵌入维度失败');
+    }
+  }
+
+  /**
    * 更新配置
    * @param {Object} newConfig - 新配置
    * @returns {Promise<void>}

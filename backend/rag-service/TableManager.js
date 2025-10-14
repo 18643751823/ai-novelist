@@ -1,4 +1,3 @@
-
 const lancedb = require('@lancedb/lancedb');
 const path = require('path');
 const fs = require('fs').promises;
@@ -38,15 +37,15 @@ class TableManager {
 
     /**
      * 重新初始化嵌入函数，用于API Key更新后刷新嵌入功能
-     * @returns {boolean} 重新初始化是否成功
+     * @returns {Promise<boolean>} 重新初始化是否成功
      */
-    reinitializeEmbeddingFunction() {
+    async reinitializeEmbeddingFunction() {
         try {
             console.log("[TableManager] 重新初始化嵌入函数...");
-            this.initializeEmbeddingFunction();
+            await this.initializeEmbeddingFunction();
             
             // 重新加载所有现有表以使用新的嵌入函数
-            this.reloadTablesWithNewEmbeddingFunction();
+            await this.reloadTablesWithNewEmbeddingFunction();
             
             console.log("[TableManager] 嵌入函数重新初始化成功");
             return true;
@@ -55,7 +54,6 @@ class TableManager {
             return false;
         }
     }
-
     /**
      * 重新加载所有现有表以使用新的嵌入函数
      */
@@ -83,9 +81,9 @@ class TableManager {
     /**
      * 初始化嵌入函数（启动时一次性初始化）
      */
-    initializeEmbeddingFunction() {
+    async initializeEmbeddingFunction() {
         try {
-            const { embeddingModel, apiKeys } = this.getEmbeddingSettingsFromStore();
+            const { embeddingModel, apiKeys, embeddingDimensions } = this.getEmbeddingSettingsFromStore();
             
             if (!embeddingModel) {
                 console.warn("[TableManager] 嵌入模型未设置，嵌入功能将不可用");
@@ -93,14 +91,34 @@ class TableManager {
                 return;
             }
 
-            this.embeddingFunction = new EmbeddingFunction(embeddingModel, apiKeys);
-            console.log(`[TableManager] 嵌入函数初始化成功，使用模型: ${embeddingModel}`);
+            // 优先使用从模型获取的实际维度，如果无法获取则使用store中的值
+            let dimensions = embeddingDimensions;
+            
+            // 如果store中没有维度设置或使用默认值，尝试从模型获取实际维度
+            if (!dimensions || dimensions === 1024) {
+                try {
+                    const { getModelRegistry } = require('../engine/models/modelProvider');
+                    const modelRegistry = getModelRegistry();
+                    const adapter = modelRegistry.getAdapterForModel(embeddingModel);
+                    if (adapter && adapter.getEmbeddingDimensions) {
+                        const modelDimensions = await adapter.getEmbeddingDimensions(embeddingModel);
+                        if (modelDimensions && modelDimensions > 0) {
+                            dimensions = modelDimensions;
+                            console.log(`[TableManager] 使用模型实际维度: ${dimensions}`);
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`[TableManager] 无法获取模型 ${embeddingModel} 的维度，使用store值: ${dimensions}`, error);
+                }
+            }
+
+            this.embeddingFunction = new EmbeddingFunction(embeddingModel, apiKeys, dimensions);
+            console.log(`[TableManager] 嵌入函数初始化成功，使用模型: ${embeddingModel}, 维度: ${dimensions}`);
         } catch (error) {
             console.error("[TableManager] 嵌入函数初始化失败:", error);
             this.embeddingFunction = null;
         }
     }
-
     /**
      * 从store获取嵌入设置
      * @returns {Object} 包含embeddingModel和apiKeys的对象
@@ -108,10 +126,11 @@ class TableManager {
     getEmbeddingSettingsFromStore() {
         if (!this.storeInstance) {
             console.warn("[TableManager] store实例未设置，无法获取嵌入设置");
-            return { embeddingModel: '', apiKeys: {} };
+            return { embeddingModel: '', apiKeys: {}, embeddingDimensions: 1024 };
         }
         
         const embeddingModel = this.storeInstance.get('embeddingModel') || '';
+        const embeddingDimensions = this.storeInstance.get('embeddingDimensions') || 1024;
         const apiKeys = {
             aliyun: this.storeInstance.get('aliyunApiKey') || '',
             aliyunEmbedding: this.storeInstance.get('aliyunEmbeddingApiKey') || '',
@@ -121,7 +140,7 @@ class TableManager {
             siliconflow: this.storeInstance.get('siliconflowApiKey') || ''
         };
         
-        return { embeddingModel, apiKeys };
+        return { embeddingModel, apiKeys, embeddingDimensions };
     }
 
     /**
@@ -179,7 +198,7 @@ class TableManager {
             console.log("[TableManager] 开始初始化...");
             
             // 初始化嵌入函数（会自动从store读取最新API Key）
-            this.initializeEmbeddingFunction();
+            await this.initializeEmbeddingFunction();
             
             // 首先从持久化存储加载表元数据
             this.loadTableMetadataFromStore();
@@ -207,7 +226,8 @@ class TableManager {
                             filename: this.extractFilenameFromTableName(tableName),
                             originalFilename: this.extractFilenameFromTableName(tableName),
                             createdAt: new Date().toISOString(),
-                            documentCount: 0
+                            documentCount: 0,
+                            embeddingDimensions: this.embeddingFunction.getDimensions() // 保存嵌入函数实际使用的维度
                         });
                         
                         // 获取表中的文档数量
@@ -318,9 +338,10 @@ class TableManager {
         try {
             console.log(`[TableManager] 创建新表: ${tableName}`);
             
-            // 创建新表 - 需要提供空数据来创建表结构
+            // 创建新表 - 使用嵌入函数的实际维度
+            const dimensions = this.embeddingFunction.getDimensions();
             const table = await this.db.createTable(tableName, [
-                { id: "dummy", vector: Array(1024).fill(0), text: "", metadata: "{}" }
+                { id: "dummy", vector: Array(dimensions).fill(0), text: "", metadata: "{}" }
             ]);
             
             // 注册表和元数据
@@ -329,7 +350,8 @@ class TableManager {
                 filename: path.basename(filename),
                 originalFilename: path.basename(filename), // 保存原始文件名
                 createdAt: new Date().toISOString(),
-                documentCount: 0
+                documentCount: 0,
+                embeddingDimensions: this.embeddingFunction.getDimensions() // 保存嵌入函数实际使用的维度
             });
             
             // 保存元数据到持久化存储
@@ -352,7 +374,8 @@ class TableManager {
                     filename: path.basename(filename),
                     originalFilename: path.basename(filename), // 保存原始文件名
                     createdAt: new Date().toISOString(),
-                    documentCount: count
+                    documentCount: count,
+                    embeddingDimensions: this.embeddingFunction.getDimensions() // 保存嵌入函数实际使用的维度
                 });
                 
                 // 保存元数据到持久化存储
@@ -396,7 +419,8 @@ class TableManager {
                     this.tableMetadata.set(tableName, {
                         filename: this.extractFilenameFromTableName(tableName),
                         createdAt: new Date().toISOString(),
-                        documentCount: count
+                        documentCount: count,
+                        embeddingDimensions: this.embeddingFunction.getDimensions() // 保存嵌入函数实际使用的维度
                     });
                 }
                 
@@ -411,7 +435,8 @@ class TableManager {
                     tableName: tableName,
                     filename: metadata.filename,
                     createdAt: metadata.createdAt,
-                    documentCount: metadata.documentCount
+                    documentCount: metadata.documentCount,
+                    embeddingDimensions: metadata.embeddingDimensions || this.embeddingFunction.getDimensions() // 返回嵌入函数实际使用的维度
                 });
                 
             } catch (error) {
@@ -423,7 +448,8 @@ class TableManager {
                         tableName: tableName,
                         filename: metadata.filename,
                         createdAt: metadata.createdAt,
-                        documentCount: metadata.documentCount
+                        documentCount: metadata.documentCount,
+                        embeddingDimensions: metadata.embeddingDimensions || this.embeddingFunction.getDimensions() // 返回嵌入函数实际使用的维度
                     });
                 }
             }
@@ -616,17 +642,21 @@ class TableManager {
 
         try {
             console.log(`[TableManager] 在多表中查询: "${queryText}"`);
-            console.log(`[TableManager] 目标表数量: ${targetTables.length}`);
+            console.log(`[TableManager] 目标表数量: ${targetTables.length}, 期望总结果数: ${nResults}`);
             
             // 生成查询文本的嵌入向量
             const queryEmbedding = await this.embeddingFunction.generate([queryText]);
             const queryVector = queryEmbedding[0];
             
             // 并行查询所有目标表
+            // 计算每个表应该返回的结果数量，确保总结果数不超过 nResults
+            const resultsPerTable = Math.max(1, Math.ceil(nResults / targetTables.length));
+            console.log(`[TableManager] 每个表返回结果数: ${resultsPerTable}`);
+            
             const queries = targetTables.map(table => {
                 // 使用LanceDB的向量搜索
                 return table.search(queryVector)
-                    .limit(nResults)
+                    .limit(resultsPerTable)
                     .toArray()
                     .catch(error => {
                         console.warn(`[TableManager] 表查询失败:`, error);
@@ -638,9 +668,12 @@ class TableManager {
             
             // 合并和排序结果
             const mergedResults = this.mergeTableQueryResults(results);
-            console.log(`[TableManager] 查询完成，共找到 ${mergedResults.length} 个相关片段`);
             
-            return mergedResults;
+            // 确保返回的结果数量不超过 nResults
+            const finalResults = mergedResults.slice(0, nResults);
+            console.log(`[TableManager] 查询完成，共找到 ${mergedResults.length} 个相关片段，返回 ${finalResults.length} 个片段`);
+            
+            return finalResults;
             
         } catch (error) {
             console.error("[TableManager] 多表查询失败:", error);
@@ -694,6 +727,8 @@ class TableManager {
         
         try {
             // 生成嵌入向量
+            const dimensions = this.embeddingFunction.getDimensions();
+            console.log(`[TableManager] 开始生成嵌入向量，维度: ${dimensions}, 文档数量: ${documents.length}`);
             const embeddings = await this.embeddingFunction.generate(documents);
             
             // 准备要插入的数据
@@ -707,10 +742,12 @@ class TableManager {
             // 插入数据到表
             await table.add(dataToInsert);
             
-            // 更新文档计数
+            // 更新文档计数和嵌入维度
             const metadata = this.tableMetadata.get(this.normalizeTableName(filename));
             if (metadata) {
                 metadata.documentCount += documents.length;
+                // 保存嵌入函数实际使用的维度
+                metadata.embeddingDimensions = dimensions;
             }
             
             return { success: true };
@@ -753,6 +790,50 @@ class TableManager {
      */
     async renameCollection(oldFilename, newFilename) {
         return this.renameTable(oldFilename, newFilename);
+    }
+
+    /**
+     * 设置嵌入维度
+     * @param {number} dimensions 嵌入维度
+     * @returns {Promise<boolean>} 设置是否成功
+     */
+    async setEmbeddingDimensions(dimensions) {
+        try {
+            if (!dimensions || dimensions <= 0) {
+                console.error('[TableManager] 嵌入维度必须为正整数');
+                return false;
+            }
+
+            // 保存到store
+            if (this.storeInstance) {
+                this.storeInstance.set('embeddingDimensions', dimensions);
+                console.log(`[TableManager] 嵌入维度已保存到store: ${dimensions}`);
+            }
+
+            // 重新初始化嵌入函数以应用新的维度设置
+            await this.initializeEmbeddingFunction();
+            
+            // 重新加载所有现有表以使用新的嵌入函数
+            await this.reloadTablesWithNewEmbeddingFunction();
+            
+            console.log(`[TableManager] 嵌入维度设置成功: ${dimensions}`);
+            return true;
+        } catch (error) {
+            console.error('[TableManager] 设置嵌入维度失败:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 获取当前嵌入维度
+     * @returns {number} 当前维度
+     */
+    getEmbeddingDimensions() {
+        if (this.storeInstance) {
+            const storedDimensions = this.storeInstance.get('embeddingDimensions');
+            return storedDimensions || 1024;
+        }
+        return 1024;
     }
 }
 

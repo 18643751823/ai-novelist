@@ -49,6 +49,7 @@ const chatSlice = createSlice({
     openrouterApiKey: '',
     siliconflowApiKey: '', // 新增：硅基流动API Key
     aliyunApiKey: '', // 新增：阿里云百炼API Key
+    aliyunEmbeddingApiKey: '', // 新增：阿里云嵌入API Key
     embeddingModel: '', // 新增：嵌入模型
     ollamaBaseUrl: 'http://127.0.0.1:11434', // 新增：Ollama服务地址
     intentAnalysisModel: '', // 新增：意图分析模型
@@ -60,17 +61,8 @@ const chatSlice = createSlice({
     showGeneralSettingsModal: false,
     showHomePage: true, // 新增：控制主页面显示状态
     showWorkspacePanel: false, // 新增：控制工作区面板显示状态
+    showPersistentMemoryPanel: false, // 新增：控制持久记忆面板显示状态
     availableModels: [], // 新增：用于存储所有可用模型列表
-    // 新增：Flowise 集成状态
-    flowiseIntegration: {
-      serviceStatus: 'stopped', // stopped, starting, running, error
-      servicePort: 3001, // 使用 3001 端口，避免与 React 开发服务器冲突
-      baseURL: 'http://localhost:3001',
-      currentWorkflow: null,
-      workflows: [],
-      embeddedViewUrl: 'http://localhost:3001',
-      lastError: null
-    },
     customSystemPrompt: DEFAULT_SYSTEM_PROMPT, // 新增：自定义系统提示词（旧版，用于通用模式）
     customPrompts: { // 新增：每个模式的自定义提示词
       general: '',
@@ -82,6 +74,7 @@ const chatSlice = createSlice({
     editingMessageId: null, // 新增：用于跟踪正在编辑的消息ID
     ragRetrievalEnabled: false, // 新增：RAG检索启用状态（全局默认）
     // 新增：每个模式的功能启用状态（工具功能已硬编码，只保留RAG检索）
+    // 注意：自定义模式的状态会在运行时动态创建
     modeFeatureSettings: {
       general: {
         ragRetrievalEnabled: false,
@@ -101,6 +94,7 @@ const chatSlice = createSlice({
       }
     },
     // 新增：上下文限制设置
+    // 注意：自定义模式的上下文限制设置会在运行时动态创建
     contextLimitSettings: {
       modes: {
         general: {
@@ -122,6 +116,7 @@ const chatSlice = createSlice({
       }
     },
     // 新增：附加信息/持久记忆
+    // 注意：自定义模式的附加信息会在运行时动态创建
     additionalInfo: {
       general: {
         outline: '',
@@ -148,6 +143,7 @@ const chatSlice = createSlice({
     isCreationModeEnabled: true,
     showCreationModal: false,
     // 新增：AI参数设置（按模式管理）
+    // 注意：自定义模式的AI参数会在运行时动态创建
     aiParameters: {
       general: {
         temperature: 0.7,
@@ -170,6 +166,9 @@ const chatSlice = createSlice({
         n: 1
       }
     },
+    // 新增：检索设置
+    retrievalTopK: 3, // 默认返回3个文档片段
+    
     // 新增：停止功能相关状态
     isStreaming: false, // 是否正在流式传输
     abortController: null // 用于中止请求的控制器
@@ -332,6 +331,9 @@ const chatSlice = createSlice({
     setShowWorkspacePanel: (state, action) => { // 新增：设置工作区面板显示状态
       state.showWorkspacePanel = action.payload;
     },
+    setShowPersistentMemoryPanel: (state, action) => { // 新增：设置持久记忆面板显示状态
+      state.showPersistentMemoryPanel = action.payload;
+    },
     setDeepseekApiKey: (state, action) => {
       state.deepseekApiKey = action.payload;
     },
@@ -355,6 +357,9 @@ const chatSlice = createSlice({
     },
     setIntentAnalysisModel: (state, action) => { // 新增：设置意图分析模型
       state.intentAnalysisModel = action.payload;
+    },
+    setAliyunEmbeddingApiKey: (state, action) => { // 新增：设置阿里云嵌入API Key
+      state.aliyunEmbeddingApiKey = action.payload;
     },
     setAvailableModels: (state, action) => { // 新增：设置可用模型列表
         state.availableModels = action.payload;
@@ -512,23 +517,6 @@ const chatSlice = createSlice({
         };
       }
     },
-    // 新增：Flowise 集成相关 reducer
-    setFlowiseServiceStatus: (state, action) => {
-      const { status, port, baseURL, lastError } = action.payload;
-      state.flowiseIntegration.serviceStatus = status;
-      if (port) state.flowiseIntegration.servicePort = port;
-      if (baseURL) state.flowiseIntegration.baseURL = baseURL;
-      if (lastError !== undefined) state.flowiseIntegration.lastError = lastError;
-    },
-    setFlowiseWorkflows: (state, action) => {
-      state.flowiseIntegration.workflows = action.payload;
-    },
-    setCurrentFlowiseWorkflow: (state, action) => {
-      state.flowiseIntegration.currentWorkflow = action.payload;
-    },
-    setFlowiseEmbeddedViewUrl: (state, action) => {
-      state.flowiseIntegration.embeddedViewUrl = action.payload;
-    },
     // 新增：批量设置所有模式的AI参数
     setAiParametersForAllModes: (state, action) => {
       const { parameters } = action.payload;
@@ -538,6 +526,11 @@ const chatSlice = createSlice({
         }
       }
     },
+    // 新增：设置检索返回文档片段数
+    setRetrievalTopK: (state, action) => {
+      state.retrievalTopK = action.payload;
+    },
+    
     // 新增：停止功能相关reducer
     setStreamingState: (state, action) => {
       const { isStreaming, abortController } = action.payload;
@@ -870,6 +863,7 @@ export const {
   setShowGeneralSettingsModal,
   setShowHomePage, // 新增：导出 setShowHomePage
   setShowWorkspacePanel, // 新增：导出 setShowWorkspacePanel
+  setShowPersistentMemoryPanel, // 新增：导出 setShowPersistentMemoryPanel
   setDeepseekApiKey,
   setOpenaiApiKey, // 新增
   setOpenrouterApiKey,
@@ -903,11 +897,7 @@ export const {
   setAiParametersForAllModes, // 新增：导出 setAiParametersForAllModes
   setStreamingState, // 新增：导出 setStreamingState
   stopStreaming, // 新增：导出 stopStreaming
-  // 新增：Flowise 集成相关 action
-  setFlowiseServiceStatus,
-  setFlowiseWorkflows,
-  setCurrentFlowiseWorkflow,
-  setFlowiseEmbeddedViewUrl,
+  setRetrievalTopK, // 新增：导出 setRetrievalTopK
   deleteMessage,
   startEditing,
   // submitEdit,

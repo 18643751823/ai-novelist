@@ -1,4 +1,4 @@
-const BaseModelAdapter = require('./adapters/baseAdapter');
+const BaseModelAdapter = require('./BaseModelAdapter');
 
 class ModelRegistry {
     constructor() {

@@ -387,4 +387,9 @@ export const {
   setSplitViewLayout,
   setSplitViewTabs,
 } = novelSlice.actions;
+
+// 为兼容性添加别名导出
+export const endDiff = rejectSuggestion;
+export const setNovelContent = updateTabContent;
+export const setCurrentFile = setActiveTab;
 export default novelSlice.reducer;

@@ -270,8 +270,18 @@ async function* chatWithAI(messages, modelId, customSystemPrompt, mode = 'genera
                ragCollectionNames = null; // 出错时也跳过检索
            }
            
+           // 获取存储的检索设置
+           let retrievalTopK = 3; // 默认值
+           try {
+               const storeInstance = await getStoreInstance();
+               retrievalTopK = storeInstance.get('retrievalTopK') || 3;
+               console.log(`[ChatService] 使用检索设置: topK=${retrievalTopK}`);
+           } catch (error) {
+               console.warn('[ChatService] 获取检索设置失败，使用默认值:', error.message);
+           }
+           
            // 使用增强的检索功能，启用意图分析，并传递当前模式和选择的表
-           const retrievalResult = await retriever.retrieve(messages, 3, true, mode, ragTableNames);
+           const retrievalResult = await retriever.retrieve(messages, retrievalTopK, true, mode, ragTableNames);
             
             if (retrievalResult.documents && retrievalResult.documents.length > 0) {
                 retrievalInfo = retrievalResult;

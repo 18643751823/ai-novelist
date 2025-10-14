@@ -43,7 +43,6 @@
     "langchain": "^0.3.31",
     "lodash": "^4.17.21",
     "mammoth": "^1.10.0",
-    "node-fetch": "^3.3.2",
     "openai": "^4.0.0",
     "p-wait-for": "^5.0.2",
     "pdf-parse": "^1.1.1",

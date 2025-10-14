@@ -34,7 +34,7 @@ class AliyunEmbeddingFunction {
                 return [];
             }
 
-            console.log(`[AliyunEmbedding] 开始为 ${texts.length} 个文本生成嵌入向量`);
+            console.log(`[AliyunEmbedding] 开始为 ${texts.length} 个文本生成嵌入向量，维度: ${this.dimensions}`);
 
             // 阿里云API限制：最多10条文本，每条最多8192个token
             const batchSize = 10;

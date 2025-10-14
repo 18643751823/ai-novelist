@@ -1384,6 +1384,43 @@ const handleRedetectOllama = async () => {
     }
 };
 
+// 新增：处理获取嵌入模型维度请求
+const handleGetEmbeddingDimensions = async (event, modelId) => {
+    try {
+        console.log(`[handlers.js] 开始获取嵌入模型维度: ${modelId}`);
+        
+        // 确保 ModelProvider 已初始化
+        await initializeModelProvider();
+        const modelRegistry = getModelRegistry();
+        
+        // 获取模型信息
+        const modelInfo = await modelRegistry.getModelInfo(modelId);
+        if (!modelInfo) {
+            return { success: false, error: `模型 ${modelId} 未找到` };
+        }
+        
+        // 获取适配器
+        const adapter = modelRegistry.getAdapter(modelInfo.provider);
+        if (!adapter) {
+            return { success: false, error: `提供商 ${modelInfo.provider} 的适配器未找到` };
+        }
+        
+        // 检查适配器是否支持获取嵌入维度
+        if (typeof adapter.getEmbeddingDimensions !== 'function') {
+            return { success: false, error: `模型 ${modelId} 不支持自动获取嵌入维度` };
+        }
+        
+        // 获取嵌入维度
+        const dimensions = await adapter.getEmbeddingDimensions(modelInfo);
+        console.log(`[handlers.js] 模型 ${modelId} 的嵌入维度: ${dimensions}`);
+        
+        return { success: true, dimensions };
+        
+    } catch (error) {
+        console.error(`[handlers.js] 获取嵌入模型维度失败: ${modelId}`, error);
+        return { success: false, error: `获取嵌入维度失败: ${error.message}` };
+    }
+};
 // 注册所有IPC处理器
 function register(store, mainWindow) { // 接收 store 和 mainWindow 参数并设置全局实例
   storeInstance = store; // 设置全局存储实例
@@ -1472,6 +1509,16 @@ function register(store, mainWindow) { // 接收 store 和 mainWindow 参数并�
 
   // 新增：RAG嵌入函数处理器
   ipcMain.handle('reinitialize-embedding-function', ragIpcHandler.reinitializeEmbeddingFunction.bind(ragIpcHandler));
+  ipcMain.handle('set-embedding-dimensions', ragIpcHandler.setEmbeddingDimensions.bind(ragIpcHandler));
+  ipcMain.handle('get-embedding-dimensions', ragIpcHandler.getEmbeddingDimensions.bind(ragIpcHandler));
+  
+  // 新增：RAG分段参数处理器
+  ipcMain.handle('set-rag-chunk-settings', ragIpcHandler.setRagChunkSettings.bind(ragIpcHandler));
+  ipcMain.handle('get-rag-chunk-settings', ragIpcHandler.getRagChunkSettings.bind(ragIpcHandler));
+
+  // 新增：检索设置处理器
+  ipcMain.handle('set-retrieval-top-k', ragIpcHandler.setRetrievalTopK.bind(ragIpcHandler));
+  ipcMain.handle('get-retrieval-top-k', ragIpcHandler.getRetrievalTopK.bind(ragIpcHandler));
 
   // 新增：排序配置处理器
   ipcMain.handle('get-sort-config', handleGetSortConfig);
@@ -1499,9 +1546,6 @@ function register(store, mainWindow) { // 接收 store 和 mainWindow 参数并�
   //   }
   // });
   
-  // Flowise Service Handlers
-  const FlowiseIpcHandler = require('../../flowise-service/flowiseIpcHandler');
-  FlowiseIpcHandler.registerIpcHandlers(ipcMain, mainWindow);
 
   // Checkpoint Service Handlers
   ipcMain.handle('checkpoints:save', async (event, { taskId, message }) => {
