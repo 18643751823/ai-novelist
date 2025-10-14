@@ -1482,23 +1482,6 @@ input:checked + .slider:before {
   margin-left: 5px;
 }
 
-/* 知识库面板容器样式 */
-.knowledge-base-panel {
-  position: absolute;
-  top: 60px; /* 从聊天头部下方开始 */
-  left: 0px;
-  right: 0px;
-  bottom: 0px;
-  background-color: #333333; /* 与聊天区背景一致 */
-  border: 1px solid #444444;
-  border-radius: 8px;
-  z-index: 100; /* 确保在其他内容之上 */
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-}
-
 /* 模型选择面板容器样式 */
 .model-selector-panel {
   position: absolute;
@@ -1514,90 +1497,6 @@ input:checked + .slider:before {
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-}
-
-/* 知识库面板头部样式 */
-.kb-header {
-  padding: 15px;
-  background-color: #222222; /* 深色背景 */
-  border-bottom: 1px solid #444444;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.kb-header h2 {
-  color: #ffffff;
-  margin: 0;
-  font-size: 1.2em;
-}
-
-.kb-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.kb-actions button {
-  padding: 8px 16px;
-  border: 1px solid #555555;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9em;
-  transition: background-color 0.2s ease;
-}
-
-.kb-actions .add-btn {
-  background-color: #4CAF50; /* 绿色添加按钮 */
-  color: white;
-}
-
-.kb-actions .add-btn:hover {
-  background-color: #66bb6a;
-}
-
-.kb-actions .refresh-btn {
-  background-color: #3a3f4b; /* 灰色刷新按钮 */
-  color: #abb2bf;
-}
-
-.kb-actions .refresh-btn:hover {
-  background-color: #4a4f5b;
-}
-
-.kb-actions .close-btn {
-  background-color: #555555; /* 深灰色关闭按钮 */
-  color: white;
-}
-
-.kb-actions .close-btn:hover {
-  background-color: #666666;
-}
-
-
-.file-details {
-  display: flex;
-  gap: 15px;
-  color: #aaaaaa;
-  font-size: 0.85em;
-}
-
-.file-actions .delete-btn {
-  background-color: #f44336; /* 红色删除按钮 */
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85em;
-}
-
-.file-actions .delete-btn:hover {
-  background-color: #e53935;
-}
-
-.file-actions .delete-btn:disabled {
-  background-color: #666666;
-  cursor: not-allowed;
 }
 
 /* 加载和空状态样式 */

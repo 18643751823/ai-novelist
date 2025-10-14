@@ -379,6 +379,44 @@ class AliyunAdapter extends BaseModelAdapter {
 
     return { isValid: true, errors }; // 总是返回有效，允许注册
   }
+  /**
+   * 获取嵌入模型的维度
+   * @param {string} modelId - 模型ID
+   * @returns {Promise<number>} 嵌入维度
+   */
+  async getEmbeddingDimensions(modelId) {
+    try {
+      const client = this._getClient();
+      if (!client) {
+        throw new Error('阿里云百炼客户端未初始化，请检查 API 密钥配置');
+      }
+
+      // 检查是否为嵌入模型
+      if (!this.isEmbeddingModel(modelId)) {
+        throw new Error(`模型 ${modelId} 不是嵌入模型`);
+      }
+
+      // 移除 aliyun/ 前缀，使用实际的模型名称
+      const actualModelName = modelId.replace(/^aliyun\//, '');
+      
+      // 发送测试请求获取嵌入向量
+      const response = await client.embeddings.create({
+        model: actualModelName,
+        input: 'test',
+        encoding_format: 'float'
+      });
+
+      // 从响应中提取嵌入向量长度
+      if (response.data && response.data.length > 0 && response.data[0].embedding) {
+        return response.data[0].embedding.length;
+      } else {
+        throw new Error('无法从响应中获取嵌入向量');
+      }
+    } catch (error) {
+      console.error(`获取阿里云百炼模型 ${modelId} 嵌入维度失败:`, error);
+      throw this._standardizeError(error, '获取嵌入维度失败');
+    }
+  }
 
   /**
    * 更新配置

@@ -233,6 +233,46 @@ class OllamaAdapter extends BaseModelAdapter {
   }
 
   /**
+   * 获取嵌入模型的维度
+   * @param {string} modelId - 模型ID
+   * @returns {Promise<number>} 嵌入维度
+   */
+  async getEmbeddingDimensions(modelId) {
+    try {
+      // 检查是否为嵌入模型
+      if (!this.isEmbeddingModel(modelId)) {
+        throw new Error(`模型 ${modelId} 不是嵌入模型`);
+      }
+
+      // 移除 ollama/ 前缀，使用实际的模型名称
+      const actualModelName = modelId.replace(/^ollama\//, '');
+      
+      // 使用 Ollama 的嵌入 API
+      const response = await axios.post(`${this.baseURL}/api/embed`, {
+        model: actualModelName,
+        input: 'test'
+      }, {
+        timeout: 30000
+      });
+
+      // 从响应中提取嵌入向量长度
+      if (response.data && response.data.embeddings && Array.isArray(response.data.embeddings)) {
+        const embedding = response.data.embeddings[0];
+        if (Array.isArray(embedding)) {
+          return embedding.length;
+        } else {
+          throw new Error('嵌入向量格式不正确');
+        }
+      } else {
+        throw new Error('无法从响应中获取嵌入向量');
+      }
+    } catch (error) {
+      console.error(`获取 Ollama 模型 ${modelId} 嵌入维度失败:`, error);
+      throw this._standardizeError(error, '获取嵌入维度失败');
+    }
+  }
+
+  /**
    * 配置验证（重写父类方法）
    * @param {Object} config - 配置对象
    * @returns {{isValid: boolean, errors: string[]}} 验证结果

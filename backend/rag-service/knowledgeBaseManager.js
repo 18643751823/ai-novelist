@@ -13,10 +13,7 @@ class KnowledgeBaseManager {
         }
         this.tableManager = TableManager;
         this.isInitialized = false;
-        this.textSplitter = new SemanticTextSplitter({
-            chunkSize: 400,    // 更适合小说的片段大小
-            chunkOverlap: 50   // 减少重叠，避免重复内容
-        });
+        this.textSplitter = new SemanticTextSplitter();
         
         KnowledgeBaseManager.instance = this;
     }
@@ -26,7 +23,10 @@ class KnowledgeBaseManager {
      * @param {Object} store electron-store实例
      */
     setStore(store) {
+        console.log(`[KBManager] 设置store实例`);
+        this.storeInstance = store;
         this.tableManager.setStore(store);
+        this.textSplitter.setStore(store);
     }
 
     /**
@@ -42,9 +42,13 @@ class KnowledgeBaseManager {
         try {
             console.log("[KBManager] 开始初始化...");
             
-            // 设置存储实例给TableManager
+            // 设置存储实例给TableManager和TextSplitter
             if (store) {
+                console.log(`[KBManager] initialize中设置store`);
                 this.tableManager.setStore(store);
+                this.textSplitter.setStore(store);
+            } else {
+                console.log(`[KBManager] initialize中store为null`);
             }
             
             await this.tableManager.initialize();
@@ -63,7 +67,9 @@ class KnowledgeBaseManager {
      * @param {string} filePath 文件的绝对路径
      */
     async addFileToKnowledgeBase(filePath) {
+        console.log(`[KBManager] addFileToKnowledgeBase 开始，isInitialized=${this.isInitialized}`);
         if (!this.isInitialized) {
+            console.log(`[KBManager] 调用initialize()...`);
             await this.initialize();
         }
 

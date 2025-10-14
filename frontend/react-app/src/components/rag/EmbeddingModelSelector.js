@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faSync, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import useIpcRenderer from '../../hooks/useIpcRenderer';
 import './EmbeddingModelSelector.css';
 
 const EmbeddingModelSelector = ({
@@ -11,6 +12,10 @@ const EmbeddingModelSelector = ({
 }) => {
   const [searchText, setSearchText] = useState('');
   const [selectedProvider, setSelectedProvider] = useState('');
+  const [loadingDimensions, setLoadingDimensions] = useState({});
+  const [modelDimensions, setModelDimensions] = useState({});
+  const [dimensionErrors, setDimensionErrors] = useState({});
+  const { invoke } = useIpcRenderer();
 
   // 获取所有提供商列表
   const providers = useMemo(() => {
@@ -53,6 +58,38 @@ const EmbeddingModelSelector = ({
     setSelectedProvider(provider === selectedProvider ? '' : provider);
   };
 
+  // 获取嵌入模型维度
+  const handleGetDimensions = async (modelId, e) => {
+    e.stopPropagation();
+    
+    setLoadingDimensions(prev => ({ ...prev, [modelId]: true }));
+    setDimensionErrors(prev => ({ ...prev, [modelId]: null }));
+    
+    try {
+      const result = await invoke('get-embedding-dimensions', modelId);
+      
+      if (result.success) {
+        setModelDimensions(prev => ({ ...prev, [modelId]: result.dimensions }));
+      } else {
+        setDimensionErrors(prev => ({ ...prev, [modelId]: result.error }));
+      }
+    } catch (error) {
+      setDimensionErrors(prev => ({ ...prev, [modelId]: error.message }));
+    } finally {
+      setLoadingDimensions(prev => ({ ...prev, [modelId]: false }));
+    }
+  };
+
+  // 检查是否为嵌入模型
+  const isEmbeddingModel = (model) => {
+    const modelLower = model.id.toLowerCase();
+    return modelLower.includes('embedding') ||
+           modelLower.includes('embed') ||
+           modelLower.includes('bge') ||
+           modelLower.includes('multilingual-e5') ||
+           model.isEmbedding;
+  };
+
   return (
     <div className="embedding-model-selector-panel">
       {/* 搜索和过滤区域 */}
@@ -93,21 +130,59 @@ const EmbeddingModelSelector = ({
           </div>
         ) : (
           <div className="embedding-model-grid">
-            {filteredModels.map((model) => (
-              <div
-                key={model.id}
-                className={`embedding-model-card ${selectedModel === model.id ? 'selected' : ''}`}
-                onClick={() => handleModelSelect(model.id)}
-              >
-                <div className="embedding-model-info">
-                  <div className="embedding-model-name">{model.id}</div>
-                  <div className="embedding-model-provider">{model.provider}</div>
+            {filteredModels.map((model) => {
+              const isEmbedding = isEmbeddingModel(model);
+              const isLoading = loadingDimensions[model.id];
+              const dimensions = modelDimensions[model.id];
+              const error = dimensionErrors[model.id];
+              
+              return (
+                <div
+                  key={model.id}
+                  className={`embedding-model-card ${selectedModel === model.id ? 'selected' : ''}`}
+                  onClick={() => handleModelSelect(model.id)}
+                >
+                  <div className="embedding-model-info">
+                    <div className="embedding-model-name">{model.id}</div>
+                    <div className="embedding-model-provider">{model.provider}</div>
+                    
+                    {/* 嵌入维度信息 */}
+                    {isEmbedding && (
+                      <div className="embedding-dimensions-info">
+                        {isLoading ? (
+                          <div className="dimensions-loading">
+                            <FontAwesomeIcon icon={faSync} spin />
+                            <span>获取维度中...</span>
+                          </div>
+                        ) : dimensions ? (
+                          <div className="dimensions-success">
+                            <span className="dimensions-label">维度:</span>
+                            <span className="dimensions-value">{dimensions}</span>
+                          </div>
+                        ) : error ? (
+                          <div className="dimensions-error">
+                            <FontAwesomeIcon icon={faExclamationTriangle} />
+                            <span className="error-message">获取失败</span>
+                          </div>
+                        ) : (
+                          <button
+                            className="get-dimensions-button"
+                            onClick={(e) => handleGetDimensions(model.id, e)}
+                            title="自动获取嵌入维度"
+                          >
+                            <FontAwesomeIcon icon={faSync} />
+                            <span>获取维度</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {selectedModel === model.id && (
+                    <div className="selected-indicator">✓</div>
+                  )}
                 </div>
-                {selectedModel === model.id && (
-                  <div className="selected-indicator">✓</div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
         

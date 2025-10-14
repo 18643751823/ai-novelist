@@ -10,7 +10,8 @@ import {
   setContextLimitSettings,
   setShowGeneralSettingsModal,
   setAiParametersForMode,
-  resetAiParametersForMode
+  resetAiParametersForMode,
+  setRagTableNames
 } from '../../store/slices/chatSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUndo, faSave } from '@fortawesome/free-solid-svg-icons';
@@ -26,6 +27,7 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
   const [localFeatureSettings, setLocalFeatureSettings] = useState({});
   const [localAdditionalInfo, setLocalAdditionalInfo] = useState({});
   const [localAiParameters, setLocalAiParameters] = useState({});
+  const [localRagSettings, setLocalRagSettings] = useState({});
   const [defaultPrompts, setDefaultPrompts] = useState({});
   const [customModes, setCustomModes] = useState([]);
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
@@ -64,16 +66,18 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
   };
 
   // 直接从存储加载设置，避免Redux状态同步问题
+  // 直接从存储加载设置，避免Redux状态同步问题
   const loadSettingsFromStore = async () => {
     try {
       console.log('[GeneralSettingsTab] 开始直接从存储加载设置...');
       
       // 从存储获取所有设置
-      const [storedCustomPrompts, storedModeFeatureSettings, storedAdditionalInfo, storedAiParameters] = await Promise.all([
+      const [storedCustomPrompts, storedModeFeatureSettings, storedAdditionalInfo, storedAiParameters, storedRagSettings] = await Promise.all([
         getStoreValue('customPrompts'),
         getStoreValue('modeFeatureSettings'),
         getStoreValue('additionalInfo'),
-        getStoreValue('aiParameters')
+        getStoreValue('aiParameters'),
+        getStoreValue('ragSettings')
       ]);
       
       console.log('[GeneralSettingsTab] 从存储获取的设置:');
@@ -81,10 +85,12 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
       console.log('[GeneralSettingsTab] modeFeatureSettings:', JSON.stringify(storedModeFeatureSettings, null, 2));
       console.log('[GeneralSettingsTab] additionalInfo:', JSON.stringify(storedAdditionalInfo, null, 2));
       console.log('[GeneralSettingsTab] aiParameters:', JSON.stringify(storedAiParameters, null, 2));
+      console.log('[GeneralSettingsTab] ragSettings:', JSON.stringify(storedRagSettings, null, 2));
       
       // 设置本地状态
       setLocalPrompts(storedCustomPrompts || {});
-      setLocalFeatureSettings(storedModeFeatureSettings || {});
+      // 优先使用Redux状态，如果Redux状态为空则使用存储中的设置
+      setLocalFeatureSettings(modeFeatureSettings || storedModeFeatureSettings || {});
       
       // 直接使用从存储中获取的AI参数，不进行迁移处理
       const aiParametersData = storedAiParameters || {};
@@ -98,6 +104,9 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
         }
       }
       
+      // 加载RAG设置
+      const ragSettingsData = storedRagSettings || {};
+      setLocalRagSettings(ragSettingsData);
       // 处理附加信息的旧格式迁移
       const migratedAdditionalInfo = {};
       const additionalInfoData = storedAdditionalInfo || {};
@@ -134,6 +143,7 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
       console.log('[GeneralSettingsTab] localFeatureSettings:', JSON.stringify(storedModeFeatureSettings, null, 2));
       console.log('[GeneralSettingsTab] migratedAdditionalInfo:', JSON.stringify(migratedAdditionalInfo, null, 2));
       console.log('[GeneralSettingsTab] localAiParameters:', JSON.stringify(aiParametersData, null, 2));
+      console.log('[GeneralSettingsTab] localRagSettings:', JSON.stringify(ragSettingsData, null, 2));
       
     } catch (error) {
       console.error('[GeneralSettingsTab] 从存储加载设置失败:', error);
@@ -160,6 +170,25 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
         }
       }
       setLocalAiParameters(aiParametersData);
+      
+      // 处理RAG设置
+      const ragSettingsData = {};
+      for (const mode of allModesForRedux) {
+        // 从Redux状态获取RAG设置
+        if (modeFeatureSettings && modeFeatureSettings[mode]) {
+          ragSettingsData[mode] = {
+            ragRetrievalEnabled: modeFeatureSettings[mode].ragRetrievalEnabled || false,
+            ragTableNames: modeFeatureSettings[mode].ragTableNames || []
+          };
+        } else {
+          // 如果没有，使用默认值
+          ragSettingsData[mode] = {
+            ragRetrievalEnabled: false,
+            ragTableNames: []
+          };
+        }
+      }
+      setLocalRagSettings(ragSettingsData);
       
       const migratedAdditionalInfo = {};
       
@@ -233,11 +262,23 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
       delete updatedAdditionalInfo[modeId];
       setLocalAdditionalInfo(updatedAdditionalInfo);
       
+      const updatedRagSettings = { ...localRagSettings };
+      delete updatedRagSettings[modeId];
+      setLocalRagSettings(updatedRagSettings);
+      
       console.log('[GeneralSettingsTab] 删除自定义模式:', modeId);
     } catch (error) {
       console.error('[GeneralSettingsTab] 删除自定义模式失败:', error);
     }
   };
+
+  // 监听Redux状态变化，确保localFeatureSettings与Redux状态同步
+  useEffect(() => {
+    console.log('[GeneralSettingsTab] modeFeatureSettings 发生变化:', modeFeatureSettings);
+    console.log('[GeneralSettingsTab] 更新前的 localFeatureSettings:', localFeatureSettings);
+    setLocalFeatureSettings(modeFeatureSettings);
+    console.log('[GeneralSettingsTab] 更新后的 localFeatureSettings:', modeFeatureSettings);
+  }, [modeFeatureSettings]);
 
   useEffect(() => {
     fetchDefaultPrompts();
@@ -285,6 +326,34 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
     dispatch(setAiParametersForMode({ mode, parameters: newParameters }));
   };
 
+  // 处理RAG设置变化
+  const handleRagSettingsChange = (newRagSettings) => {
+    console.log('[GeneralSettingsTab] RAG设置已更新:', newRagSettings);
+    setLocalRagSettings(newRagSettings);
+    
+    // 同时更新Redux状态
+    for (const mode of Object.keys(newRagSettings)) {
+      const settings = newRagSettings[mode];
+      if (settings) {
+        // 保存RAG检索启用状态
+        dispatch(setModeFeatureSetting({
+          mode,
+          feature: 'ragRetrievalEnabled',
+          enabled: settings.ragRetrievalEnabled || false
+        }));
+        
+        // 保存文件选择
+        const tableNames = settings.ragTableNames && settings.ragTableNames.length > 0
+          ? settings.ragTableNames
+          : null;
+        dispatch(setRagTableNames({
+          mode,
+          tableNames: tableNames
+        }));
+      }
+    }
+  };
+
   const handleReset = (mode) => {
     setLocalPrompts(prev => ({
       ...prev,
@@ -308,7 +377,6 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
     dispatch(resetAdditionalInfoForMode({ mode }));
   };
 
-
   const handleSave = async () => {
     try {
       console.log('[GeneralSettingsTab] 开始保存通用设置');
@@ -317,8 +385,8 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
       for (const mode of Object.keys(localPrompts)) {
         dispatch(setCustomPromptForMode({ mode, prompt: localPrompts[mode] }));
         console.log(`[GeneralSettingsTab] 保存模式 ${mode} 的自定义提示词: ${localPrompts[mode] ? '有内容' : '空'}`);
-      }
-      
+     }
+     
       // 保存所有模式的功能设置（现在只保存其他功能设置，RAG设置已移到专门页面）
       for (const mode of Object.keys(localFeatureSettings)) {
         const settings = localFeatureSettings[mode];
@@ -336,8 +404,8 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
           characterSettingsLength: info.characterSettings?.length || 0
         });
         dispatch(setAdditionalInfoForMode({ mode, info: localAdditionalInfo[mode] }));
-      }
-      
+     }
+     
       // 保存AI参数设置（按模式）
       for (const mode of Object.keys(localAiParameters)) {
         const parameters = localAiParameters[mode];
@@ -347,13 +415,18 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
         }
       }
       
+      // RAG设置已经在handleRagSettingsChange中实时更新到Redux状态
+      console.log('[GeneralSettingsTab] RAG设置已实时更新到Redux状态');
+      
       // 保存到持久化存储
       console.log('[GeneralSettingsTab] 保存到持久化存储...');
+      console.log('[GeneralSettingsTab] 保存的 modeFeatureSettings:', localFeatureSettings);
+      console.log('[GeneralSettingsTab] 保存的 ragSettings:', localRagSettings);
       await invoke('set-store-value', 'customPrompts', localPrompts);
       await invoke('set-store-value', 'modeFeatureSettings', localFeatureSettings);
       await invoke('set-store-value', 'additionalInfo', localAdditionalInfo);
       await invoke('set-store-value', 'aiParameters', localAiParameters);
-
+      await invoke('set-store-value', 'ragSettings', localRagSettings);
       console.log('[GeneralSettingsTab] 通用设置保存完成');
       
       // 通知保存成功
@@ -392,11 +465,13 @@ const GeneralSettingsTab = forwardRef(({ onSaveComplete }, ref) => {
         localFeatureSettings={localFeatureSettings}
         localAdditionalInfo={localAdditionalInfo}
         localAiParameters={localAiParameters}
+        localRagSettings={localRagSettings}
         customModes={customModes}
         onPromptChange={handlePromptChange}
         onFeatureSettingChange={handleFeatureSettingChange}
         onAdditionalInfoChange={handleAdditionalInfoChange}
         onAiParametersChange={handleAiParametersChange}
+        onRagSettingsChange={handleRagSettingsChange}
         onReset={handleReset}
         onAddCustomMode={handleAddCustomMode}
         onEditCustomMode={handleEditCustomMode}

@@ -39,6 +39,7 @@ import {
   stopStreaming, // 新增：导入停止流式传输的action
   setAiParametersForAllModes, // 新增：导入设置所有模式AI参数的action
   setAiParametersForMode, // 新增：导入设置特定模式AI参数的action
+  setRetrievalTopK, // 新增：导入设置检索返回文档片段数的action
 } from '../../store/slices/chatSlice';
 import { DEFAULT_SYSTEM_PROMPT } from '../../store/slices/chatSlice'; // 导入默认系统提示词
 import { startDiff, acceptSuggestion, rejectSuggestion } from '../../store/slices/novelSlice';
@@ -49,7 +50,6 @@ import NotificationModal from '../NotificationModal';
 import ConfirmationModal from '../ConfirmationModal';
 import CreationModeModal from './CreationModeModal';
 import PromptManagerModal from '../agent/PromptManagerModal'; // 新增：导入提示词管理模态框
-import KnowledgeBasePanel from './KnowledgeBasePanel'; // 新增：导入知识库面板
 import ModeSelector from './ModeSelector'; // 新增：导入模式选择器
 import ModelSelectorPanel from './ModelSelectorPanel'; // 新增：导入模型选择面板
 import './ChatPanel.css';
@@ -295,7 +295,6 @@ const ChatPanel = memo(() => {
   const [currentMode, setCurrentMode] = useState('general'); // 新增：当前创作模式
   const [customModes, setCustomModes] = useState([]); // 新增：自定义模式列表
   const [showPromptManager, setShowPromptManager] = useState(false); // 新增：提示词管理模态框状态
-  const [showKnowledgeBasePanel, setShowKnowledgeBasePanel] = useState(false); // 新增：知识库面板显示状态
   const [showModelSelectorPanel, setShowModelSelectorPanel] = useState(false); // 新增：模型选择面板显示状态
 
   const { invoke, getDeepSeekChatHistory, deleteDeepSeekChatHistory, clearDeepSeekConversation, getStoreValue, setStoreValue, listAllModels, send, on, removeListener, setAliyunEmbeddingApiKey: setAliyunEmbeddingApiKeyIpc, reinitializeModelProvider, reinitializeAliyunEmbedding, stopStreaming: stopStreamingIpc } = useIpcRenderer();
@@ -558,12 +557,29 @@ const ChatPanel = memo(() => {
         console.log('未加载到附加信息，使用初始状态。');
       }
 
+      // 加载检索设置
+      try {
+        const retrievalSettingsResult = await invoke('get-retrieval-top-k');
+        if (retrievalSettingsResult.success) {
+          dispatch(setRetrievalTopK(retrievalSettingsResult.topK));
+          console.log(`加载到的检索设置: topK=${retrievalSettingsResult.topK}`);
+        } else {
+          console.warn('加载检索设置失败:', retrievalSettingsResult.error);
+          // 使用默认值
+          dispatch(setRetrievalTopK(3));
+        }
+      } catch (error) {
+        console.error('调用检索设置API失败:', error);
+        // 使用默认值
+        dispatch(setRetrievalTopK(3));
+      }
+
       console.log('loadSettings: 结束加载设置。');
 
     } catch (error) {
       console.error('加载设置失败:', error);
     }
-  }, [dispatch, getStoreValue, setDeepseekApiKey, setOpenrouterApiKey, setSiliconflowApiKey, setSelectedModel, listAllModels, setAvailableModels, setSelectedProvider]); // 更新依赖
+  }, [dispatch, getStoreValue, setDeepseekApiKey, setOpenrouterApiKey, setSiliconflowApiKey, setSelectedModel, listAllModels, setAvailableModels, setSelectedProvider, invoke, setRetrievalTopK]); // 更新依赖
 
   const handleUserQuestionResponse = useCallback(async (response, toolCallId, isButtonClick) => {
     dispatch(setQuestionCard(null));
@@ -965,17 +981,6 @@ const ChatPanel = memo(() => {
           }} title="历史会话">
             <FontAwesomeIcon icon={faClock} />
           </button>
-          {/* 保留知识库按钮和模型选择器 */}
-          <button className="knowledgebase-button" onClick={() => {
-            setShowKnowledgeBasePanel(!showKnowledgeBasePanel);
-            // 关闭其他面板
-            if (!showKnowledgeBasePanel) {
-              setShowModelSelectorPanel(false);
-              dispatch(setIsHistoryPanelVisible(false));
-            }
-          }} title="知识库管理">
-            <FontAwesomeIcon icon={faBook} />
-          </button>
           {/* 模型选择器 - 移动到头部按钮区域 */}
           <div className="model-selector-header-wrapper">
             <button
@@ -1167,11 +1172,6 @@ const ChatPanel = memo(() => {
             onSelectConversation={handleSelectConversation}
             onDeleteConversation={handleDeleteConversation}
           />
-        )}
-
-        {/* 知识库面板 */}
-        {showKnowledgeBasePanel && (
-          <KnowledgeBasePanel onClose={() => setShowKnowledgeBasePanel(false)} />
         )}
 
         {/* 模型选择面板 */}

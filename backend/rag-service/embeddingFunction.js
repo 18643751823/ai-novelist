@@ -1,17 +1,18 @@
 const { OpenAI } = require('openai');
 const AliyunEmbeddingFunction = require('./aliyunEmbeddingFunction');
 const OllamaEmbeddingFunction = require('./ollamaEmbeddingFunction');
+const SiliconFlowEmbeddingFunction = require('./siliconflowEmbeddingFunction');
 
 /**
  * 通用嵌入函数类，支持多种模型提供商
  */
 class EmbeddingFunction {
-    constructor(modelId, apiKeys = {}) {
+    constructor(modelId, apiKeys = {}, dimensions = 1024) {
         this.modelId = modelId;
         this.apiKeys = apiKeys;
         this.client = null;
         this.modelName = modelId;
-        this.dimensions = 1024; // 默认维度
+        this.dimensions = dimensions; // 可配置维度
         
         // 根据模型ID初始化对应的客户端
         this.initializeClient();
@@ -71,18 +72,17 @@ class EmbeddingFunction {
             });
             return;
         }
-         
         // SiliconFlow模型
-        if (modelLower.includes('siliconflow')) {
+        if (modelLower.includes('siliconflow') ||
+            modelLower.includes('bge') ||
+            modelLower.includes('qwen')) {
             const apiKey = this.apiKeys.siliconflow;
             if (!apiKey) {
                 throw new Error('SiliconFlow API Key是必需的');
             }
              
-            this.client = new OpenAI({
-                apiKey: apiKey,
-                baseURL: 'https://api.siliconflow.cn/v1'
-            });
+            // 使用硅基流动专用嵌入函数
+            this.client = new SiliconFlowEmbeddingFunction(apiKey, this.modelId, this.dimensions);
             return;
         }
          
@@ -130,8 +130,7 @@ class EmbeddingFunction {
                 return [];
             }
 
-            console.log(`[EmbeddingFunction] 使用模型 ${this.modelId} 开始为 ${texts.length} 个文本生成嵌入向量`);
-
+            console.log(`[EmbeddingFunction] 使用模型 ${this.modelId} 开始为 ${texts.length} 个文本生成嵌入向量，维度: ${this.dimensions}`);
             // 阿里云嵌入函数有自己的批处理逻辑
             if (this.client instanceof AliyunEmbeddingFunction) {
                 return await this.client.generate(texts);
@@ -139,6 +138,11 @@ class EmbeddingFunction {
 
             // Ollama 嵌入函数有自己的处理逻辑
             if (this.client instanceof OllamaEmbeddingFunction) {
+                return await this.client.generate(texts);
+            }
+
+            // SiliconFlow 嵌入函数有自己的处理逻辑
+            if (this.client instanceof SiliconFlowEmbeddingFunction) {
                 return await this.client.generate(texts);
             }
 
@@ -181,11 +185,32 @@ class EmbeddingFunction {
             await this.generate(testText);
             return { valid: true };
         } catch (error) {
-            return { 
-                valid: false, 
-                error: error.message 
+            return {
+                valid: false,
+                error: error.message
             };
         }
+    }
+
+    /**
+     * 设置嵌入维度
+     * @param {number} dimensions - 嵌入维度
+     */
+    setDimensions(dimensions) {
+        this.dimensions = dimensions;
+        
+        // 如果客户端已经初始化，重新初始化以应用新的维度设置
+        if (this.client) {
+            this.initializeClient();
+        }
+    }
+
+    /**
+     * 获取当前嵌入维度
+     * @returns {number} 当前维度
+     */
+    getDimensions() {
+        return this.dimensions;
     }
 }
 

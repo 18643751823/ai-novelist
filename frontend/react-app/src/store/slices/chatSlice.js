@@ -49,6 +49,7 @@ const chatSlice = createSlice({
     openrouterApiKey: '',
     siliconflowApiKey: '', // 新增：硅基流动API Key
     aliyunApiKey: '', // 新增：阿里云百炼API Key
+    aliyunEmbeddingApiKey: '', // 新增：阿里云嵌入API Key
     embeddingModel: '', // 新增：嵌入模型
     ollamaBaseUrl: 'http://127.0.0.1:11434', // 新增：Ollama服务地址
     intentAnalysisModel: '', // 新增：意图分析模型
@@ -73,6 +74,7 @@ const chatSlice = createSlice({
     editingMessageId: null, // 新增：用于跟踪正在编辑的消息ID
     ragRetrievalEnabled: false, // 新增：RAG检索启用状态（全局默认）
     // 新增：每个模式的功能启用状态（工具功能已硬编码，只保留RAG检索）
+    // 注意：自定义模式的状态会在运行时动态创建
     modeFeatureSettings: {
       general: {
         ragRetrievalEnabled: false,
@@ -92,6 +94,7 @@ const chatSlice = createSlice({
       }
     },
     // 新增：上下文限制设置
+    // 注意：自定义模式的上下文限制设置会在运行时动态创建
     contextLimitSettings: {
       modes: {
         general: {
@@ -113,6 +116,7 @@ const chatSlice = createSlice({
       }
     },
     // 新增：附加信息/持久记忆
+    // 注意：自定义模式的附加信息会在运行时动态创建
     additionalInfo: {
       general: {
         outline: '',
@@ -139,6 +143,7 @@ const chatSlice = createSlice({
     isCreationModeEnabled: true,
     showCreationModal: false,
     // 新增：AI参数设置（按模式管理）
+    // 注意：自定义模式的AI参数会在运行时动态创建
     aiParameters: {
       general: {
         temperature: 0.7,
@@ -161,6 +166,9 @@ const chatSlice = createSlice({
         n: 1
       }
     },
+    // 新增：检索设置
+    retrievalTopK: 3, // 默认返回3个文档片段
+    
     // 新增：停止功能相关状态
     isStreaming: false, // 是否正在流式传输
     abortController: null // 用于中止请求的控制器
@@ -350,6 +358,9 @@ const chatSlice = createSlice({
     setIntentAnalysisModel: (state, action) => { // 新增：设置意图分析模型
       state.intentAnalysisModel = action.payload;
     },
+    setAliyunEmbeddingApiKey: (state, action) => { // 新增：设置阿里云嵌入API Key
+      state.aliyunEmbeddingApiKey = action.payload;
+    },
     setAvailableModels: (state, action) => { // 新增：设置可用模型列表
         state.availableModels = action.payload;
     },
@@ -515,6 +526,11 @@ const chatSlice = createSlice({
         }
       }
     },
+    // 新增：设置检索返回文档片段数
+    setRetrievalTopK: (state, action) => {
+      state.retrievalTopK = action.payload;
+    },
+    
     // 新增：停止功能相关reducer
     setStreamingState: (state, action) => {
       const { isStreaming, abortController } = action.payload;
@@ -881,6 +897,7 @@ export const {
   setAiParametersForAllModes, // 新增：导出 setAiParametersForAllModes
   setStreamingState, // 新增：导出 setStreamingState
   stopStreaming, // 新增：导出 stopStreaming
+  setRetrievalTopK, // 新增：导出 setRetrievalTopK
   deleteMessage,
   startEditing,
   // submitEdit,

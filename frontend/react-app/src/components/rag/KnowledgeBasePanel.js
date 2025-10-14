@@ -267,6 +267,7 @@ const KnowledgeBasePanel = ({ onClose }) => {
                 <div className="file-name">{file.filename}</div>
                 <div className="file-details">
                   <span className="document-count">{file.documentCount} 片段</span>
+                  <span className="embedding-dimensions">{file.embeddingDimensions} 维</span>
                 </div>
               </div>
               <div className="file-actions">

@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUndo, faPlus, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import ModeContextSettings from './ModeContextSettings';
 import AiParametersSettings from './AiParametersSettings';
+import RagSettingsPanel from './RagSettingsPanel';
 import ConfirmationModal from '../ConfirmationModal';
 import './GeneralSettingsPanel.css';
 
@@ -13,11 +14,13 @@ const GeneralSettingsPanel = ({
   localFeatureSettings = {},
   localAdditionalInfo = {},
   localAiParameters = {},
+  localRagSettings = {},
   customModes = [],
   onPromptChange,
   onFeatureSettingChange,
   onAdditionalInfoChange,
   onAiParametersChange,
+  onRagSettingsChange,
   onReset,
   onAddCustomMode,
   onEditCustomMode,
@@ -30,6 +33,7 @@ const GeneralSettingsPanel = ({
   const [editingMode, setEditingMode] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newModeName, setNewModeName] = useState('');
+  const [activeTab, setActiveTab] = useState('prompt'); // 'prompt', 'rag', 'ai'
 
   // 获取模式显示名称
   const getModeDisplayName = (mode) => {
@@ -84,6 +88,81 @@ const GeneralSettingsPanel = ({
       n: 1
     },
     type: selectedMode.startsWith('custom_') ? 'custom' : 'builtin'
+  };
+
+  // 渲染标签页内容
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'rag':
+        return (
+          <div className="tab-content">
+            <RagSettingsPanel
+              ragSettings={localRagSettings}
+              onRagSettingsChange={onRagSettingsChange}
+              customModes={customModes}
+              selectedMode={selectedMode}
+            />
+          </div>
+        );
+      case 'ai':
+        return (
+          <div className="tab-content">
+            <AiParametersSettings
+              aiParameters={localAiParameters}
+              onParametersChange={onAiParametersChange}
+              mode={selectedMode}
+            />
+          </div>
+        );
+      case 'prompt':
+      default:
+        return (
+          <div className="prompt-sections">
+            {/* 自定义提示词 */}
+            <div className="custom-prompt">
+              <h4>自定义提示词:</h4>
+              <textarea
+                value={selectedModeDetail.customPrompt}
+                onChange={(e) => onPromptChange && onPromptChange(selectedMode, e.target.value)}
+                placeholder={selectedModeDetail.type === 'builtin' ? selectedModeDetail.defaultPrompt : `输入${selectedModeDetail.name}模式的自定义提示词...`}
+                rows={4}
+              />
+              <button
+                className="reset-button"
+                onClick={() => onReset && onReset(selectedMode)}
+                disabled={!selectedModeDetail.customPrompt}
+              >
+                <FontAwesomeIcon icon={faUndo} /> 重置
+              </button>
+            </div>
+
+            {/* 功能设置 */}
+            <div className="feature-settings">
+              <h4>功能设置:</h4>
+              
+              {/* 工具功能状态说明 */}
+              {selectedMode === 'general' ? (
+                <div className="feature-info">
+                  <strong>工具功能：始终启用</strong>
+                  <div className="feature-description">
+                    通用模式下AI可以自动使用工具进行文件操作、代码编辑等
+                  </div>
+                </div>
+              ) : (
+                <div className="feature-info">
+                  <strong>工具功能：禁用</strong>
+                  <div className="feature-description">
+                    此模式下AI仅提供对话功能，无法使用工具
+                  </div>
+                </div>
+              )}
+
+              {/* 单个模式的上下文设置 */}
+              <ModeContextSettings mode={selectedMode} modeName={selectedModeDetail.name} />
+            </div>
+          </div>
+        );
+    }
   };
 
   // 处理添加自定义模式
@@ -276,59 +355,30 @@ const GeneralSettingsPanel = ({
                   )}
                 </div>
 
-                <div className="prompt-sections">
-                  {/* 自定义提示词 */}
-                  <div className="custom-prompt">
-                    <h4>自定义提示词:</h4>
-                    <textarea
-                      value={selectedModeDetail.customPrompt}
-                      onChange={(e) => onPromptChange && onPromptChange(selectedMode, e.target.value)}
-                      placeholder={selectedModeDetail.type === 'builtin' ? selectedModeDetail.defaultPrompt : `输入${selectedModeDetail.name}模式的自定义提示词...`}
-                      rows={4}
-                    />
-                    <button
-                      className="reset-button"
-                      onClick={() => onReset && onReset(selectedMode)}
-                      disabled={!selectedModeDetail.customPrompt}
-                    >
-                      <FontAwesomeIcon icon={faUndo} /> 重置
-                    </button>
-                  </div>
-
-                  {/* 功能设置 */}
-                  <div className="feature-settings">
-                    <h4>功能设置:</h4>
-                    
-                    {/* 工具功能状态说明 */}
-                    {selectedMode === 'general' ? (
-                      <div className="feature-info">
-                        <strong>工具功能：始终启用</strong>
-                        <div className="feature-description">
-                          通用模式下AI可以自动使用工具进行文件操作、代码编辑等
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="feature-info">
-                        <strong>工具功能：禁用</strong>
-                        <div className="feature-description">
-                          此模式下AI仅提供对话功能，无法使用工具
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 单个模式的上下文设置 */}
-                    <ModeContextSettings mode={selectedMode} modeName={selectedModeDetail.name} />
-                  </div>
-
-                  {/* AI参数设置 */}
-                  <div className="ai-parameters-section">
-                    <AiParametersSettings
-                      aiParameters={localAiParameters}
-                      onParametersChange={onAiParametersChange}
-                      mode={selectedMode}
-                    />
-                  </div>
+                {/* 标签页导航 */}
+                <div className="settings-tabs">
+                  <button
+                    className={`tab-button ${activeTab === 'prompt' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('prompt')}
+                  >
+                    提示词设置
+                  </button>
+                  <button
+                    className={`tab-button ${activeTab === 'rag' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('rag')}
+                  >
+                    RAG设置
+                  </button>
+                  <button
+                    className={`tab-button ${activeTab === 'ai' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('ai')}
+                  >
+                    AI参数
+                  </button>
                 </div>
+  
+                {/* 标签页内容 */}
+                {renderTabContent()}
               </div>
             )}
           </div>

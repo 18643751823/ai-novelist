@@ -7,15 +7,63 @@ const { Document } = require('langchain/document');
  */
 class SemanticTextSplitter {
     constructor(options = {}) {
+        this.storeInstance = options.store || null;
         this.options = {
-            chunkSize: 1000,          // 每个片段的最大字符数
-            chunkOverlap: 200,        // 片段之间的重叠字符数
+            chunkSize: 400,          // 默认值，可被store中的设置覆盖
+            chunkOverlap: 50,        // 默认值，可被store中的设置覆盖
             separators: ["\n\n", "\n", "。", "！", "？", ".", "!", "?", " ", ""],
             keepSeparator: true,      // 是否保留分隔符
             ...options
         };
         
+        // 从store获取配置（如果可用）
+        this.loadSettingsFromStore();
+        
         // 初始化LangChain分割器
+        this.recursiveSplitter = new RecursiveCharacterTextSplitter({
+            chunkSize: this.options.chunkSize,
+            chunkOverlap: this.options.chunkOverlap,
+            separators: this.options.separators,
+            keepSeparator: this.options.keepSeparator
+        });
+    }
+
+    /**
+     * 从store加载分段参数设置
+     */
+    loadSettingsFromStore() {
+        if (this.storeInstance) {
+            const chunkSize = this.storeInstance.get('ragChunkSize');
+            const chunkOverlap = this.storeInstance.get('ragChunkOverlap');
+            
+            console.log(`[SemanticTextSplitter] 从store读取分段参数: ragChunkSize=${chunkSize}, ragChunkOverlap=${chunkOverlap}`);
+            
+            if (chunkSize !== undefined && chunkSize !== null) {
+                this.options.chunkSize = parseInt(chunkSize) || this.options.chunkSize;
+            }
+            
+            if (chunkOverlap !== undefined && chunkOverlap !== null) {
+                this.options.chunkOverlap = parseInt(chunkOverlap) || this.options.chunkOverlap;
+            }
+            
+            console.log(`[SemanticTextSplitter] 加载后的分段参数: chunkSize=${this.options.chunkSize}, chunkOverlap=${this.options.chunkOverlap}`);
+        }
+    }
+
+    /**
+     * 设置存储实例以便获取配置
+     * @param {Object} store electron-store实例
+     */
+    setStore(store) {
+        this.storeInstance = store;
+        this.loadSettingsFromStore();
+        this.updateSplitter();
+    }
+
+    /**
+     * 更新分割器配置
+     */
+    updateSplitter() {
         this.recursiveSplitter = new RecursiveCharacterTextSplitter({
             chunkSize: this.options.chunkSize,
             chunkOverlap: this.options.chunkOverlap,
@@ -50,6 +98,9 @@ class SemanticTextSplitter {
      */
     async splitText(text) {
         try {
+            // 记录当前使用的分段参数
+            console.log(`[SemanticTextSplitter] 当前分段参数: chunkSize=${this.options.chunkSize}, chunkOverlap=${this.options.chunkOverlap}`);
+            
             const cleanedText = this.preprocessText(text);
             
             if (!cleanedText) {
@@ -73,7 +124,6 @@ class SemanticTextSplitter {
             return this.fallbackSplit(text);
         }
     }
-
     /**
      * 降级分割方法 - 当语义分割失败时使用
      * @param {string} text 要分割的文本

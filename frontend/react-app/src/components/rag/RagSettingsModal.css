@@ -1,0 +1,285 @@
+.rag-settings-modal-content {
+  height: 100%;
+  width: 100%;
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 头部样式 */
+.rag-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--panel-bg-color);
+}
+
+.rag-modal-header h2 {
+  margin: 0;
+  color: var(--text-color-primary);
+  font-size: 1.5em;
+}
+
+.rag-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.save-button, .cancel-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.save-button {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.save-button:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.cancel-button {
+  background-color: transparent;
+  color: var(--text-color-light);
+  border: 1px solid var(--border-color);
+}
+
+.cancel-button:hover {
+  background-color: var(--hover-bg-color);
+}
+
+/* 面板组样式 */
+.rag-settings-panel-group {
+  height: calc(100% - 80px);
+  width: 100%;
+  border: none;
+}
+
+/* 左侧面板样式 */
+.rag-left-panel {
+  background-color: transparent;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.rag-left-container {
+  padding: 15px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--panel-bg-color-alt);
+  border-radius: var(--border-radius);
+}
+
+/* 标签页列表样式 */
+.tab-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  background-color: var(--panel-bg-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-color-primary);
+  font-weight: 500;
+}
+
+.tab-item:hover {
+  background-color: var(--hover-bg-color);
+  border-color: var(--primary-color);
+}
+
+.tab-item.active {
+  background-color: rgba(0, 173, 98, 0.1);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.tab-item svg {
+  font-size: 14px;
+  width: 16px;
+}
+
+.tab-item span {
+  font-size: 14px;
+}
+
+/* 右侧面板样式 */
+.rag-right-panel {
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: none;
+}
+
+.rag-right-container {
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--panel-bg-color);
+  border-radius: var(--border-radius);
+}
+
+/* 右侧区域布局 */
+.tab-content-full {
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  color: var(--text-color-primary);
+}
+
+
+/* 知识库管理区域特殊样式 */
+.knowledge-base-management-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.knowledge-base-management-content .settings-section {
+  margin-bottom: 0;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--panel-bg-color);
+}
+
+.knowledge-base-management-content .settings-section h5 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+}
+
+/* RAG设置区域特殊样式 */
+.rag-settings-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rag-settings-content .settings-section {
+  margin-bottom: 0;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--panel-bg-color);
+}
+
+.rag-settings-content .settings-section h5 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+/* 分隔条样式 */
+.rag-panel-resize-handle {
+  width: 5px;
+  background-color: var(--divider-color);
+  cursor: ew-resize;
+  position: relative;
+}
+
+.rag-resize-handle-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 20px;
+  background-color: var(--border-color);
+  border-radius: 1px;
+}
+
+.rag-panel-resize-handle:hover {
+  background-color: var(--primary-color);
+}
+
+.rag-panel-resize-handle:hover .rag-resize-handle-inner {
+  background-color: white;
+}
+
+/* 滚动条样式 */
+.rag-right-container::-webkit-scrollbar,
+.section-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rag-right-container::-webkit-scrollbar-track,
+.section-content::-webkit-scrollbar-track {
+  background: var(--panel-bg-color);
+  border-radius: 3px;
+}
+
+.rag-right-container::-webkit-scrollbar-thumb,
+.section-content::-webkit-scrollbar-thumb {
+  background: var(--divider-color);
+  border-radius: 3px;
+}
+
+.rag-right-container::-webkit-scrollbar-thumb:hover,
+.section-content::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .rag-settings-panel-group {
+    flex-direction: column;
+  }
+  
+  .rag-left-panel {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .rag-panel-resize-handle {
+    width: 100%;
+    height: 5px;
+    cursor: ns-resize;
+  }
+  
+  .rag-resize-handle-inner {
+    width: 20px;
+    height: 2px;
+  }
+  
+  .rag-modal-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .rag-modal-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

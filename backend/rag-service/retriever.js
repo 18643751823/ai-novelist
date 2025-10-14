@@ -86,17 +86,36 @@ class Retriever {
     /**
      * 从知识库中检索与查询相关的文档片段
      * @param {Array} messages 完整的对话消息数组
-     * @param {number} topK 返回的最相关结果数量
+     * @param {number} topK 返回的最相关结果数量（如果未提供则使用存储的设置）
      * @param {boolean} enableAnalysis 是否启用意图分析
      * @param {string} mode 当前模式
      * @param {Array} tableNames 要查询的表名称数组（空数组表示查询所有表）
      * @returns {Promise<Array<string>>} 返回文档片段内容数组
      */
-    async retrieve(messages, topK = 3, enableAnalysis = true, mode = 'general', tableNames = null) {
+    async retrieve(messages, topK = null, enableAnalysis = true, mode = 'general', tableNames = null) {
         if (!this.isInitialized) {
             await this.initialize();
         }
 
+        // 获取存储的检索设置
+        let finalTopK = topK;
+        if (finalTopK === null || finalTopK === undefined) {
+            try {
+                // 通过 TableManager 获取 store 实例
+                const tableManager = require('./TableManager');
+                if (tableManager.storeInstance) {
+                    const storedTopK = tableManager.storeInstance.get('retrievalTopK');
+                    finalTopK = storedTopK || 3;
+                    console.log(`[Retriever] 使用存储的检索设置: topK=${finalTopK}`);
+                } else {
+                    console.warn('[Retriever] store实例未设置，使用默认值: topK=3');
+                    finalTopK = 3;
+                }
+            } catch (error) {
+                console.warn('[Retriever] 获取检索设置失败，使用默认值:', error.message);
+                finalTopK = 3;
+            }
+        }
         // 新增：获取上下文限制设置并应用RAG上下文限制
         let contextLimitSettings = null;
         let filteredMessages = messages;
@@ -159,7 +178,7 @@ class Retriever {
                 console.log(`[Retriever] 用户未选择任何表，跳过RAG检索`);
                 results = { documents: [] };
             } else {
-                results = await knowledgeBaseManager.queryCollection(finalQuery, topK, tableNames);
+                results = await knowledgeBaseManager.queryCollection(finalQuery, finalTopK, tableNames);
             }
 
             if (results && results.documents && results.documents.length > 0) {
