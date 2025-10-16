@@ -69,7 +69,9 @@ class OpenRouterAdapter extends BaseModelAdapter {
     const completionParams = {
       model: modelId,
       messages: messages,
-      temperature: options.temperature || 0.7,
+      temperature: options.temperature, // 使用前端传递的参数，不设置默认值
+      top_p: options.top_p,
+      n: options.n,
       max_tokens: options.max_tokens,
       stream: options.stream !== false, // 默认启用流式
       route: 'auto', // OpenRouter 特有参数

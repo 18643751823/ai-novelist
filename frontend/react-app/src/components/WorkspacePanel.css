@@ -1,0 +1,38 @@
+/* 工作区面板样式 - 自定义工作流编辑器 */
+.workspace-panel {
+  background-color: var(--panel-bg-color);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-left: 1px solid var(--border-color);
+}
+
+/* 工作流编辑器容器 */
+.workflow-editor-container {
+  flex: 1;
+  position: relative;
+  background-color: var(--bg-color);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .workspace-panel {
+    width: 95%;
+    max-width: none;
+    margin: 20px;
+  }
+  
+  .placeholder-content {
+    padding: 20px;
+  }
+  
+  .placeholder-content h3 {
+    font-size: 18px;
+  }
+  
+  .placeholder-content p {
+    font-size: 13px;
+  }
+}

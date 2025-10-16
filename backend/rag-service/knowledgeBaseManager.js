@@ -1,9 +1,9 @@
-// 使用官方 ChromaDB JavaScript 客户端库
+// 使用 LanceDB 嵌入式向量数据库
 const path = require('path');
 const fs = require('fs').promises;
 const mammoth = require('mammoth');
 const pdf = require('pdf-parse');
-const CollectionManager = require('./CollectionManager');
+const TableManager = require('./TableManager');
 const SemanticTextSplitter = require('./SemanticTextSplitter');
 
 class KnowledgeBaseManager {
@@ -11,22 +11,22 @@ class KnowledgeBaseManager {
         if (KnowledgeBaseManager.instance) {
             return KnowledgeBaseManager.instance;
         }
-        this.collectionManager = CollectionManager;
+        this.tableManager = TableManager;
         this.isInitialized = false;
-        this.textSplitter = new SemanticTextSplitter({
-            chunkSize: 400,    // 更适合小说的片段大小
-            chunkOverlap: 50   // 减少重叠，避免重复内容
-        });
+        this.textSplitter = new SemanticTextSplitter();
         
         KnowledgeBaseManager.instance = this;
     }
 
     /**
-     * 设置存储实例以便CollectionManager使用
+     * 设置存储实例以便TableManager使用
      * @param {Object} store electron-store实例
      */
     setStore(store) {
-        this.collectionManager.setStore(store);
+        console.log(`[KBManager] 设置store实例`);
+        this.storeInstance = store;
+        this.tableManager.setStore(store);
+        this.textSplitter.setStore(store);
     }
 
     /**
@@ -42,12 +42,16 @@ class KnowledgeBaseManager {
         try {
             console.log("[KBManager] 开始初始化...");
             
-            // 设置存储实例给CollectionManager
+            // 设置存储实例给TableManager和TextSplitter
             if (store) {
-                this.collectionManager.setStore(store);
+                console.log(`[KBManager] initialize中设置store`);
+                this.tableManager.setStore(store);
+                this.textSplitter.setStore(store);
+            } else {
+                console.log(`[KBManager] initialize中store为null`);
             }
             
-            await this.collectionManager.initialize();
+            await this.tableManager.initialize();
             this.isInitialized = true;
             console.log("[KBManager] 初始化成功。");
 
@@ -63,7 +67,9 @@ class KnowledgeBaseManager {
      * @param {string} filePath 文件的绝对路径
      */
     async addFileToKnowledgeBase(filePath) {
+        console.log(`[KBManager] addFileToKnowledgeBase 开始，isInitialized=${this.isInitialized}`);
         if (!this.isInitialized) {
+            console.log(`[KBManager] 调用initialize()...`);
             await this.initialize();
         }
 
@@ -96,7 +102,7 @@ class KnowledgeBaseManager {
             const splits = await this.textSplitter.splitText(content);
             console.log(`[KBManager] 语义文本分割完成，共 ${splits.length} 个片段。`);
 
-            // 3. 添加到集合（ChromaDB 会自动处理嵌入）
+            // 3. 添加到集合（LanceDB 会自动处理嵌入）
             const documents = splits;
             
             // 创建元数据
@@ -107,8 +113,8 @@ class KnowledgeBaseManager {
             
             const ids = splits.map((_, i) => `${path.basename(filePath)}-${i}`);
             
-            // 使用 CollectionManager 添加文档到指定文件的集合
-            await this.collectionManager.addDocumentsToCollection(filePath, documents, metadatas, ids);
+            // 使用 TableManager 添加文档到指定文件的表
+            await this.tableManager.addDocumentsToTable(filePath, documents, metadatas, ids);
             console.log(`[KBManager] 文件 '${filePath}' 已成功添加到知识库。`);
             return { success: true, message: `文件 '${path.basename(filePath)}' 已添加。` };
 
@@ -188,8 +194,8 @@ class KnowledgeBaseManager {
      */
     async queryCollection(queryText, nResults = 3, collectionNames = []) {
         try {
-            // 使用 CollectionManager 进行多集合查询
-            const results = await this.collectionManager.queryMultipleCollections(
+            // 使用 TableManager 进行多表查询
+            const results = await this.tableManager.queryMultipleTables(
                 queryText,
                 collectionNames,
                 nResults
@@ -208,7 +214,7 @@ class KnowledgeBaseManager {
         if (!this.isInitialized) {
             await this.initialize();
         }
-        return await this.collectionManager.listCollections();
+        return await this.tableManager.listTables();
     }
 
     /**
@@ -219,7 +225,7 @@ class KnowledgeBaseManager {
         if (!this.isInitialized) {
             await this.initialize();
         }
-        return await this.collectionManager.deleteCollection(filename);
+        return await this.tableManager.deleteTable(filename);
     }
 
     /**
@@ -231,7 +237,7 @@ class KnowledgeBaseManager {
         if (!this.isInitialized) {
             await this.initialize();
         }
-        return await this.collectionManager.renameCollection(oldFilename, newFilename);
+        return await this.tableManager.renameTable(oldFilename, newFilename);
     }
 }
 

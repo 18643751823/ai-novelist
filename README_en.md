@@ -1,11 +1,13 @@
-# Qingzhu v2.0.1
+# Qingzhu v0.1.0
 
 [中文版](README.md) | English Version
+
+> **Version Note**: As this is a personal learning project, the previous version numbering was somewhat chaotic. We are restarting version management from v0.1.0.
 
 ![Project Screenshot](images/示例图片.jpg)
 ## Project Introduction
 
-Qingzhu (Official Name) is a desktop application built on the Electron framework, aiming to provide users with an AI-assisted novel creation platform.
+Qingzhu (Official Name) is a desktop application built on the Electron framework, aiming to be a writing version AI IDE.
 
 **Core Features**:
 *   **AI Smart Interaction**: Real-time conversation with AI, from providing inspiration to content writing, revision and polishing, intelligent assistance throughout the entire writing process.
@@ -20,7 +22,7 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
 *   **React.js**: Frontend user interface framework, providing efficient component-based development patterns and excellent user experience.
 *   **Node.js**: Backend service runtime environment, responsible for handling AI interactions, file system operations, and IPC communication with the frontend.
 *   **AI API Integration**: Supports DeepSeek, Open Router, Ollama, Silicon Flow model providers, providing a unified interface calling experience.
-*   **ChromaDB**: Open-source vector database for RAG (Retrieval-Augmented Generation) functionality, providing semantic search and knowledge base management.
+*   **LanceDB**: Vector database for RAG (Retrieval-Augmented Generation) functionality, providing semantic search and knowledge base management.
 *   **Redux**: Frontend state management library, used to uniformly manage the application's complex state.
 *   **Tiptap**: Excellent rich text editor.
 *   **electron-store**: Lightweight Electron configuration storage library, used to persist application settings, such as API Key.
@@ -34,42 +36,28 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
 
 *   Node.js (LTS version recommended)
 *   npm or yarn
-*   Python 3.8+ (for ChromaDB vector database)
-*   ChromaDB Python package (install via `pip install chromadb`)
-*   **Windows Users**: Need to install the "Desktop development with C++" workload in Visual Studio Installer to support native module compilation
 
 ### Installation
 
 1.  **Clone the repository**:
     ```bash
-    git clone git@github.com:18643751823/ai-novelist.git
-    cd ai-novel
+    git clone git@github.com:FlickeringLamp/ai-novelist.git
+    cd ai-novelist
     ```
 
-2.  **Install Python dependencies**:
-    Ensure Python 3.8+ is installed, then install ChromaDB:
-    ```bash
-    pip install chromadb
-    ```
 
-3.  **Install backend dependencies**:
+2.  **Install dependencies**:
     Execute in the project root directory (`ai-novel/`):
     ```bash
     npm install
     ```
-4.  **Install frontend dependencies**:
-    Navigate to the frontend directory (`ai-novel/frontend/react-app/`) and execute:
-    ```bash
-    cd frontend/react-app
-    npm install
-    ```
 
-5.  **Build frontend application**:
+
+3.  **Build frontend application**:
     Return to the project root directory (`ai-novel/`) and execute the build:
     ```bash
     cd ../..
     npm run build
-    ```
     ```
 
 ### Running the Application
@@ -80,12 +68,6 @@ Execute in the project root directory (`ai-novel/`):
 npm run start:full .
 ```
 
-The application will automatically start the ChromaDB server (listening on port 8000). If port 8000 is occupied, the application will automatically try other ports.
-
-**Note**: On first run, ChromaDB needs some time to initialize the database.
-
-**Configure API Key**:
-After the application starts, you need to enter your DeepSeek API Key in the application's settings interface. This API Key will be securely stored via `electron-store`.
 
 
 ## Contribution
@@ -95,6 +77,8 @@ We welcome all forms of contributions! If you find bugs, have feature suggestion
 To maintain the project's healthy development, please ensure:
 - Submitted code is compatible with the [MIT License](LICENSE)
 - Avoid introducing code that is incompatible with the MIT License
+
+**Note on DCO**: Previously, this project had DCO (Developer Certificate of Origin) requirements, but the checks were not properly removed. We have now completely removed all DCO checks and requirements. Contributors are no longer required to sign off on their commits.
 
 Thank you for your support!
 

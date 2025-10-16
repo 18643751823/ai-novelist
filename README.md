@@ -1,6 +1,8 @@
-# 青烛 v2.0.1
+# 青烛 v0.1.0
 
 [English Version](README_en.md) | 中文版
+
+> **版本说明**: 由于这是个人学习项目，前期版本号管理较为混乱，故从 v0.1.0 开始重新进行版本管理。
 
 ![项目截图](images/示例图片.jpg)
 ## 项目介绍
@@ -20,7 +22,7 @@
 *   **React.js**: 前端用户界面框架，提供高效的组件化开发模式和出色的用户体验。
 *   **Node.js**: 后端服务运行时环境，负责处理与AI的交互、文件系统操作以及与前端的IPC通信。
 *   **AI API集成**: 支持 DeepSeek、Open Router、Ollama、硅基流动模型提供商，提供统一的接口调用体验。
-*   **ChromaDB**: 开源向量数据库，用于RAG（检索增强生成）功能，提供语义搜索和知识库管理。
+*   **LanceDB**: 向量数据库，用于RAG（检索增强生成）功能，提供语义搜索和知识库管理。
 *   **Redux**: 前端状态管理库，用于统一管理应用程序的复杂状态。
 *   **Tiptap**: 优秀的富文本编辑器。
 *   **electron-store**: 轻量级的Electron配置存储库，用于持久化应用程序设置，例如API Key。
@@ -34,38 +36,24 @@
 
 *   Node.js (推荐 LTS 版本)
 *   npm 或 yarn
-*   Python 3.8+ (用于 ChromaDB 向量数据库)
-*   ChromaDB Python 包 (通过 `pip install chromadb` 安装)
-*   **Windows 用户**: 需要在 Visual Studio Installer 中安装 "使用C++的桌面开发" 工作负载，以支持原生模块的编译
 
 ### 安装
 
 1.  **克隆仓库**:
     ```bash
-    git clone git@github.com:18643751823/ai-novelist.git
-    cd ai-novel
+    git clone git@github.com:FlickeringLamp/ai-novelist.git
+    cd ai-novelist
     ```
 
-2.  **安装 Python 依赖**:
-    确保已安装 Python 3.8+，然后安装 ChromaDB:
-    ```bash
-    pip install chromadb
-    ```
 
-3.  **安装后端依赖**:
+2.  **安装依赖**:
     在项目根目录 (`ai-novel/`) 下执行：
     ```bash
     npm install
     ```
 
-4.  **安装前端依赖**:
-    进入前端目录 (`ai-novel/frontend/react-app/`) 并执行：
-    ```bash
-    cd frontend/react-app
-    npm install
-    ```
 
-5.  **构建前端应用**:
+3.  **构建前端应用**:
     回到项目根目录 (`ai-novel/`) 并执行构建：
     ```bash
     cd ../..
@@ -80,12 +68,6 @@
 npm run start:full .
 ```
 
-应用会自动启动 ChromaDB 服务器（监听端口 8000）。如果端口 8000 被占用，应用会自动尝试其他端口。
-
-**注意**: 首次运行时，ChromaDB 需要一些时间来初始化数据库。
-
-**配置 API Key**:
-应用启动后，您需要在应用的设置界面中输入您的 DeepSeek API Key。此API Key将通过 `electron-store` 进行安全存储。
 
 
 ## 贡献
@@ -95,6 +77,8 @@ npm run start:full .
 为了保持项目的健康发展，请确保：
 - 提交的代码与 [MIT 协议](LICENSE) 兼容
 - 避免引入与 MIT 协议不兼容的代码
+
+**关于 DCO 的说明**：先前本项目有 DCO（开发者来源证书）要求，但检查未正确移除。现已完全移除所有 DCO 检查和要求。贡献者不再需要在提交时进行签名确认。
 
 感谢每一位贡献者的支持！
 

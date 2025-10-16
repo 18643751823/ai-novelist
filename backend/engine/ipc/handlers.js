@@ -277,11 +277,16 @@ const checkAndAutoSendBatchResults = async () => {
            
            // **关键重构**: 调用新的流式生成器并处理其返回的块
            // **关键重构**: chatService 现在从其内部状态获取流式设置
+           // 从会话状态获取AI参数
+           const sessionAiParameters = sessionState.aiParameters || {};
+           console.log(`[DEBUG][handlers.js] 工具结果反馈 - 从会话状态获取AI参数:`, JSON.stringify(sessionAiParameters, null, 2));
+           
            const stream = chatService.sendToolResultToAI(
                resultsToSend,
                defaultModelId,
                null, // customSystemPrompt
-               sessionState.mode // mode
+               sessionState.mode, // mode
+               sessionAiParameters // aiParameters
            );
            let hasNewPendingTools = false;
            
@@ -554,11 +559,16 @@ const handleSendBatchToolResults = async (event, processedTools) => {
         const isGeneralMode = sessionState.mode === 'general';
         console.log(`[handleSendBatchToolResults] 会话状态: mode=${sessionState.mode}, 工具功能: ${isGeneralMode ? '启用(通用模式)' : '禁用(其他模式)'}`);
 
+        // 从会话状态获取AI参数
+        const sessionAiParameters = sessionState.aiParameters || {};
+        console.log(`[DEBUG][handlers.js] 批量工具结果反馈 - 从会话状态获取AI参数:`, JSON.stringify(sessionAiParameters, null, 2));
+        
         const aiResponseResult = await chatService.sendToolResultToAI(
             processedTools,
             defaultModelId,
             null, // customSystemPrompt
-            sessionState.mode // mode
+            sessionState.mode, // mode
+            sessionAiParameters // aiParameters
         ); // 修改并添加 modelId 参数
         state.pendingToolCalls = [];
         chatService._sendAiResponseToFrontend('batch_processing_complete', null); // 修改
@@ -571,9 +581,20 @@ const handleSendBatchToolResults = async (event, processedTools) => {
 };
 
 // 处理用户命令
-const handleProcessCommand = async (event, { message, sessionId, currentMessages, mode, customPrompt, toolUsageEnabled, ragRetrievalEnabled, model }) => {
-    console.log(`[handlers.js] handleProcessCommand: Received command: "${message}", Mode: ${mode}, Custom Prompt: "${customPrompt}", RAG Retrieval Enabled: ${ragRetrievalEnabled}, Model: ${model}`);
+const handleProcessCommand = async (event, { message, sessionId, currentMessages, mode, customPrompt, toolUsageEnabled, ragRetrievalEnabled, model, aiParameters }) => {
+    console.log(`[handlers.js] handleProcessCommand: Received command: "${message}", Mode: ${mode}, Custom Prompt: "${customPrompt}", RAG Retrieval Enabled: ${ragRetrievalEnabled}, Model: ${model}, AI Parameters:`, aiParameters);
     console.log(`[handlers.js] Custom Prompt type: ${typeof customPrompt}, length: ${customPrompt ? customPrompt.length : 0}`);
+    
+    // 新增：详细的AI参数调试日志
+    console.log(`[DEBUG][handlers.js] AI参数详细调试信息:`);
+    console.log(`  - 原始aiParameters对象:`, JSON.stringify(aiParameters, null, 2));
+    console.log(`  - temperature: ${aiParameters?.temperature ?? '未设置'}`);
+    console.log(`  - top_p: ${aiParameters?.top_p ?? '未设置'}`);
+    console.log(`  - n: ${aiParameters?.n ?? '未设置'}`);
+    console.log(`  - stream: ${aiParameters?.stream ?? '未设置'}`);
+    console.log(`  - aiParameters类型: ${typeof aiParameters}`);
+    console.log(`  - aiParameters是否为null: ${aiParameters === null}`);
+    console.log(`  - aiParameters是否为undefined: ${aiParameters === undefined}`);
     
     // 根据模式选择服务：通用模式使用chatService，其他模式使用simpleChatService
     const isGeneralMode = mode === 'general';
@@ -630,11 +651,12 @@ const handleProcessCommand = async (event, { message, sessionId, currentMessages
       mode: mode,
       ragRetrievalEnabled: ragRetrievalEnabled,
       model: finalModel,
-      customPrompt: customPrompt
+      customPrompt: customPrompt,
+      aiParameters: aiParameters
     });
     
     // 调用相应的服务处理消息
-    await targetService.processUserMessage(message, sessionId, currentMessages, mode, customPrompt, ragRetrievalEnabled, finalModel);
+    await targetService.processUserMessage(message, sessionId, currentMessages, mode, customPrompt, ragRetrievalEnabled, finalModel, aiParameters);
     return { success: true };
 };
 // 新的、修复后的用户问题回复处理器
@@ -652,7 +674,7 @@ const handleUserQuestionResponse = async (event, { response, toolCallId }) => {
         const toolResultsArray = [{
             toolCallId: toolCallId,
             toolName: "ask_user_question",
-            result: { content: response } // 将结果包装在对象中以保持一致性
+            result: { content: response } // 只包含工具执行结果，不包含工具调用请求信息
         }];
         
         // 获取默认模型 ID
@@ -678,11 +700,16 @@ const handleUserQuestionResponse = async (event, { response, toolCallId }) => {
         console.log(`[handleUserQuestionResponse] 会话状态: mode=${sessionState.mode}, 工具功能: ${isGeneralMode ? '启用(通用模式)' : '禁用(其他模式)'}`);
 
         // **关键修复**: 调用新的流式 sendToolResultToAI 并正确处理其输出
+        // 从会话状态获取AI参数
+        const sessionAiParameters = sessionState.aiParameters || {};
+        console.log(`[DEBUG][handlers.js] 用户问题回复 - 从会话状态获取AI参数:`, JSON.stringify(sessionAiParameters, null, 2));
+        
         const stream = chatService.sendToolResultToAI(
             toolResultsArray,
             defaultModelId,
             null, // customSystemPrompt
-            sessionState.mode // mode
+            sessionState.mode, // mode
+            sessionAiParameters // aiParameters
         );
 
         for await (const chunk of stream) {
@@ -1357,8 +1384,45 @@ const handleRedetectOllama = async () => {
     }
 };
 
+// 新增：处理获取嵌入模型维度请求
+const handleGetEmbeddingDimensions = async (event, modelId) => {
+    try {
+        console.log(`[handlers.js] 开始获取嵌入模型维度: ${modelId}`);
+        
+        // 确保 ModelProvider 已初始化
+        await initializeModelProvider();
+        const modelRegistry = getModelRegistry();
+        
+        // 获取模型信息
+        const modelInfo = await modelRegistry.getModelInfo(modelId);
+        if (!modelInfo) {
+            return { success: false, error: `模型 ${modelId} 未找到` };
+        }
+        
+        // 获取适配器
+        const adapter = modelRegistry.getAdapter(modelInfo.provider);
+        if (!adapter) {
+            return { success: false, error: `提供商 ${modelInfo.provider} 的适配器未找到` };
+        }
+        
+        // 检查适配器是否支持获取嵌入维度
+        if (typeof adapter.getEmbeddingDimensions !== 'function') {
+            return { success: false, error: `模型 ${modelId} 不支持自动获取嵌入维度` };
+        }
+        
+        // 获取嵌入维度
+        const dimensions = await adapter.getEmbeddingDimensions(modelInfo);
+        console.log(`[handlers.js] 模型 ${modelId} 的嵌入维度: ${dimensions}`);
+        
+        return { success: true, dimensions };
+        
+    } catch (error) {
+        console.error(`[handlers.js] 获取嵌入模型维度失败: ${modelId}`, error);
+        return { success: false, error: `获取嵌入维度失败: ${error.message}` };
+    }
+};
 // 注册所有IPC处理器
-function register(store) { // 接收 store 参数并设置全局实例
+function register(store, mainWindow) { // 接收 store 和 mainWindow 参数并设置全局实例
   storeInstance = store; // 设置全局存储实例
   console.log('[handlers.js] register: 开始注册 IPC 处理器...');
   console.log(`[DEBUG] register: storeInstance set, path: ${storeInstance.path}`);
@@ -1443,6 +1507,19 @@ function register(store) { // 接收 store 参数并设置全局实例
   // 新增：RAG检索状态设置处理器
   ipcMain.handle('set-rag-retrieval-enabled', handleSetRagRetrievalEnabled);
 
+  // 新增：RAG嵌入函数处理器
+  ipcMain.handle('reinitialize-embedding-function', ragIpcHandler.reinitializeEmbeddingFunction.bind(ragIpcHandler));
+  ipcMain.handle('set-embedding-dimensions', ragIpcHandler.setEmbeddingDimensions.bind(ragIpcHandler));
+  ipcMain.handle('get-embedding-dimensions', ragIpcHandler.getEmbeddingDimensions.bind(ragIpcHandler));
+  
+  // 新增：RAG分段参数处理器
+  ipcMain.handle('set-rag-chunk-settings', ragIpcHandler.setRagChunkSettings.bind(ragIpcHandler));
+  ipcMain.handle('get-rag-chunk-settings', ragIpcHandler.getRagChunkSettings.bind(ragIpcHandler));
+
+  // 新增：检索设置处理器
+  ipcMain.handle('set-retrieval-top-k', ragIpcHandler.setRetrievalTopK.bind(ragIpcHandler));
+  ipcMain.handle('get-retrieval-top-k', ragIpcHandler.getRetrievalTopK.bind(ragIpcHandler));
+
   // 新增：排序配置处理器
   ipcMain.handle('get-sort-config', handleGetSortConfig);
   ipcMain.handle('set-sort-enabled', handleSetSortEnabled);
@@ -1469,6 +1546,7 @@ function register(store) { // 接收 store 参数并设置全局实例
   //   }
   // });
   
+
   // Checkpoint Service Handlers
   ipcMain.handle('checkpoints:save', async (event, { taskId, message }) => {
     const { workspaceDir, shadowDir } = await getCheckpointDirs();
@@ -1576,19 +1654,16 @@ function register(store) { // 接收 store 参数并设置全局实例
             storeInstance = new Store();
             console.warn(`[WARNING] get-store-value: 创建了新的 storeInstance 作为fallback，路径: ${storeInstance.path}`);
         } else {
-            console.log(`[API设置调试] get-store-value: 使用现有 storeInstance，key: ${key}`);
         }
         const value = storeInstance.get(key);
         
         // 特别处理功能状态设置的详细日志
         const featureKeys = ['modeFeatureSettings', 'toolUsageEnabled', 'ragRetrievalEnabled'];
         if (featureKeys.includes(key)) {
-            console.log(`[API设置调试] get-store-value: 获取功能设置 key=${key}, value=`, JSON.stringify(value, null, 2));
         } else {
             // 特别处理API相关设置的详细日志
             const apiKeys = ['selectedModel', 'selectedProvider', 'deepseekApiKey', 'openrouterApiKey', 'aliyunEmbeddingApiKey', 'intentAnalysisModel'];
             if (apiKeys.includes(key)) {
-                console.log(`[API设置调试] get-store-value: 获取API设置 key=${key}, value=`, value);
             }
         }
         
@@ -1611,18 +1686,15 @@ function register(store) { // 接收 store 参数并设置全局实例
             storeInstance = new Store();
             console.warn(`[WARNING] set-store-value: 创建了新的 storeInstance 作为fallback，路径: ${storeInstance.path}`);
         } else {
-            console.log(`[API设置调试] set-store-value: 使用现有 storeInstance，key: ${key}`);
         }
         
         // 特别处理功能状态设置的详细日志
         const featureKeys = ['modeFeatureSettings', 'toolUsageEnabled', 'ragRetrievalEnabled'];
         if (featureKeys.includes(key)) {
-            console.log(`[API设置调试] set-store-value: 保存功能设置 key=${key}, value=`, JSON.stringify(value, null, 2));
         } else {
             // 特别处理API相关设置的详细日志
             const apiKeys = ['selectedModel', 'selectedProvider', 'deepseekApiKey', 'openrouterApiKey', 'aliyunEmbeddingApiKey', 'intentAnalysisModel'];
             if (apiKeys.includes(key)) {
-                console.log(`[API设置调试] set-store-value: 保存API设置 key=${key}, value=`, value);
             }
         }
         
@@ -1630,11 +1702,9 @@ function register(store) { // 接收 store 参数并设置全局实例
         
         // 验证保存是否成功
         const savedValue = storeInstance.get(key);
-        console.log(`[API设置调试] set-store-value: 验证保存 key=${key}, 实际存储值=`, savedValue);
         
         // 强制写入磁盘
         await storeInstance.store;
-        console.log(`[API设置调试] set-store-value: 数据已强制写入磁盘`);
         
         return { success: true, message: `值已保存: ${key}` };
     } catch (error) {

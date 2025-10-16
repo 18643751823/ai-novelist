@@ -1,61 +1,36 @@
 import { useCallback } from 'react';
 
-// 环境检测函数
-const isElectron = () => {
-  return !!(window.ipcRenderer || window.api);
-};
-
 const useIpcRenderer = () => {
   const send = useCallback((channel, ...args) => {
-    if (isElectron()) {
-      if (window.ipcRenderer) {
-        window.ipcRenderer.send(channel, ...args);
-      } else if (window.api) {
-        window.api.send(channel, ...args);
-      }
+    if (window.ipcRenderer) {
+      window.ipcRenderer.send(channel, ...args);
     } else {
-      console.warn(`开发环境: 无法发送IPC消息 (${channel})，请启动Electron应用`);
-      // 开发环境中，某些send操作可以转换为HTTP请求
-      if (channel === 'main-log') {
-        console.log('开发环境日志:', ...args);
-      }
+      console.warn('ipcRenderer is not available. Are you running in Electron?');
     }
   }, []);
 
   const invoke = useCallback(async (channel, ...args) => {
-    if (isElectron()) {
-      if (window.ipcRenderer) {
-        return await window.ipcRenderer.invoke(channel, ...args);
-      } else if (window.api) {
-        return await window.api.invoke(channel, ...args);
-      }
+    if (window.ipcRenderer) {
+      return await window.ipcRenderer.invoke(channel, ...args);
     } else {
-      console.warn(`开发环境: 无法调用IPC方法 (${channel})，请在Electron环境中运行`);
-      return { success: false, error: `开发环境不支持此操作: ${channel}` };
+      console.warn('ipcRenderer is not available. Are you running in Electron?');
+      return null;
     }
   }, []);
 
   const on = useCallback((channel, listener) => {
-    if (isElectron()) {
-      if (window.ipcRenderer) {
-        window.ipcRenderer.on(channel, listener);
-      } else if (window.api) {
-        window.api.on(channel, listener);
-      }
+    if (window.ipcRenderer) {
+      window.ipcRenderer.on(channel, listener);
     } else {
-      console.warn(`开发环境: 无法监听IPC事件 (${channel})`);
+      console.warn('ipcRenderer is not available. Are you running in Electron?');
     }
   }, []);
 
   const removeListener = useCallback((channel, listener) => {
-    if (isElectron()) {
-      if (window.ipcRenderer) {
-        window.ipcRenderer.removeListener(channel, listener);
-      } else if (window.api) {
-        window.api.removeListener(channel, listener);
-      }
+    if (window.ipcRenderer) {
+      window.ipcRenderer.removeListener(channel, listener);
     } else {
-      console.warn(`开发环境: 无法移除IPC监听器 (${channel})`);
+      console.warn('ipcRenderer is not available. Are you running in Electron?');
     }
   }, []);
 
@@ -64,20 +39,15 @@ const useIpcRenderer = () => {
     invoke,
     on,
     removeListener,
-    isElectron: useCallback(() => isElectron(), []),
-    getDeepSeekChatHistory: useCallback(() => invoke('get-ai-chat-history'), [invoke]),
-    deleteDeepSeekChatHistory: useCallback((sessionId) => invoke('delete-ai-chat-history', sessionId), [invoke]),
-    clearDeepSeekConversation: useCallback(() => invoke('clear-ai-conversation'), [invoke]),
-    getStoreValue: useCallback((key) => invoke('get-store-value', key), [invoke]),
-    setStoreValue: useCallback((key, value) => invoke('set-store-value', key, value), [invoke]),
-    sendToMainLog: useCallback((message) => send('main-log', message), [send]),
-    listAllModels: useCallback(() => invoke('list-all-models'), [invoke]),
-    reinitializeModelProvider: useCallback(() => invoke('reinitialize-model-provider'), [invoke]),
-    reinitializeAliyunEmbedding: useCallback(() => invoke('reinitialize-aliyun-embedding'), [invoke]),
-    stopStreaming: useCallback(() => invoke('stop-streaming'), [invoke]),
-    getFileList: useCallback(() => invoke('get-file-list'), [invoke]),
-    readFile: useCallback((filename) => invoke('read-file', filename), [invoke]),
-    writeFile: useCallback((filePath, content) => invoke('write-file', filePath, content), [invoke])
+    getDeepSeekChatHistory: useCallback(() => invoke('get-ai-chat-history'), [invoke]), // 修改为更通用的 ai 名称
+    deleteDeepSeekChatHistory: useCallback((sessionId) => invoke('delete-ai-chat-history', sessionId), [invoke]), // 修改为更通用的 ai 名称
+    clearDeepSeekConversation: useCallback(() => invoke('clear-ai-conversation'), [invoke]), // 修改为更通用的 ai 名称
+    getStoreValue: useCallback((key) => invoke('get-store-value', key), [invoke]), // 新增：获取 electron-store 值
+    setStoreValue: useCallback((key, value) => invoke('set-store-value', key, value), [invoke]), // 新增：设置 electron-store 值
+    sendToMainLog: useCallback((message) => send('main-log', message), [send]), // 新增：发送日志到主进程
+    listAllModels: useCallback(() => invoke('list-all-models'), [invoke]), // 新增：获取所有可用模型列表
+    reinitializeModelProvider: useCallback(() => invoke('reinitialize-model-provider'), [invoke]), // 新增：重新初始化模型提供者
+    reinitializeAliyunEmbedding: useCallback(() => invoke('reinitialize-aliyun-embedding'), [invoke]) // 新增：重新初始化阿里云嵌入函数
   };
 };
 

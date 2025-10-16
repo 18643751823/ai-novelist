@@ -1,0 +1,435 @@
+/* 章节树面板容器 */
+.chapter-tree-panel-container {
+    background-color: #060606; /* 深色背景 */
+    color: #abb2bf; /* 默认文字颜色 */
+    display: flex; /* 使容器成为 Flex 容器 */
+    flex-direction: column; /* 垂直排列子项 */
+    border-right: 1px solid #3e4451; /* 右边框 */
+    height: 100%; /* 确保占据父容器的全部高度 */
+}
+
+/* 新增 main-chapter-area 样式 */
+.main-chapter-area {
+    display: flex;
+    flex-direction: column;
+    height: 85%; /* 占据 85% 高度 */
+    flex-shrink: 0; /* 防止被压缩 */
+    background-color: rgb(40, 40, 40);
+    width: 100%; /* 确保占据父容器的全部宽度 */
+}
+
+/* 章节树面板头部 */
+.chapter-tree-panel-header {
+    display: flex;
+    justify-content: flex-end; /* 按钮靠右 */
+    gap: 10px; /* 按钮间距 */
+    border-bottom: 1px solid #3e4451;
+    height: 5%; /* 占据顶部 5% 高度 */
+    flex-shrink: 0; /* 防止被压缩 */
+    align-items: center; /* 垂直居中按钮 */
+    background-color: rgb(40, 40, 40);
+    width: 100%; /* 确保占据父容器的全部宽度 */
+}
+
+.chapter-tree-panel-header button {
+    background-color: #3a3f4b;
+    color: #abb2bf;
+    border: 1px solid #5c6370;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.chapter-tree-panel-header button:hover {
+    background-color: #4a4f5b;
+    border-color: var(--border-color); /* 改为深灰色 */
+    color: var(--primary-color); /* 改为绿色 */
+}
+
+/* 章节树面板内容 */
+.chapter-tree-panel-content {
+    flex-grow: 1; /* 占据剩余空间 */
+    overflow-y: auto; /* 允许滚动 */
+    padding: 10px;
+}
+
+/* 新增 settings-button-area 样式 */
+.settings-button-area {
+    height: 10%; /* 占据底部 10% 高度 */
+    flex-shrink: 0; /* 防止被压缩 */
+    display: flex;
+    justify-content: flex-end; /* 将内容推到右边 */
+    align-items: flex-end; /* 将内容推到底部 */
+    padding: 10px; /* 留出一定的边距 */
+    background-color: rgb(40, 40, 40);
+    width: 100%; /* 确保占据父容器的全部宽度 */
+}
+
+/* 无章节消息 */
+.no-chapters-message {
+    padding: 10px;
+    text-align: center;
+    color: #5ad06e; /* 绿色文字 */
+}
+
+/* 章节列表 */
+.chapter-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* 章节列表项 */
+.chapter-list-item {
+    margin-bottom: 2px;
+}
+
+/* 文件夹项和文件项的通用样式 */
+.chapter-item-content {
+    display: flex;
+    align-items: center;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    white-space: nowrap; /* 防止文本换行 */
+    overflow: hidden; /* 隐藏溢出内容 */
+    text-overflow: ellipsis; /* 显示省略号 */
+}
+
+.chapter-item-content:hover {
+    background-color: #3e4451; /* 悬停背景 */
+}
+
+.chapter-item-content.editing {
+    background-color: #3a3f4b; /* 编辑状态下的背景 */
+}
+
+/* 文件夹展开/折叠图标 */
+.collapse-icon {
+    margin-right: 5px;
+    font-size: 0.8em;
+    color: var(--text-color-secondary); /* 改为浅灰色 */
+}
+
+/* 文件/文件夹图标 */
+.item-icon {
+    margin-right: 8px;
+    color: #a6e22e; /* 绿色 */
+}
+
+.folder-item > .chapter-item-content > .item-icon {
+    color: var(--text-color-secondary); /* 改为深灰色系 */
+}
+
+/* 章节标题按钮 */
+.chapter-title-button {
+    background: none;
+    border: none;
+    color: inherit; /* 继承父元素的颜色 */
+    text-align: left;
+    flex-grow: 1; /* 占据剩余空间 */
+    cursor: pointer;
+    padding: 0;
+    font-size: 1em;
+    outline: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chapter-title-button:hover {
+    color: var(--primary-color); /* 悬停时变绿 */
+}
+
+/* 编辑状态下的输入框 */
+.chapter-edit-input {
+    flex-grow: 1;
+    background-color: #3a3f4b;
+    border: 1px solid #5c6370;
+    color: #abb2bf;
+    padding: 3px 5px;
+    border-radius: 3px;
+    margin-right: 5px;
+    font-size: 1em;
+}
+
+.chapter-edit-input:focus {
+    border-color: var(--primary-color); /* 改为绿色 */
+    outline: none;
+}
+
+/* 保存按钮 (编辑状态下) */
+.chapter-item-content .save-button {
+    background-color: var(--primary-color); /* 改为绿色 */
+    color: white;
+    border: none;
+    padding: 3px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-left: 5px;
+}
+
+.chapter-item-content .save-button:hover {
+    background-color: var(--primary-color-dark); /* 改为深绿色 */
+}
+
+/* 子章节列表 */
+.sub-chapter-list {
+    list-style: none;
+    padding-left: 20px; /* 缩进子章节 */
+    margin: 0;
+}
+
+/* 设置按钮 */
+.settings-button {
+    background-color: transparent; /* 去掉背景色 */
+    color: #abb2bf;
+    border: none; /* 去掉边框 */
+    padding: 0; /* 去掉内边距，让图标本身大小决定 */
+    border-radius: 0; /* 去掉圆角 */
+    font-size: 1.2em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease; /* 只过渡颜色 */
+}
+
+/* 齿轮图标的样式和动画 */
+.settings-button .fa-gear {
+    transition: transform 0.5s ease-in-out; /* 旋转动画 */
+}
+
+.settings-button:hover .fa-gear {
+    transform: rotate(360deg); /* 鼠标悬停时旋转 */
+}
+
+.settings-button:hover {
+    background-color: transparent; /* 保持背景色透明 */
+    border-color: transparent; /* 保持边框透明 */
+    color: #a6e22e; /* 悬停时文字变为绿色 */
+}
+
+/* 设置模态框 */
+.settings-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+}
+
+.settings-modal-content {
+    background-color: #282c34;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    width: 400px;
+    max-width: 90%;
+    color: #abb2bf;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.settings-modal-content h2 {
+    color: var(--text-color-primary); /* 改为文本主色 */
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.setting-item label {
+    font-weight: bold;
+    color: #abb2bf;
+}
+
+.setting-item input[type="text"] {
+    background-color: #3a3f4b;
+    border: 1px solid #5c6370;
+    color: #abb2bf;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 1em;
+    width: 100%;
+    box-sizing: border-box; /* 确保 padding 不会增加宽度 */
+}
+
+.setting-item input[type="text"]::placeholder {
+    color: #7f848e;
+}
+
+.setting-item input[type="text"]:focus {
+    border-color: var(--primary-color); /* 改为绿色 */
+    outline: none;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-actions button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+.modal-actions .save-button {
+    background-color: var(--primary-color); /* 改为绿色 */
+    color: white;
+}
+
+.modal-actions .save-button:hover {
+    background-color: var(--primary-color-dark); /* 改为深绿色 */
+}
+
+.modal-actions .cancel-button {
+    background-color: var(--panel-bg-color); /* 改为深灰色 */
+    color: white;
+}
+
+.modal-actions .cancel-button:hover {
+    background-color: var(--hover-bg-color); /* 改为悬停背景色 */
+}
+
+/* 针对不同层级的字体大小调整 */
+.chapter-list-item.level-0 .chapter-title-button {
+    font-size: 1em;
+}
+
+.chapter-list-item.level-1 .chapter-title-button {
+    font-size: 0.95em; /* 第一层级子项字体缩小 */
+}
+
+.chapter-list-item.level-2 .chapter-title-button {
+    font-size: 0.9em; /* 第二层级子项字体进一步缩小 */
+}
+
+.chapter-list-item.level-3 .chapter-title-button {
+    font-size: 0.85em; /* 第三层级子项字体进一步缩小 */
+}
+
+/* 针对文件夹下内容的区分度 */
+.nested-folder-content {
+  background-color: rgba(255, 255, 255, 0.03); /* 略微不同的背景色 */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* 细微边框 */
+  margin-top: 2px; /* 与上一个项目稍微分离 */
+  margin-bottom: 2px; /* 与下一个项目稍微分离 */
+  border-radius: 4px; /* 圆角 */
+}
+
+/* 调整图标大小 */
+.nested-folder-content .item-icon {
+    font-size: 0.9em; /* 图标也稍微小一点 */
+}
+
+/* 刷新按钮样式 */
+.refresh-button {
+    background-color: #3a3f4b;
+    color: #abb2bf;
+    border: 1px solid #5c6370;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 图标居中 */
+    gap: 5px;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.refresh-button:hover {
+    background-color: #4a4f5b;
+    border-color: var(--primary-color); /* 悬停时边框变为绿色 */
+    color: var(--primary-color); /* 悬停时文字变为绿色 */
+}
+/* 前缀相关样式 */
+.prefix-section {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+  min-width: 30px;
+}
+
+.prefix-display {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border: 1px solid transparent;
+}
+
+.prefix-display:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.prefix-edit-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.prefix-edit-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: inherit;
+  padding: 2px 4px;
+  font-size: 0.8em;
+  width: 40px;
+  text-align: center;
+}
+
+.prefix-edit-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.prefix-edit-confirm,
+.prefix-edit-cancel {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 2px;
+  font-size: 0.7em;
+  transition: background-color 0.2s;
+}
+
+.prefix-edit-confirm:hover {
+  background: rgba(76, 175, 80, 0.3);
+}
+
+.prefix-edit-cancel:hover {
+  background: rgba(244, 67, 54, 0.3);
+}

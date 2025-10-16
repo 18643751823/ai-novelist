@@ -69,17 +69,16 @@ class SiliconFlowAdapter extends BaseModelAdapter {
     const completionParams = {
       model: modelId,
       messages: messages,
-      temperature: options.temperature || 0.7,
+      temperature: options.temperature, // 使用前端传递的参数，不设置默认值
       max_tokens: options.max_tokens,
       stream: options.stream !== false, // 默认启用流式
       // 硅基流动特有参数
       // enable_thinking: options.enable_thinking || false, // 暂时注释，不向服务器发送此参数，未来开发"关闭思考模式"功能时再启用
-      thinking_budget: options.thinking_budget || 4096,
       min_p: options.min_p,
-      top_p: options.top_p || 0.7,
+      top_p: options.top_p,
       top_k: options.top_k,
       frequency_penalty: options.frequency_penalty,
-      n: options.n || 1,
+      n: options.n,
       response_format: options.response_format,
       stop: options.stop
     };
@@ -261,6 +260,59 @@ validateConfig(config) {
 
   return { isValid: true, errors }; // 总是返回有效，允许注册
 }
+
+  /**
+   * 获取嵌入模型的维度
+   * @param {string} modelId - 模型ID
+   * @returns {Promise<number>} 嵌入维度
+   */
+  async getEmbeddingDimensions(modelId) {
+    try {
+      const client = this._getClient();
+      if (!client) {
+        throw new Error('SiliconFlow 客户端未初始化，请检查 API 密钥配置');
+      }
+
+      // 检查是否为嵌入模型
+      if (!this.isEmbeddingModel(modelId)) {
+        throw new Error(`模型 ${modelId} 不是嵌入模型`);
+      }
+
+      // 构建请求体
+      const requestBody = {
+        model: modelId,
+        input: 'test',
+        encoding_format: 'float'
+      };
+
+      // 发送测试请求获取嵌入向量
+      const response = await global.fetch(`${this.baseURL}/embeddings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`硅基流动API请求失败: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      // 从响应中提取嵌入向量长度
+      if (data.data && data.data.length > 0 && data.data[0].embedding) {
+        return data.data[0].embedding.length;
+      } else {
+        throw new Error('无法从响应中获取嵌入向量');
+      }
+    } catch (error) {
+      console.error(`获取 SiliconFlow 模型 ${modelId} 嵌入维度失败:`, error);
+      throw this._standardizeError(error, '获取嵌入维度失败');
+    }
+  }
 
   /**
    * 更新配置

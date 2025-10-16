@@ -1,0 +1,177 @@
+/* 模式选择器容器 */
+.mode-selector-container {
+  position: relative;
+  display: inline-block;
+  z-index: 100;
+  box-sizing: border-box; /* 确保容器也使用border-box */
+}
+
+/* 模式选择器栏 */
+.mode-selector-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: var(--panel-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 36px;
+}
+
+.mode-selector-bar:hover {
+  border-color: var(--primary-color);
+  background-color: var(--hover-bg-color);
+}
+
+.selected-mode-name {
+  color: var(--text-color-primary);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mode-search-input-bar {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-color-primary);
+  font-size: 14px;
+  outline: none;
+  padding: 0;
+}
+
+.mode-search-input-bar::placeholder {
+  color: var(--text-color-light);
+}
+
+.expand-icon {
+  color: var(--text-color-light);
+  font-size: 12px;
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+}
+
+/* 模式列表 */
+.mode-list {
+  flex: 1;
+  overflow-y: auto;
+}
+.mode-item {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid var(--divider-color);
+}
+
+.mode-item:last-child {
+  border-bottom: none;
+}
+
+.mode-item:hover {
+  background-color: var(--hover-bg-color);
+}
+
+.mode-item.selected {
+  background-color: rgba(0, 173, 98, 0.1);
+  border-left: 3px solid var(--primary-color);
+}
+
+.mode-name {
+  font-weight: 500;
+  color: var(--text-color-primary);
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.mode-type {
+  font-size: 0.8em;
+  color: var(--text-color-light);
+}
+
+/* 分页控制 */
+.mode-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border-top: 1px solid var(--divider-color);
+  background-color: var(--panel-bg-color-alt);
+  min-height: 44px; /* 确保分页区域有足够高度 */
+}
+
+.pagination-btn {
+  background: none;
+  border: none;
+  color: var(--text-color-primary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: var(--hover-bg-color);
+}
+
+.pagination-btn:disabled {
+  color: var(--text-color-light);
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 0.8em;
+  color: var(--text-color-light);
+  margin: 0 12px;
+}
+
+/* 搜索结果信息 */
+.search-results-info {
+  padding: 8px 12px;
+  font-size: 0.8em;
+  color: var(--text-color-light);
+  text-align: center;
+  border-top: 1px solid var(--divider-color);
+  background-color: var(--panel-bg-color-alt);
+}
+
+/* 滚动条样式 */
+.mode-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mode-list::-webkit-scrollbar-track {
+  background: var(--panel-bg-color);
+  border-radius: 3px;
+}
+
+.mode-list::-webkit-scrollbar-thumb {
+  background: var(--divider-color);
+  border-radius: 3px;
+}
+
+.mode-list::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .mode-selector-container {
+    width: 100%;
+  }
+  
+  .mode-selector-dropdown {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 300px;
+    max-height: 60vh;
+  }
+}

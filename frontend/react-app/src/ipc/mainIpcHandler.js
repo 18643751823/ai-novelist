@@ -1,35 +1,7 @@
 // frontend/react-app/src/ipc/mainIpcHandler.js
 import { setDeepSeekHistory } from '../store/slices/chatSlice';
 
-// 环境检测函数
-const isElectron = () => {
-  return !!(window.ipcRenderer || window.api);
-};
-
 export const registerMainIpcListeners = (dispatch) => {
-  // 开发环境模拟IPC事件处理
-  const simulateElectronEvents = () => {
-    if (!isElectron()) {
-      console.log('开发环境: 模拟Electron IPC事件');
-      
-      // 模拟文件更新事件（用于测试）
-      setTimeout(() => {
-        const mockFileUpdate = {
-          type: 'file-content-updated',
-          payload: {
-            filePath: '/novel/test.md',
-            content: '# 测试文件\n这是开发环境模拟的文件内容',
-            checkpointId: 'dev-mock-checkpoint'
-          }
-        };
-        
-        if (typeof window.dispatchMockIpcEvent === 'function') {
-          window.dispatchMockIpcEvent('ai-response', mockFileUpdate);
-        }
-      }, 2000);
-    }
-  };
-
   const handleAiResponse = (event, payload) => {
     // 根据 payload 的 type 智能分发 action
     const { type, payload: innerPayload } = payload;
@@ -95,70 +67,33 @@ export const registerMainIpcListeners = (dispatch) => {
     dispatch({ type: 'novel/fileRenamed', payload: { oldFilePath, newFilePath } });
   };
 
-  if (isElectron()) {
-    const ipc = window.ipcRenderer || window.api;
-    if (ipc) {
-      ipc.on('ai-response', handleAiResponse);
-      ipc.on('update-current-file', handleUpdateCurrentFile);
-      ipc.on('file-written', handleFileWritten);
-      ipc.on('file-deleted', handleFileDeleted);
-      ipc.on('file-renamed', handleFileRenamed);
-      ipc.on('ai-chat-history', (event, history) => {
-        dispatch(setDeepSeekHistory(history));
-      });
-      console.log("[MainIpcHandler] 所有 IPC 监听器已注册.");
-    }
-  } else {
-    console.log("[MainIpcHandler] 开发环境: 无法注册IPC监听器，使用模拟事件");
-    
-    // 开发环境下的模拟事件处理
-    window.dispatchMockIpcEvent = (channel, data) => {
-      switch (channel) {
-        case 'ai-response':
-          handleAiResponse(null, data);
-          break;
-        case 'update-current-file':
-          handleUpdateCurrentFile(null, data);
-          break;
-        case 'file-written':
-          handleFileWritten(null, data);
-          break;
-        case 'file-deleted':
-          handleFileDeleted(null, data);
-          break;
-        case 'file-renamed':
-          handleFileRenamed(null, data);
-          break;
-        default:
-          console.warn(`开发环境: 未知的模拟事件通道: ${channel}`);
-      }
-    };
-    
-    // 启动模拟事件
-    simulateElectronEvents();
+  if (window.ipcRenderer) {
+    window.ipcRenderer.on('ai-response', handleAiResponse);
+    window.ipcRenderer.on('update-current-file', handleUpdateCurrentFile);
+    window.ipcRenderer.on('file-written', handleFileWritten);
+    window.ipcRenderer.on('file-deleted', handleFileDeleted);
+    window.ipcRenderer.on('file-renamed', handleFileRenamed);
+    window.ipcRenderer.on('ai-chat-history', (event, history) => {
+      dispatch(setDeepSeekHistory(history));
+    });
+    console.log("[MainIpcHandler] 所有 IPC 监听器已注册.");
   }
 
   // 返回清理函数
   return () => {
-    if (isElectron()) {
-      const ipc = window.ipcRenderer || window.api;
-      if (ipc) {
-        ipc.removeListener('ai-response', handleAiResponse);
-        ipc.removeListener('update-current-file', handleUpdateCurrentFile);
-        ipc.removeListener('file-written', handleFileWritten);
-        ipc.removeListener('file-deleted', handleFileDeleted);
-        ipc.removeListener('file-renamed', handleFileRenamed);
-        // 注意：这里移除监听器时，回调函数必须是同一个引用，否则无法正确移除。
-        // 对于匿名函数，需要单独定义
-        const removeHistoryListener = (event, history) => {
-          dispatch(setDeepSeekHistory(history));
-        };
-        ipc.removeListener('ai-chat-history', removeHistoryListener);
-        console.log("[MainIpcHandler] 所有 IPC 监听器已移除.");
-      }
-    } else {
-      console.log("[MainIpcHandler] 开发环境: 清理模拟事件");
-      delete window.dispatchMockIpcEvent;
+    if (window.ipcRenderer) {
+      window.ipcRenderer.removeListener('ai-response', handleAiResponse);
+      window.ipcRenderer.removeListener('update-current-file', handleUpdateCurrentFile);
+      window.ipcRenderer.removeListener('file-written', handleFileWritten);
+      window.ipcRenderer.removeListener('file-deleted', handleFileDeleted);
+      window.ipcRenderer.removeListener('file-renamed', handleFileRenamed);
+      // 注意：这里移除监听器时，回调函数必须是同一个引用，否则无法正确移除。
+      // 对于匿名函数，需要单独定义
+      const removeHistoryListener = (event, history) => {
+        dispatch(setDeepSeekHistory(history));
+      };
+      window.ipcRenderer.removeListener('ai-chat-history', removeHistoryListener);
+      console.log("[MainIpcHandler] 所有 IPC 监听器已移除.");
     }
   };
 };

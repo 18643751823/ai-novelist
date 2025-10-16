@@ -1,0 +1,783 @@
+.prompt-manager-modal-content {
+  background-color: #1e1e1e;
+  border-radius: 0;
+  padding: 0px;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  overflow: hidden; /* 改为hidden，避免双重滚动条 */
+  color: #abb2bf;
+  box-shadow: none;
+  border-left: 1px solid #444; /* 在侧边栏和模态框之间添加分隔线 */
+  display: flex;
+  flex-direction: column;
+}
+
+
+.close-button {
+  background: none;
+  border: none;
+  color: #abb2bf;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 5px;
+}
+
+.close-button:hover {
+  color: #fff;
+}
+
+.prompt-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.prompt-section {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #444;
+}
+
+.prompt-section h3 {
+  margin-top: 0;
+  color: #fff;
+  border-bottom: 2px solid #555;
+  padding-bottom: 12px;
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.prompt-section h4 {
+  margin: 15px 0 8px 0;
+  color: #ddd;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.custom-prompt textarea {
+  width: 100%;
+  background-color: #1e1e1e;
+  color: #abb2bf;
+  border: 2px solid #555;
+  border-radius: 6px;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 320px;
+}
+
+.custom-prompt textarea:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.custom-prompt textarea::placeholder {
+  color: #888;
+  font-style: italic;
+}
+
+.reset-button {
+  background-color: #555;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  margin-top: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.reset-button:hover:not(:disabled) {
+  background-color: #666;
+}
+
+.reset-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+.save-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.save-button:hover {
+  background-color: #45a049;
+  transform: translateY(-1px);
+}
+
+.cancel-button {
+  background-color: #666;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.cancel-button:hover {
+  background-color: #777;
+  transform: translateY(-1px);
+}
+
+/* 新增：功能设置样式 */
+.feature-settings {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #555;
+}
+
+.feature-toggle {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+
+.feature-toggle label {
+  font-size: 14px;
+  color: #ddd;
+  cursor: pointer;
+}
+
+.feature-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.feature-description {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+  margin-left: 26px;
+}
+
+
+
+/* 持久记忆标签页样式 */
+.memory-tab-content {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  padding: 0; /* 移除内边距，让内容完全撑满容器 */
+  border: 1px solid #444;
+}
+
+.mode-selector {
+  margin-bottom: 20px;
+}
+
+.mode-selector h4 {
+  margin: 0 0 8px 0;
+  color: #ddd;
+  font-size: 16px;
+}
+
+.mode-dropdown {
+  background-color: #1e1e1e;
+  color: #abb2bf;
+  border: 2px solid #555;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  width: 200px;
+}
+
+.mode-dropdown:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.additional-info-editor h4 {
+  margin: 0 0 8px 0;
+  color: #ddd;
+  font-size: 16px;
+}
+
+.additional-info-textarea {
+  width: 100%;
+  background-color: #1e1e1e;
+  color: #abb2bf;
+  border: 2px solid #555;
+  border-radius: 6px;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 150px;
+}
+
+.additional-info-textarea:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.character-count {
+  font-size: 12px;
+  color: #888;
+  margin-top: 8px;
+  text-align: right;
+}
+
+.preview-panel {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #555;
+}
+
+.preview-panel h5 {
+  margin: 0 0 8px 0;
+  color: #ddd;
+  font-size: 14px;
+}
+
+.preview-content {
+  background-color: #1e1e1e;
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  min-height: 60px;
+}
+
+.preview-placeholder {
+  color: #888;
+  font-style: italic;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .prompt-sections {
+    grid-template-columns: 1fr;
+  }
+  
+  .prompt-manager-modal-content {
+    width: 100%; /* 改为100%全屏显示 */
+    padding: 15px;
+  }
+
+  .tab-navigation {
+    flex-direction: column;
+  }
+
+  .tab-button {
+    text-align: left;
+    border-bottom: none;
+    border-left: 2px solid transparent;
+  }
+
+  .tab-button.active {
+    border-bottom-color: transparent;
+    border-left-color: #4CAF50;
+  }
+
+  .mode-dropdown {
+    width: 100%;
+  }
+}
+
+/* RAG知识库设置样式 */
+.rag-settings-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.rag-settings-section {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #444;
+}
+
+.rag-settings-section h3 {
+  margin-top: 0;
+  color: #fff;
+  border-bottom: 2px solid #555;
+  padding-bottom: 12px;
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.rag-toggle {
+  margin-bottom: 15px;
+}
+
+.rag-toggle label {
+  font-size: 14px;
+  color: #ddd;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.rag-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.collection-selection h4 {
+  margin: 15px 0 8px 0;
+  color: #ddd;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.collection-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.collection-item {
+  margin-bottom: 8px;
+  padding: 8px;
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  border: 1px solid #555;
+}
+
+.collection-item label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.collection-item input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.collection-info {
+  display: flex;
+  flex-direction: column;
+  margin-left: 8px;
+}
+
+.collection-info strong {
+  color: #fff;
+  font-size: 13px;
+}
+
+.collection-details {
+  color: #888;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.collection-help {
+  background-color: #2d2d30;
+  padding: 10px;
+  border-radius: 4px;
+  border-left: 3px solid #2196F3;
+}
+
+.collection-help p {
+  margin: 4px 0;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.rag-settings-header {
+  margin-bottom: 20px;
+}
+
+.refresh-button {
+  background-color: #555;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background-color: #666;
+}
+
+.refresh-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.no-collections {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  border: 1px solid #444;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border: 1px solid #ffcdd2;
+}
+
+/* 持久记忆编辑器样式 */
+.memory-editor h4 {
+  margin: 0 0 15px 0;
+  color: #ddd;
+  font-size: 18px;
+  border-bottom: 2px solid #555;
+  padding-bottom: 10px;
+}
+
+.memory-field {
+  margin-bottom: 20px;
+}
+
+.memory-field h5 {
+  margin: 0 0 8px 0;
+  color: #ccc;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.memory-textarea {
+  width: 100%;
+  background-color: #1e1e1e;
+  color: #abb2bf;
+  border: 2px solid #555;
+  border-radius: 6px;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.memory-textarea:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.memory-textarea::placeholder {
+  color: #666;
+}
+
+/* 应用到全部模式按钮样式 */
+.memory-actions {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #555;
+  text-align: center;
+}
+
+.apply-all-button {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.apply-all-button:hover {
+  background-color: #1976D2;
+  transform: translateY(-1px);
+}
+/* 提供商设置子标签页样式 */
+.provider-tabs {
+  margin: 15px 0;
+  border: 1px solid #444;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.provider-tab-headers {
+  display: flex;
+  background-color: #2a2a2a;
+  border-bottom: 1px solid #444;
+}
+
+.provider-tab-headers button {
+  background: none;
+  border: none;
+  padding: 12px 20px;
+  color: #abb2bf;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.provider-tab-headers button:hover {
+  color: #fff;
+  background-color: #333;
+}
+
+.provider-tab-headers button.active {
+  color: #4CAF50;
+  border-bottom-color: #4CAF50;
+  background-color: #333;
+}
+
+.provider-tab-content {
+  padding: 0; /* 移除内边距，让内容完全撑满容器 */
+  background-color: #2a2a2a;
+}
+
+.provider-settings {
+  max-width: 500px;
+}
+
+.provider-actions {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.provider-actions .save-button {
+  background-color: #2196F3;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.provider-actions .save-button:hover {
+  background-color: #1976D2;
+}
+
+/* 新的分栏布局样式 */
+.tab-content-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* 移除内边距，让内容填满整个模态框 */
+  position: relative;
+}
+
+.tab-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* 移除内边距，让内容完全撑满容器 */
+  overflow-y: auto; /* 允许内容区域滚动 */
+  flex: 1; /* 确保内容区域填满可用空间 */
+  min-height: 0; /* 防止弹性盒子溢出 */
+}
+
+/* 标签页内容操作按钮 */
+.tab-content-actions {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+}
+
+.tab-content-actions .save-button,
+.tab-content-actions .cancel-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.tab-content-actions .save-button:hover,
+.tab-content-actions .cancel-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.settings-section {
+  margin-bottom: 25px;
+  background-color: var(--panel-bg-color);
+  border-radius: var(--border-radius-medium);
+  padding: 20px;
+  border: 1px solid var(--border-color);
+}
+
+.settings-section h4 {
+  margin: 0 0 15px 0;
+  color: var(--text-color-primary);
+  font-size: 1.1em;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+.setting-item {
+  margin-bottom: 15px;
+}
+
+.setting-item label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-color-primary);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.setting-item input,
+.setting-item select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  background-color: var(--panel-bg-color-alt);
+  color: var(--text-color-primary);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.setting-item input:focus,
+.setting-item select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.setting-description {
+  margin-top: 5px;
+  font-size: 0.85em;
+  color: var(--text-color-light);
+  line-height: 1.4;
+}
+
+.setting-description a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.setting-description a:hover {
+  text-decoration: underline;
+}
+
+.redetect-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-small);
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.redetect-button:hover {
+  background-color: var(--primary-color-dark);
+}
+
+
+.save-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.save-button:hover {
+  background-color: #45a049;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.cancel-button {
+  background-color: #666;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.cancel-button:hover {
+  background-color: #777;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+/* 双面板布局样式 */
+.dual-panel-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  height: 100%;
+  padding: 0; /* 移除内边距，让内容完全撑满容器 */
+  overflow-y: auto;
+}
+
+.panel-section {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  border: 1px solid #444;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  background-color: #333;
+  padding: 15px 20px;
+  border-bottom: 1px solid #444;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-header svg {
+  color: #4CAF50;
+}
+
+.panel-section > *:not(.panel-header) {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .dual-panel-container {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .panel-section {
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dual-panel-container {
+    padding: 0; /* 移除内边距，让内容完全撑满容器 */
+    padding-top: 70px;
+  }
+  
+  .panel-header {
+    padding: 12px 15px;
+    font-size: 14px;
+  }
+}

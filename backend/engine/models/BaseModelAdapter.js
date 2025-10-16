@@ -108,6 +108,30 @@ class BaseModelAdapter {
   }
 
   /**
+   * 获取嵌入模型的维度（可选实现）
+   * @param {string} modelId - 模型ID
+   * @returns {Promise<number>} 嵌入维度
+   */
+  async getEmbeddingDimensions(modelId) {
+    // 默认实现，子类可以重写此方法
+    throw new Error('getEmbeddingDimensions() must be implemented by subclass for embedding models');
+  }
+
+  /**
+   * 检查模型是否为嵌入模型
+   * @param {string} modelId - 模型ID
+   * @returns {boolean} 是否为嵌入模型
+   */
+  isEmbeddingModel(modelId) {
+    // 默认实现，子类可以重写此方法
+    const modelLower = modelId.toLowerCase();
+    return modelLower.includes('embedding') ||
+           modelLower.includes('embed') ||
+           modelLower.includes('bge') ||
+           modelLower.includes('multilingual-e5');
+  }
+
+  /**
    * 工具方法 - 标准化错误处理
    * @param {Error} error - 原始错误
    * @param {string} context - 错误上下文

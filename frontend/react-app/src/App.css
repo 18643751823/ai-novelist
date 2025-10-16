@@ -4,11 +4,11 @@
   --primary-color-dark: #008C4F; /* 绿色深色版本 */
   --accent-color: var(--primary-color); /* 改为绿色点缀 */
 
-  /* 背景色 */
-  --bg-color: #1E1E1E; /* 深黑色背景 */
-  --panel-bg-color: #2D2D2D; /* 面板背景色 */
-  --panel-bg-color-alt: #3C3C3C; /* 替代面板背景色 */
-  --hover-bg-color: #4A4A4A; /* 悬停背景色 */
+  /* 背景色 - 纯黑色主题 */
+  --bg-color: #000000; /* 纯黑色背景 */
+  --panel-bg-color: #000000; /* 面板背景色 - 纯黑色 */
+  --panel-bg-color-alt: #000000; /* 替代面板背景色 - 纯黑色 */
+  --hover-bg-color: #1A1A1A; /* 悬停背景色 - 深灰色 */
 
   /* 字体颜色 */
   --text-color-primary: #E0E0E0; /* 浅色文本 */
@@ -16,8 +16,8 @@
   --text-color-light: #808080; /* 更暗的浅色文本 */
 
   /* 边框和线条 */
-  --border-color: #555555; /* 暗淡的灰色边框 */
-  --divider-color: #6A6A6A; /* 分隔线颜色 */
+  --border-color: #333333; /* 深灰色边框 */
+  --divider-color: #333333; /* 深灰色分隔线 */
 
   /* 阴影 - 调整为适合深色背景的阴影 */
   --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -44,10 +44,12 @@
 .App {
   background-color: var(--bg-color);
   color: var(--text-color-primary);
-  display: flex; /* 使用 flex 布局 */
-  flex-direction: column; /* 垂直方向布局 */
-  height: 100%; /* 确保 App 占据整个高度 */
-  overflow: hidden; /* 防止滚动条出现 */
+  /* 使用 flex 来实现自定义标题栏布局 */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  /* 禁止 html,body 滚动，避免滚动条出现在标题栏右边 */
+  overflow: hidden;
 }
 
 .main-layout {
@@ -55,6 +57,7 @@
   display: flex; /* 使 PanelGroup 内部的 Panel 也能使用 flex */
   height: 100%; /* 占据整个父容器的高度 */
   overflow: hidden; /* 防止内容溢出 PanelGroup */
+  min-height: 0; /* 修复 flex 子元素溢出问题 */
 }
 
 .sidebar-panel-fixed, .left-panel, .middle-panel, .right-panel {
@@ -69,7 +72,7 @@
 
 /* 固定侧边栏样式 */
 .sidebar-panel-fixed {
-  background-color: var(--panel-bg-color-alt);
+  background-color: #000000; /* 纯黑色 */
   padding: 0;
   width: 50px; /* 固定宽度 */
   flex-shrink: 0; /* 防止被压缩 */
@@ -79,18 +82,21 @@
 /* 细长的普通灰色分隔线 */
 .divider-line {
   width: 1px;
-  background-color: var(--divider-color);
+  background-color: #333333; /* 深灰色分隔线 */
   flex-shrink: 0; /* 防止被压缩 */
 }
 
 .left-panel {
-  background-color: var(--panel-bg-color-alt);
+  background-color: #000000; /* 纯黑色 */
   padding: 0; /* 特别为 left-panel 移除 padding */
 }
 
 .middle-panel {
-  background-color: var(--panel-bg-color);
-  padding: 15px; /* 保持 middle-panel 的 padding */
+  background-color: #000000; /* 纯黑色 */
+  padding: 0; /* 移除 padding 让内容完全填充 */
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 确保完全填充父容器高度 */
 }
 
 /* 编辑器内容包装器，确保标签页始终可见 */
@@ -100,19 +106,19 @@
   flex-direction: column;
   overflow: hidden; /* 防止内容溢出 */
   min-height: 0; /* 修复 flex 子元素溢出问题 */
+  height: 100%; /* 确保完全填充父容器 */
 }
 
 .right-panel {
-  background-color: var(--panel-bg-color-alt);
-  padding: 15px; /* 保持 right-panel 的 padding */
+  background-color: #000000; /* 纯黑色 */
+  padding: 0; /* 移除 padding 让子组件完全填充 */
+  display: flex; /* 使用 flex 布局 */
+  flex-direction: column; /* 垂直排列子元素 */
+  height: 100%; /* 确保完全填充父容器高度 */
 }
 
 .middle-panel {
-  background-color: var(--panel-bg-color);
-}
-
-.right-panel {
-  background-color: var(--panel-bg-color-alt);
+  background-color: #000000; /* 纯黑色 */
 }
 
 .resize-handle {
@@ -410,4 +416,34 @@ a:hover {
 .left-panel.collapsed > *:not(.panel-collapse-button),
 .right-panel.collapsed > *:not(.panel-collapse-button) {
   display: none;
+}
+
+/* 自定义标题栏样式 */
+.custom-titlebar {
+  display: flex;
+  align-items: center;
+  /* 避免被收缩 */
+  flex-shrink: 0;
+  /* 高度与 main.js 中 titleBarOverlay.height 一致  */
+  height: 35px;
+  width: 100%;
+  /* 标题栏始终在最顶层（避免后续被 Modal 之类的覆盖） */
+  z-index: 9999;
+
+  background-color: #000000; /* 纯黑色 */
+  color: #E0E0E0; /* 浅灰色文字 */
+  padding-left: 12px;
+  font-size: 14px;
+  
+  /* 避免选中窗口标题 */
+  user-select: none;
+  /* 设置该属性表明这是可拖拽区域，用来移动窗口 */
+  -webkit-app-region: drag;
+}
+
+/* 内容区域样式 */
+.content-area {
+  /* 内容区需要设置可滚动 */
+  overflow: auto;
+  flex-grow: 1;
 }

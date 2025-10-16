@@ -10,8 +10,9 @@ class IntentAnalyzer {
             return IntentAnalyzer.instance;
         }
         
-        // 意图分析提示词模板
-        this.analysisPrompt = `你是一个专业的写作助手，请分析先前的所有对话，总结一篇精简的细纲，约300字`;
+        // 默认意图分析提示词模板
+        this.defaultPrompt = `你是一个专业的写作助手，请分析先前的所有对话，总结一篇精简的细纲，约300字`;
+        this.analysisPrompt = this.defaultPrompt;
 
         this.storeInstance = null;
         IntentAnalyzer.instance = this;
@@ -67,12 +68,53 @@ class IntentAnalyzer {
     }
 
     /**
+     * 设置自定义提示词
+     * @param {string} prompt 自定义提示词
+     */
+    setCustomPrompt(prompt) {
+        if (prompt && prompt.trim()) {
+            this.analysisPrompt = prompt.trim();
+        } else {
+            this.analysisPrompt = this.defaultPrompt;
+        }
+        
+        // 保存到存储
+        if (this.storeInstance) {
+            this.storeInstance.set('intentAnalysisPrompt', this.analysisPrompt);
+        }
+    }
+
+    /**
+     * 获取当前使用的提示词
+     * @returns {string} 当前提示词
+     */
+    getCurrentPrompt() {
+        if (this.storeInstance) {
+            const storedPrompt = this.storeInstance.get('intentAnalysisPrompt');
+            if (storedPrompt) {
+                this.analysisPrompt = storedPrompt;
+            }
+        }
+        return this.analysisPrompt;
+    }
+
+    /**
+     * 重置为默认提示词
+     */
+    resetToDefaultPrompt() {
+        this.analysisPrompt = this.defaultPrompt;
+        if (this.storeInstance) {
+            this.storeInstance.delete('intentAnalysisPrompt');
+        }
+    }
+
+    /**
      * 生成完整的提示词
      * @param {string} outline 用户细纲
      * @returns {string} 完整的提示词
      */
     generatePrompt(outline) {
-        return this.analysisPrompt;
+        return this.getCurrentPrompt();
     }
 
 
@@ -121,14 +163,21 @@ class IntentAnalyzer {
             // 生成提示词并调用AI模型
             const prompt = this.generatePrompt(outline);
             
-            // 构建完整的消息上下文：系统提示词 + 对话历史 + 当前分析指令
+            // 构建完整的消息上下文：自定义提示词作为系统提示词 + 对话历史
             const messagesToSend = [
-                { role: "system", content: "你是一个专业的写作助手，擅长分析对话上下文并生成细纲总结。" },
-                ...messages, // 包含完整的对话历史
-                { role: "user", content: prompt } // 当前的分析指令
+                { role: "system", content: prompt }, // 自定义提示词作为系统提示词
+                ...messages // 包含完整的对话历史
             ];
             
             console.log(`[IntentAnalyzer] 发送给意图识别模型的消息数量: ${messagesToSend.length}`);
+            
+            // 打印每条消息的详细信息
+            console.log('[IntentAnalyzer] 消息内容详情:');
+            messagesToSend.forEach((msg, index) => {
+                console.log(`[IntentAnalyzer] 消息 ${index + 1} (${msg.role}):`);
+                console.log(`[IntentAnalyzer]   内容: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? '...' : ''}`);
+                console.log(`[IntentAnalyzer]   长度: ${msg.content.length} 字符`);
+            });
             
             // 直接使用模型适配器进行调用（避免循环依赖）
             let fullResponse = '';

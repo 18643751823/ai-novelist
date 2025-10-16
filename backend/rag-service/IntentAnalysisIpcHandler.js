@@ -146,6 +146,47 @@ class IntentAnalysisIpcHandler {
             }
         });
 
+        // 设置自定义意图分析提示词
+        ipcMain.handle('set-intent-analysis-prompt', async (event, prompt) => {
+            try {
+                if (typeof prompt !== 'string') {
+                    return { success: false, error: '提示词必须是字符串类型' };
+                }
+
+                // 设置自定义提示词
+                intentAnalyzer.setCustomPrompt(prompt);
+                
+                console.log(`[IntentAnalysisIpcHandler] 设置自定义意图分析提示词: ${prompt.substring(0, 50)}...`);
+                return { success: true, prompt: prompt };
+            } catch (error) {
+                console.error('[IntentAnalysisIpcHandler] 设置提示词失败:', error);
+                return { success: false, error: error.message };
+            }
+        });
+
+        // 获取当前意图分析提示词
+        ipcMain.handle('get-intent-analysis-prompt', async () => {
+            try {
+                const prompt = intentAnalyzer.getCurrentPrompt();
+                return { success: true, prompt };
+            } catch (error) {
+                console.error('[IntentAnalysisIpcHandler] 获取提示词失败:', error);
+                return { success: false, error: error.message };
+            }
+        });
+
+        // 重置意图分析提示词为默认值
+        ipcMain.handle('reset-intent-analysis-prompt', async () => {
+            try {
+                intentAnalyzer.resetToDefaultPrompt();
+                console.log('[IntentAnalysisIpcHandler] 重置意图分析提示词为默认值');
+                return { success: true, prompt: intentAnalyzer.getCurrentPrompt() };
+            } catch (error) {
+                console.error('[IntentAnalysisIpcHandler] 重置提示词失败:', error);
+                return { success: false, error: error.message };
+            }
+        });
+
         // 测试意图分析功能
         ipcMain.handle('test-intent-analysis', async () => {
             try {
@@ -175,6 +216,9 @@ class IntentAnalysisIpcHandler {
         ipcMain.removeHandler('get-intent-analysis-tags');
         ipcMain.removeHandler('set-intent-analysis-enabled');
         ipcMain.removeHandler('get-intent-analysis-enabled');
+        ipcMain.removeHandler('set-intent-analysis-prompt');
+        ipcMain.removeHandler('get-intent-analysis-prompt');
+        ipcMain.removeHandler('reset-intent-analysis-prompt');
         ipcMain.removeHandler('test-intent-analysis');
         
         this.isInitialized = false;

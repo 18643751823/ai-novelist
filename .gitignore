@@ -67,7 +67,9 @@ Thumbs.db
 *~
 
 # Configuration files (user-specific)
-.npmrc
+
+# Node-gyp cache directory
+.node-gyp-cache/
 
 # Temporary installation files
 get-pip.py
@@ -125,3 +127,6 @@ pnpm-lock.yaml
 *.swo
 *~
 .~lock.*
+
+# License files (auto-generated)
+licenses.json

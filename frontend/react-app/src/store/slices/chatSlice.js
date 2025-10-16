@@ -48,7 +48,9 @@ const chatSlice = createSlice({
     deepseekApiKey: '',
     openrouterApiKey: '',
     siliconflowApiKey: '', // 新增：硅基流动API Key
+    aliyunApiKey: '', // 新增：阿里云百炼API Key
     aliyunEmbeddingApiKey: '', // 新增：阿里云嵌入API Key
+    embeddingModel: '', // 新增：嵌入模型
     ollamaBaseUrl: 'http://127.0.0.1:11434', // 新增：Ollama服务地址
     intentAnalysisModel: '', // 新增：意图分析模型
     selectedModel: '',
@@ -57,6 +59,9 @@ const chatSlice = createSlice({
     showApiSettingsModal: false,
     showRagSettingsModal: false,
     showGeneralSettingsModal: false,
+    showHomePage: true, // 新增：控制主页面显示状态
+    showWorkspacePanel: false, // 新增：控制工作区面板显示状态
+    showPersistentMemoryPanel: false, // 新增：控制持久记忆面板显示状态
     availableModels: [], // 新增：用于存储所有可用模型列表
     customSystemPrompt: DEFAULT_SYSTEM_PROMPT, // 新增：自定义系统提示词（旧版，用于通用模式）
     customPrompts: { // 新增：每个模式的自定义提示词
@@ -69,25 +74,27 @@ const chatSlice = createSlice({
     editingMessageId: null, // 新增：用于跟踪正在编辑的消息ID
     ragRetrievalEnabled: false, // 新增：RAG检索启用状态（全局默认）
     // 新增：每个模式的功能启用状态（工具功能已硬编码，只保留RAG检索）
+    // 注意：自定义模式的状态会在运行时动态创建
     modeFeatureSettings: {
       general: {
         ragRetrievalEnabled: false,
-        ragCollectionNames: [] // 新增：选择的RAG集合名称数组
+        ragTableNames: [] // 新增：选择的RAG表名称数组
       },
       outline: {
         ragRetrievalEnabled: false,
-        ragCollectionNames: []
+        ragTableNames: []
       },
       writing: {
         ragRetrievalEnabled: false,
-        ragCollectionNames: []
+        ragTableNames: []
       },
       adjustment: {
         ragRetrievalEnabled: false,
-        ragCollectionNames: []
+        ragTableNames: []
       }
     },
     // 新增：上下文限制设置
+    // 注意：自定义模式的上下文限制设置会在运行时动态创建
     contextLimitSettings: {
       modes: {
         general: {
@@ -109,6 +116,7 @@ const chatSlice = createSlice({
       }
     },
     // 新增：附加信息/持久记忆
+    // 注意：自定义模式的附加信息会在运行时动态创建
     additionalInfo: {
       general: {
         outline: '',
@@ -134,6 +142,33 @@ const chatSlice = createSlice({
     // 新增：创作模式状态
     isCreationModeEnabled: true,
     showCreationModal: false,
+    // 新增：AI参数设置（按模式管理）
+    // 注意：自定义模式的AI参数会在运行时动态创建
+    aiParameters: {
+      general: {
+        temperature: 0.7,
+        top_p: 0.7,
+        n: 1
+      },
+      outline: {
+        temperature: 0.7,
+        top_p: 0.7,
+        n: 1
+      },
+      writing: {
+        temperature: 0.7,
+        top_p: 0.7,
+        n: 1
+      },
+      adjustment: {
+        temperature: 0.7,
+        top_p: 0.7,
+        n: 1
+      }
+    },
+    // 新增：检索设置
+    retrievalTopK: 3, // 默认返回3个文档片段
+    
     // 新增：停止功能相关状态
     isStreaming: false, // 是否正在流式传输
     abortController: null // 用于中止请求的控制器
@@ -290,6 +325,15 @@ const chatSlice = createSlice({
     setShowGeneralSettingsModal: (state, action) => {
       state.showGeneralSettingsModal = action.payload;
     },
+    setShowHomePage: (state, action) => { // 新增：设置主页面显示状态
+      state.showHomePage = action.payload;
+    },
+    setShowWorkspacePanel: (state, action) => { // 新增：设置工作区面板显示状态
+      state.showWorkspacePanel = action.payload;
+    },
+    setShowPersistentMemoryPanel: (state, action) => { // 新增：设置持久记忆面板显示状态
+      state.showPersistentMemoryPanel = action.payload;
+    },
     setDeepseekApiKey: (state, action) => {
       state.deepseekApiKey = action.payload;
     },
@@ -299,17 +343,23 @@ const chatSlice = createSlice({
     setSiliconflowApiKey: (state, action) => { // 新增：设置硅基流动API Key
       state.siliconflowApiKey = action.payload;
     },
+    setAliyunApiKey: (state, action) => { // 新增：设置阿里云百炼API Key
+      state.aliyunApiKey = action.payload;
+    },
     setOllamaBaseUrl: (state, action) => {
       state.ollamaBaseUrl = action.payload;
     },
     setSelectedProvider: (state, action) => {
       state.selectedProvider = action.payload;
     },
-    setAliyunEmbeddingApiKey: (state, action) => { // 新增：设置阿里云嵌入API Key
-      state.aliyunEmbeddingApiKey = action.payload;
+    setEmbeddingModel: (state, action) => { // 新增：设置嵌入模型
+      state.embeddingModel = action.payload;
     },
     setIntentAnalysisModel: (state, action) => { // 新增：设置意图分析模型
       state.intentAnalysisModel = action.payload;
+    },
+    setAliyunEmbeddingApiKey: (state, action) => { // 新增：设置阿里云嵌入API Key
+      state.aliyunEmbeddingApiKey = action.payload;
     },
     setAvailableModels: (state, action) => { // 新增：设置可用模型列表
         state.availableModels = action.payload;
@@ -337,26 +387,42 @@ const chatSlice = createSlice({
     // 新增：设置特定模式的功能启用状态
     setModeFeatureSetting: (state, action) => {
       const { mode, feature, enabled } = action.payload;
-      if (state.modeFeatureSettings[mode]) {
-        state.modeFeatureSettings[mode][feature] = enabled;
+      // 为自定义模式动态创建状态
+      if (!state.modeFeatureSettings[mode]) {
+        state.modeFeatureSettings[mode] = {
+          ragRetrievalEnabled: false,
+          ragTableNames: []
+        };
       }
+      state.modeFeatureSettings[mode][feature] = enabled;
     },
     // 新增：重置特定模式的所有功能设置
     resetModeFeatureSettings: (state, action) => {
       const { mode } = action.payload;
-      if (state.modeFeatureSettings[mode]) {
+      // 为自定义模式动态创建状态
+      if (!state.modeFeatureSettings[mode]) {
         state.modeFeatureSettings[mode] = {
           ragRetrievalEnabled: false,
-          ragCollectionNames: []
+          ragTableNames: []
+        };
+      } else {
+        state.modeFeatureSettings[mode] = {
+          ragRetrievalEnabled: false,
+          ragTableNames: []
         };
       }
     },
-    // 新增：设置特定模式的RAG集合选择
-    setRagCollectionNames: (state, action) => {
-      const { mode, collectionNames } = action.payload;
-      if (state.modeFeatureSettings[mode]) {
-        state.modeFeatureSettings[mode].ragCollectionNames = collectionNames;
+    // 新增：设置特定模式的RAG表选择
+    setRagTableNames: (state, action) => {
+      const { mode, tableNames } = action.payload;
+      // 为自定义模式动态创建状态
+      if (!state.modeFeatureSettings[mode]) {
+        state.modeFeatureSettings[mode] = {
+          ragRetrievalEnabled: false,
+          ragTableNames: []
+        };
       }
+      state.modeFeatureSettings[mode].ragTableNames = tableNames;
     },
     // 新增：设置上下文限制设置
     setContextLimitSettings: (state, action) => {
@@ -370,18 +436,33 @@ const chatSlice = createSlice({
     // 新增：设置特定附加信息字段
     setAdditionalInfoFieldForMode: (state, action) => {
       const { mode, field, value } = action.payload;
-      if (state.additionalInfo[mode]) {
-        state.additionalInfo[mode][field] = value;
+      // 为自定义模式动态创建状态
+      if (!state.additionalInfo[mode]) {
+        state.additionalInfo[mode] = {
+          outline: '',
+          previousChapter: '',
+          characterSettings: ''
+        };
       }
+      state.additionalInfo[mode][field] = value;
     },
     // 新增：重置附加信息
     resetAdditionalInfoForMode: (state, action) => {
       const { mode } = action.payload;
-      state.additionalInfo[mode] = {
-        outline: '',
-        previousChapter: '',
-        characterSettings: ''
-      };
+      // 为自定义模式动态创建状态
+      if (!state.additionalInfo[mode]) {
+        state.additionalInfo[mode] = {
+          outline: '',
+          previousChapter: '',
+          characterSettings: ''
+        };
+      } else {
+        state.additionalInfo[mode] = {
+          outline: '',
+          previousChapter: '',
+          characterSettings: ''
+        };
+      }
     },
     // 新增：设置创作模式启用状态
     setIsCreationModeEnabled: (state, action) => {
@@ -398,6 +479,58 @@ const chatSlice = createSlice({
         state.additionalInfo[mode] = { ...info };
       }
     },
+    // 新增：设置特定模式的AI参数
+    setAiParameterForMode: (state, action) => {
+      const { mode, parameter, value } = action.payload;
+      if (state.aiParameters[mode] && state.aiParameters[mode].hasOwnProperty(parameter)) {
+        state.aiParameters[mode][parameter] = value;
+      }
+    },
+    // 新增：设置特定模式的AI参数
+    setAiParametersForMode: (state, action) => {
+      const { mode, parameters } = action.payload;
+      // 为自定义模式动态创建状态
+      if (!state.aiParameters[mode]) {
+        state.aiParameters[mode] = {
+          temperature: 0.7,
+          top_p: 0.7,
+          n: 1
+        };
+      }
+      state.aiParameters[mode] = { ...state.aiParameters[mode], ...parameters };
+    },
+    // 新增：重置特定模式的AI参数为默认值
+    resetAiParametersForMode: (state, action) => {
+      const { mode } = action.payload;
+      // 为自定义模式动态创建状态
+      if (!state.aiParameters[mode]) {
+        state.aiParameters[mode] = {
+          temperature: 0.7,
+          top_p: 0.7,
+          n: 1
+        };
+      } else {
+        state.aiParameters[mode] = {
+          temperature: 0.7,
+          top_p: 0.7,
+          n: 1
+        };
+      }
+    },
+    // 新增：批量设置所有模式的AI参数
+    setAiParametersForAllModes: (state, action) => {
+      const { parameters } = action.payload;
+      for (const mode of ['general', 'outline', 'writing', 'adjustment']) {
+        if (state.aiParameters[mode]) {
+          state.aiParameters[mode] = { ...state.aiParameters[mode], ...parameters };
+        }
+      }
+    },
+    // 新增：设置检索返回文档片段数
+    setRetrievalTopK: (state, action) => {
+      state.retrievalTopK = action.payload;
+    },
+    
     // 新增：停止功能相关reducer
     setStreamingState: (state, action) => {
       const { isStreaming, abortController } = action.payload;
@@ -728,12 +861,17 @@ export const {
   setShowApiSettingsModal,
   setShowRagSettingsModal,
   setShowGeneralSettingsModal,
+  setShowHomePage, // 新增：导出 setShowHomePage
+  setShowWorkspacePanel, // 新增：导出 setShowWorkspacePanel
+  setShowPersistentMemoryPanel, // 新增：导出 setShowPersistentMemoryPanel
   setDeepseekApiKey,
   setOpenaiApiKey, // 新增
   setOpenrouterApiKey,
   setSiliconflowApiKey, // 新增：导出 setSiliconflowApiKey
+  setAliyunApiKey, // 新增：导出 setAliyunApiKey
   setOllamaBaseUrl, // 新增
   setSelectedProvider, // 新增：导出 setSelectedProvider
+  setEmbeddingModel, // 新增：导出 setEmbeddingModel
   setAliyunEmbeddingApiKey, // 新增：导出 setAliyunEmbeddingApiKey
   setIntentAnalysisModel, // 新增：导出 setIntentAnalysisModel
   setAvailableModels, // 新增：导出 setAvailableModels
@@ -746,15 +884,20 @@ export const {
   setModeFeatureSetting, // 新增：导出 setModeFeatureSetting
   resetModeFeatureSettings, // 新增：导出 resetModeFeatureSettings
   setContextLimitSettings, // 新增：导出 setContextLimitSettings
-  setRagCollectionNames, // 新增：导出 setRagCollectionNames
+  setRagTableNames, // 新增：导出 setRagTableNames
   setAdditionalInfoForMode, // 新增：导出 setAdditionalInfoForMode
   setAdditionalInfoFieldForMode, // 新增：导出 setAdditionalInfoFieldForMode
   resetAdditionalInfoForMode, // 新增：导出 resetAdditionalInfoForMode
   setIsCreationModeEnabled, // 新增：导出 setIsCreationModeEnabled
   setShowCreationModal, // 新增：导出 setShowCreationModal
   setAdditionalInfoForAllModes, // 新增：导出 setAdditionalInfoForAllModes
+  setAiParameterForMode, // 新增：导出 setAiParameterForMode
+  setAiParametersForMode, // 新增：导出 setAiParametersForMode
+  resetAiParametersForMode, // 新增：导出 resetAiParametersForMode
+  setAiParametersForAllModes, // 新增：导出 setAiParametersForAllModes
   setStreamingState, // 新增：导出 setStreamingState
   stopStreaming, // 新增：导出 stopStreaming
+  setRetrievalTopK, // 新增：导出 setRetrievalTopK
   deleteMessage,
   startEditing,
   // submitEdit,

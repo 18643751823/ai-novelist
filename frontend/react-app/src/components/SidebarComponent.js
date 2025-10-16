@@ -3,13 +3,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   setShowApiSettingsModal,
   setShowRagSettingsModal,
-  setShowGeneralSettingsModal
+  setShowGeneralSettingsModal,
+  setShowHomePage,
+  setShowWorkspacePanel,
+  setShowPersistentMemoryPanel
 } from '../store/slices/chatSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faGear,
   faBook,
-  faRobot
+  faRobot,
+  faPencil,
+  faBriefcase,
+  faInfoCircle
 } from '@fortawesome/free-solid-svg-icons';
 import './SidebarComponent.css';
 
@@ -21,16 +27,55 @@ const SidebarComponent = () => {
   const showApiSettingsModal = useSelector(state => state.chat.showApiSettingsModal);
   const showRagSettingsModal = useSelector(state => state.chat.showRagSettingsModal);
   const showGeneralSettingsModal = useSelector(state => state.chat.showGeneralSettingsModal);
+  const showHomePage = useSelector(state => state.chat.showHomePage);
+  const showWorkspacePanel = useSelector(state => state.chat.showWorkspacePanel);
+  const showPersistentMemoryPanel = useSelector(state => state.chat.showPersistentMemoryPanel);
 
-  // 关闭所有模态框的函数
-  const closeAllModals = () => {
+  // 关闭所有模态框并显示主页面的函数
+  const showHomePageAndCloseModals = () => {
     dispatch(setShowApiSettingsModal(false));
     dispatch(setShowRagSettingsModal(false));
     dispatch(setShowGeneralSettingsModal(false));
+    dispatch(setShowWorkspacePanel(false));
+    dispatch(setShowPersistentMemoryPanel(false));
+    dispatch(setShowHomePage(true));
   };
 
   // 侧边栏项目配置 - 每个图标绑定独立的设置模态框
   const sidebarItems = [
+    {
+      id: 'home',
+      icon: faPencil,
+      label: '首页',
+      action: () => {
+        // 点击首页按钮，关闭所有模态框并显示主页面
+        showHomePageAndCloseModals();
+        setActiveItem('home');
+      }
+    },
+    // 暂时隐藏工作区面板（工作流编辑器功能）
+    // {
+    //   id: 'workspace',
+    //   icon: faBriefcase,
+    //   label: '工作区',
+    //   action: () => {
+    //     if (showWorkspacePanel) {
+    //       // 如果当前已经打开，则关闭
+    //       dispatch(setShowWorkspacePanel(false));
+    //       dispatch(setShowHomePage(true));
+    //       setActiveItem(null);
+    //     } else {
+    //       // 如果当前未打开，则关闭其他模态框并打开当前模态框
+    //       dispatch(setShowHomePage(false));
+    //       dispatch(setShowApiSettingsModal(false));
+    //       dispatch(setShowRagSettingsModal(false));
+    //       dispatch(setShowGeneralSettingsModal(false));
+    //       dispatch(setShowPersistentMemoryPanel(false));
+    //       dispatch(setShowWorkspacePanel(true));
+    //       setActiveItem('workspace');
+    //     }
+    //   }
+    // },
     {
       id: 'api-settings',
       icon: faGear,
@@ -39,10 +84,15 @@ const SidebarComponent = () => {
         if (showApiSettingsModal) {
           // 如果当前已经打开，则关闭
           dispatch(setShowApiSettingsModal(false));
+          dispatch(setShowHomePage(true));
           setActiveItem(null);
         } else {
           // 如果当前未打开，则关闭其他模态框并打开当前模态框
-          closeAllModals();
+          dispatch(setShowHomePage(false));
+          dispatch(setShowWorkspacePanel(false));
+          dispatch(setShowRagSettingsModal(false));
+          dispatch(setShowGeneralSettingsModal(false));
+          dispatch(setShowPersistentMemoryPanel(false));
           dispatch(setShowApiSettingsModal(true));
           setActiveItem('api-settings');
         }
@@ -51,15 +101,20 @@ const SidebarComponent = () => {
     {
       id: 'rag-settings',
       icon: faBook,
-      label: '插入信息',
+      label: 'rag知识库',
       action: () => {
         if (showRagSettingsModal) {
           // 如果当前已经打开，则关闭
           dispatch(setShowRagSettingsModal(false));
+          dispatch(setShowHomePage(true));
           setActiveItem(null);
         } else {
           // 如果当前未打开，则关闭其他模态框并打开当前模态框
-          closeAllModals();
+          dispatch(setShowHomePage(false));
+          dispatch(setShowWorkspacePanel(false));
+          dispatch(setShowApiSettingsModal(false));
+          dispatch(setShowGeneralSettingsModal(false));
+          dispatch(setShowPersistentMemoryPanel(false));
           dispatch(setShowRagSettingsModal(true));
           setActiveItem('rag-settings');
         }
@@ -73,12 +128,39 @@ const SidebarComponent = () => {
         if (showGeneralSettingsModal) {
           // 如果当前已经打开，则关闭
           dispatch(setShowGeneralSettingsModal(false));
+          dispatch(setShowHomePage(true));
           setActiveItem(null);
         } else {
           // 如果当前未打开，则关闭其他模态框并打开当前模态框
-          closeAllModals();
+          dispatch(setShowHomePage(false));
+          dispatch(setShowWorkspacePanel(false));
+          dispatch(setShowApiSettingsModal(false));
+          dispatch(setShowRagSettingsModal(false));
+          dispatch(setShowPersistentMemoryPanel(false));
           dispatch(setShowGeneralSettingsModal(true));
           setActiveItem('general-settings');
+        }
+      }
+    },
+    {
+      id: 'insert-info',
+      icon: faInfoCircle,
+      label: '插入信息',
+      action: () => {
+        if (showPersistentMemoryPanel) {
+          // 如果当前已经打开，则关闭
+          dispatch(setShowPersistentMemoryPanel(false));
+          dispatch(setShowHomePage(true));
+          setActiveItem(null);
+        } else {
+          // 如果当前未打开，则关闭其他模态框并打开当前模态框
+          dispatch(setShowHomePage(false));
+          dispatch(setShowWorkspacePanel(false));
+          dispatch(setShowApiSettingsModal(false));
+          dispatch(setShowRagSettingsModal(false));
+          dispatch(setShowGeneralSettingsModal(false));
+          dispatch(setShowPersistentMemoryPanel(true));
+          setActiveItem('insert-info');
         }
       }
     }
@@ -96,10 +178,16 @@ const SidebarComponent = () => {
       setActiveItem('rag-settings');
     } else if (showGeneralSettingsModal) {
       setActiveItem('general-settings');
+    } else if (showWorkspacePanel) {
+      setActiveItem('workspace');
+    } else if (showPersistentMemoryPanel) {
+      setActiveItem('insert-info');
+    } else if (showHomePage) {
+      setActiveItem('home');
     } else {
       setActiveItem(null);
     }
-  }, [showApiSettingsModal, showRagSettingsModal, showGeneralSettingsModal]);
+  }, [showApiSettingsModal, showRagSettingsModal, showGeneralSettingsModal, showWorkspacePanel, showPersistentMemoryPanel, showHomePage]);
 
   return (
     <div className="sidebar">
