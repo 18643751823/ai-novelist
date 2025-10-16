@@ -53,28 +53,29 @@ const SidebarComponent = () => {
         setActiveItem('home');
       }
     },
-    {
-      id: 'workspace',
-      icon: faBriefcase,
-      label: '工作区',
-      action: () => {
-        if (showWorkspacePanel) {
-          // 如果当前已经打开，则关闭
-          dispatch(setShowWorkspacePanel(false));
-          dispatch(setShowHomePage(true));
-          setActiveItem(null);
-        } else {
-          // 如果当前未打开，则关闭其他模态框并打开当前模态框
-          dispatch(setShowHomePage(false));
-          dispatch(setShowApiSettingsModal(false));
-          dispatch(setShowRagSettingsModal(false));
-          dispatch(setShowGeneralSettingsModal(false));
-          dispatch(setShowPersistentMemoryPanel(false));
-          dispatch(setShowWorkspacePanel(true));
-          setActiveItem('workspace');
-        }
-      }
-    },
+    // 暂时隐藏工作区面板（工作流编辑器功能）
+    // {
+    //   id: 'workspace',
+    //   icon: faBriefcase,
+    //   label: '工作区',
+    //   action: () => {
+    //     if (showWorkspacePanel) {
+    //       // 如果当前已经打开，则关闭
+    //       dispatch(setShowWorkspacePanel(false));
+    //       dispatch(setShowHomePage(true));
+    //       setActiveItem(null);
+    //     } else {
+    //       // 如果当前未打开，则关闭其他模态框并打开当前模态框
+    //       dispatch(setShowHomePage(false));
+    //       dispatch(setShowApiSettingsModal(false));
+    //       dispatch(setShowRagSettingsModal(false));
+    //       dispatch(setShowGeneralSettingsModal(false));
+    //       dispatch(setShowPersistentMemoryPanel(false));
+    //       dispatch(setShowWorkspacePanel(true));
+    //       setActiveItem('workspace');
+    //     }
+    //   }
+    // },
     {
       id: 'api-settings',
       icon: faGear,

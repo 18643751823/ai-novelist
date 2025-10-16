@@ -8,7 +8,7 @@ import OverlayPanel from './OverlayPanel'; // 引入覆盖层组件
 import ApiSettingsModal from './aiprovider/ApiSettingsModal'; // 引入API设置模态框
 import RagSettingsModal from './rag/RagSettingsModal'; // 引入RAG设置模态框
 import GeneralSettingsModal from './agent/GeneralSettingsModal'; // 引入通用设置模态框
-import WorkspacePanel from './WorkspacePanel'; // 引入工作区面板
+// import WorkspacePanel from './WorkspacePanel'; // 引入工作区面板 - 暂时隐藏工作流功能
 import PersistentMemoryPanel from './insert/PersistentMemoryPanel'; // 引入持久记忆面板
 
 function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
@@ -101,9 +101,10 @@ function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
         {showGeneralSettingsModal && (
           <GeneralSettingsModal isOpen={showGeneralSettingsModal} />
         )}
-        {showWorkspacePanel && (
+        {/* 暂时隐藏工作区面板（工作流编辑器功能） */}
+        {/* {showWorkspacePanel && (
           <WorkspacePanel isOpen={showWorkspacePanel} />
-        )}
+        )} */}
         {showPersistentMemoryPanel && (
           <PersistentMemoryPanel />
         )}

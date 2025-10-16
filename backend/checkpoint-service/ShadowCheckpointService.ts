@@ -8,6 +8,7 @@ import simpleGit, { SimpleGit } from "simple-git"
 
 import { fileExistsAtPath } from "../utils/fs"
 import { executeRipgrep } from "../services/ripgrep"
+import { GitDetector } from "../utils/git-detector"
 
 import { GIT_DISABLED_SUFFIX } from "./constants"
 import { CheckpointDiff, CheckpointResult, CheckpointEventMap } from "./types"
@@ -67,60 +68,81 @@ export abstract class ShadowCheckpointService extends EventEmitter {
 			throw new Error("Shadow git repo already initialized")
 		}
 
-		await fs.mkdir(this.checkpointsDir, { recursive: true })
-		const git = simpleGit(this.checkpointsDir)
-		const gitVersion = await git.version()
-		console.log(`[${this.constructor.name}#create] git = ${gitVersion}`)
+		// 检测Git可用性
+		const gitDetection = await GitDetector.detectGit()
+		if (!gitDetection.available) {
+			throw new Error(`Git不可用：${gitDetection.error}`)
+		}
 
+		console.log(`[${this.constructor.name}#initShadowGit] 使用${gitDetection.type === "portable" ? "便携" : "系统"}Git: ${gitDetection.version}`)
+
+		await fs.mkdir(this.checkpointsDir, { recursive: true })
+		
+		// 配置simple-git使用检测到的Git路径
+		const gitOptions = gitDetection.type === "portable" && gitDetection.gitPath
+			? { binary: gitDetection.gitPath }
+			: {}
+			
+		const git = simpleGit(this.checkpointsDir, gitOptions)
+		
 		let created = false
 		const startTime = Date.now()
 
-		if (await fileExistsAtPath(this.dotGitDir)) {
-			console.log(`[${this.constructor.name}#initShadowGit] shadow git repo already exists at ${this.dotGitDir}`)
-			const worktree = await this.getShadowGitConfigWorktree(git)
+		try {
+			// 验证Git连接
+			const gitVersion = await git.version()
+			console.log(`[${this.constructor.name}#create] git = ${gitVersion}`)
 
-			if (worktree && worktree !== this.workspaceDir) {
-				console.warn(
-					`[ShadowCheckpointService] Workspace directory has changed. Updating from "${worktree}" to "${this.workspaceDir}".`,
-				)
-				await git.addConfig("core.worktree", this.workspaceDir)
+			if (await fileExistsAtPath(this.dotGitDir)) {
+				console.log(`[${this.constructor.name}#initShadowGit] shadow git repo already exists at ${this.dotGitDir}`)
+				const worktree = await this.getShadowGitConfigWorktree(git)
+
+				if (worktree && worktree !== this.workspaceDir) {
+					console.warn(
+						`[ShadowCheckpointService] Workspace directory has changed. Updating from "${worktree}" to "${this.workspaceDir}".`,
+					)
+					await git.addConfig("core.worktree", this.workspaceDir)
+				}
+
+				await this.writeExcludeFile()
+				this.baseHash = await git.revparse(["HEAD"])
+			} else {
+				console.log(`[${this.constructor.name}#initShadowGit] creating shadow git repo at ${this.checkpointsDir}`)
+				await git.init()
+				await git.addConfig("core.worktree", this.workspaceDir) // Sets the working tree to the current workspace.
+				await git.addConfig("commit.gpgSign", "false") // Disable commit signing for shadow repo.
+				await git.addConfig("user.name", "Roo Code")
+				await git.addConfig("user.email", "noreply@example.com")
+				await this.writeExcludeFile()
+				await this.stageAll(git) // <-- This is now desired behavior based on user feedback.
+				const { commit } = await git.commit("initial commit", { "--allow-empty": null })
+				this.baseHash = commit
+				created = true
 			}
 
-			await this.writeExcludeFile()
-			this.baseHash = await git.revparse(["HEAD"])
-		} else {
-			console.log(`[${this.constructor.name}#initShadowGit] creating shadow git repo at ${this.checkpointsDir}`)
-			await git.init()
-			await git.addConfig("core.worktree", this.workspaceDir) // Sets the working tree to the current workspace.
-			await git.addConfig("commit.gpgSign", "false") // Disable commit signing for shadow repo.
-			await git.addConfig("user.name", "Roo Code")
-			await git.addConfig("user.email", "noreply@example.com")
-			await this.writeExcludeFile()
-			await this.stageAll(git) // <-- This is now desired behavior based on user feedback.
-			const { commit } = await git.commit("initial commit", { "--allow-empty": null })
-			this.baseHash = commit
-			created = true
+			const duration = Date.now() - startTime
+
+			console.log(
+				`[${this.constructor.name}#initShadowGit] initialized shadow repo with base commit ${this.baseHash} in ${duration}ms`,
+			)
+
+			this.git = git
+
+			await onInit?.()
+
+			this.emit("initialize", {
+				type: "initialize",
+				workspaceDir: this.workspaceDir,
+				baseHash: this.baseHash,
+				created,
+				duration,
+			})
+
+			return { created, duration }
+		} catch (error) {
+			console.error(`[${this.constructor.name}#initShadowGit] Git操作失败:`, error)
+			throw new Error(`Git操作失败: ${error instanceof Error ? error.message : String(error)}`)
 		}
-
-		const duration = Date.now() - startTime
-
-		console.log(
-			`[${this.constructor.name}#initShadowGit] initialized shadow repo with base commit ${this.baseHash} in ${duration}ms`,
-		)
-
-		this.git = git
-
-		await onInit?.()
-
-		this.emit("initialize", {
-			type: "initialize",
-			workspaceDir: this.workspaceDir,
-			baseHash: this.baseHash,
-			created,
-			duration,
-		})
-
-		return { created, duration }
 	}
 
 	// Add basic excludes directly in git config, while respecting any

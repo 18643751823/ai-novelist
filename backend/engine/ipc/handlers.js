@@ -674,7 +674,7 @@ const handleUserQuestionResponse = async (event, { response, toolCallId }) => {
         const toolResultsArray = [{
             toolCallId: toolCallId,
             toolName: "ask_user_question",
-            result: { content: response } // 将结果包装在对象中以保持一致性
+            result: { content: response } // 只包含工具执行结果，不包含工具调用请求信息
         }];
         
         // 获取默认模型 ID
@@ -1654,19 +1654,16 @@ function register(store, mainWindow) { // 接收 store 和 mainWindow 参数并�
             storeInstance = new Store();
             console.warn(`[WARNING] get-store-value: 创建了新的 storeInstance 作为fallback，路径: ${storeInstance.path}`);
         } else {
-            console.log(`[API设置调试] get-store-value: 使用现有 storeInstance，key: ${key}`);
         }
         const value = storeInstance.get(key);
         
         // 特别处理功能状态设置的详细日志
         const featureKeys = ['modeFeatureSettings', 'toolUsageEnabled', 'ragRetrievalEnabled'];
         if (featureKeys.includes(key)) {
-            console.log(`[API设置调试] get-store-value: 获取功能设置 key=${key}, value=`, JSON.stringify(value, null, 2));
         } else {
             // 特别处理API相关设置的详细日志
             const apiKeys = ['selectedModel', 'selectedProvider', 'deepseekApiKey', 'openrouterApiKey', 'aliyunEmbeddingApiKey', 'intentAnalysisModel'];
             if (apiKeys.includes(key)) {
-                console.log(`[API设置调试] get-store-value: 获取API设置 key=${key}, value=`, value);
             }
         }
         
@@ -1689,18 +1686,15 @@ function register(store, mainWindow) { // 接收 store 和 mainWindow 参数并�
             storeInstance = new Store();
             console.warn(`[WARNING] set-store-value: 创建了新的 storeInstance 作为fallback，路径: ${storeInstance.path}`);
         } else {
-            console.log(`[API设置调试] set-store-value: 使用现有 storeInstance，key: ${key}`);
         }
         
         // 特别处理功能状态设置的详细日志
         const featureKeys = ['modeFeatureSettings', 'toolUsageEnabled', 'ragRetrievalEnabled'];
         if (featureKeys.includes(key)) {
-            console.log(`[API设置调试] set-store-value: 保存功能设置 key=${key}, value=`, JSON.stringify(value, null, 2));
         } else {
             // 特别处理API相关设置的详细日志
             const apiKeys = ['selectedModel', 'selectedProvider', 'deepseekApiKey', 'openrouterApiKey', 'aliyunEmbeddingApiKey', 'intentAnalysisModel'];
             if (apiKeys.includes(key)) {
-                console.log(`[API设置调试] set-store-value: 保存API设置 key=${key}, value=`, value);
             }
         }
         
@@ -1708,11 +1702,9 @@ function register(store, mainWindow) { // 接收 store 和 mainWindow 参数并�
         
         // 验证保存是否成功
         const savedValue = storeInstance.get(key);
-        console.log(`[API设置调试] set-store-value: 验证保存 key=${key}, 实际存储值=`, savedValue);
         
         // 强制写入磁盘
         await storeInstance.store;
-        console.log(`[API设置调试] set-store-value: 数据已强制写入磁盘`);
         
         return { success: true, message: `值已保存: ${key}` };
     } catch (error) {
