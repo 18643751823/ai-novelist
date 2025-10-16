@@ -2,7 +2,7 @@
 .mode-selector-container {
   position: relative;
   display: inline-block;
-  z-index: 1000;
+  z-index: 100;
   box-sizing: border-box; /* 确保容器也使用border-box */
 }
 

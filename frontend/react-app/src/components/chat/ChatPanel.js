@@ -11,7 +11,7 @@ import {
   setShowApiSettingsModal,
   setShowRagSettingsModal,
   setShowGeneralSettingsModal,
-  setShowWorkspacePanel, // 新增：导入设置工作区面板的action
+  // setShowWorkspacePanel, // 新增：导入设置工作区面板的action - 暂时隐藏工作流功能
   setDeepseekApiKey,
   setOpenrouterApiKey,
   setSiliconflowApiKey, // 新增：导入设置硅基流动API Key的action
@@ -653,9 +653,9 @@ const ChatPanel = memo(() => {
       if (!selectedModel || selectedModel.trim() === '') {
         dispatch(appendMessage({
           sender: 'System',
-          text: '当前没有可用的AI模型。请先前往设置页面配置API密钥。',
+          text: '当前没有可用的AI模型。请先前往设置页面配置API密钥。如果已经配置，请在上方重新选择模型，再次发送信息即可',
           role: 'system',
-          content: '当前没有可用的AI模型。请先前往设置页面配置API密钥。',
+          content: '当前没有可用的AI模型。请先前往设置页面配置API密钥。如果已经配置，请在上方重新选择模型，再次发送信息即可',
           className: 'system-error'
         }));
         return;
@@ -976,7 +976,6 @@ const ChatPanel = memo(() => {
             // 关闭其他面板
             if (!isHistoryPanelVisible) {
               setShowModelSelectorPanel(false);
-              setShowKnowledgeBasePanel(false);
             }
           }} title="历史会话">
             <FontAwesomeIcon icon={faClock} />
@@ -989,7 +988,6 @@ const ChatPanel = memo(() => {
                 setShowModelSelectorPanel(!showModelSelectorPanel);
                 // 关闭其他面板
                 if (!showModelSelectorPanel) {
-                  setShowKnowledgeBasePanel(false);
                   dispatch(setIsHistoryPanelVisible(false));
                 }
               }}
@@ -1074,7 +1072,7 @@ const ChatPanel = memo(() => {
                       {msg.isLoading && (!msg.toolCalls || msg.toolCalls.length === 0) && <FontAwesomeIcon icon={faSpinner} spin className="ai-typing-spinner" />}
                       {/* 只显示纯文字内容，不显示工具调用的JSON信息 */}
                       <span>{msg.toolCalls && msg.toolCalls.length > 0 ?
-                        (msg.content || msg.text || '').replace(/--- 工具调用请求 ---.*$/s, '').trim() :
+                        (msg.content || msg.text || '').replace(/--- 工具调用请求 ---.*$/s, '').replace(/工具调用:.*$/s, '').trim() :
                         msg.content || msg.text}</span>
                   </div>
 

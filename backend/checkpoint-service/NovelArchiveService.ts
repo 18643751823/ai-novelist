@@ -66,7 +66,15 @@ export class NovelArchiveService {
     }
 
     async listNovelArchives(): Promise<NovelArchive[]> {
-        // 1. 读取 archivesDir 下的所有子文件夹
+        // 1. 检查存档目录是否存在，如果不存在则返回空数组
+        try {
+            await fs.access(this.archivesDir);
+        } catch (error) {
+            // 如果目录不存在，返回空数组而不是抛出错误
+            return [];
+        }
+        
+        // 2. 读取 archivesDir 下的所有子文件夹
         const entries = await fs.readdir(this.archivesDir, { withFileTypes: true });
         const archiveFolders = entries.filter(e => e.isDirectory());
 

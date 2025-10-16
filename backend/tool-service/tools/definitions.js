@@ -157,7 +157,7 @@ const tools = [
           },
           diff: {
             type: "string",
-            description: "定义修改的diff块。格式为：\n<<<<<<< SEARCH\n:start_paragraph: [起始段落号]\n-------\n[要搜索的精确内容]\n=======\n[要替换成的新内容]\n>>>>>>> REPLACE\n"
+            description: "定义修改的diff块。格式为：\n<<<<<<< SEARCH\n:start_line: [起始行号]\n-------\n[要搜索的精确内容]\n=======\n[要替换成的新内容]\n>>>>>>> REPLACE\n"
           }
         },
         required: ["path", "diff"]

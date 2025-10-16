@@ -414,6 +414,16 @@ class RagIpcHandler {
         };
       }
     }
+
+    /**
+     * 重新初始化阿里云嵌入函数（兼容性方法）
+     * @returns {Promise<Object>} 重新初始化结果
+     */
+    async reinitializeAliyunEmbedding() {
+        console.log("[RagIpcHandler] 重新初始化阿里云嵌入函数...");
+        // 调用通用的重新初始化方法
+        return await this.reinitializeEmbeddingFunction();
+    }
 }
 
 // 导出单例

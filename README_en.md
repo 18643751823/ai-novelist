@@ -1,6 +1,8 @@
-# Qingzhu v2.0.1
+# Qingzhu v0.1.0
 
 [中文版](README.md) | English Version
+
+> **Version Note**: As this is a personal learning project, the previous version numbering was somewhat chaotic. We are restarting version management from v0.1.0.
 
 ![Project Screenshot](images/示例图片.jpg)
 ## Project Introduction
@@ -39,8 +41,8 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
 
 1.  **Clone the repository**:
     ```bash
-    git clone git@github.com:18643751823/ai-novelist.git
-    cd ai-novel
+    git clone git@github.com:FlickeringLamp/ai-novelist.git
+    cd ai-novelist
     ```
 
 
@@ -75,6 +77,8 @@ We welcome all forms of contributions! If you find bugs, have feature suggestion
 To maintain the project's healthy development, please ensure:
 - Submitted code is compatible with the [MIT License](LICENSE)
 - Avoid introducing code that is incompatible with the MIT License
+
+**Note on DCO**: Previously, this project had DCO (Developer Certificate of Origin) requirements, but the checks were not properly removed. We have now completely removed all DCO checks and requirements. Contributors are no longer required to sign off on their commits.
 
 Thank you for your support!
 
