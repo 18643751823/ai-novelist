@@ -54,8 +54,6 @@ To ensure the healthy development of the project, please follow these basic rule
 
 - **Test Coverage**: If possible, please add corresponding tests for your changes.
 
-- **DCO Status**: This project previously had DCO (Developer Certificate of Origin) requirements, but the checks were not properly removed. We have now completely removed all DCO checks and requirements. Contributors are no longer required to sign off on their commits.
-
 ## License
 
 This project uses the [MIT License](LICENSE). The MIT License explicitly permits commercial use, modification, distribution, and private deployment.

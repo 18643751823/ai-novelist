@@ -21,7 +21,5 @@ export default defineConfig({
     loader: 'jsx',
     include: /src\/.*\.jsx?$/,
     exclude: []
-  },
-  root: '.', // 明确指定根目录为当前目录
-  publicDir: 'public' // 明确指定 public 目录
+  }
 })

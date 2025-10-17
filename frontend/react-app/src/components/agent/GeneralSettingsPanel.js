@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUndo, faPlus, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
-import ModeContextSettings from './ModeContextSettings';
 import AiParametersSettings from './AiParametersSettings';
 import RagSettingsPanel from './RagSettingsPanel';
 import ConfirmationModal from '../ConfirmationModal';
@@ -156,9 +155,6 @@ const GeneralSettingsPanel = ({
                   </div>
                 </div>
               )}
-
-              {/* 单个模式的上下文设置 */}
-              <ModeContextSettings mode={selectedMode} modeName={selectedModeDetail.name} />
             </div>
           </div>
         );

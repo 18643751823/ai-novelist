@@ -127,6 +127,3 @@ pnpm-lock.yaml
 *.swo
 *~
 .~lock.*
-
-# License files (auto-generated)
-licenses.json

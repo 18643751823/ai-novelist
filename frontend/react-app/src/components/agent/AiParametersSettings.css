@@ -175,3 +175,112 @@
     flex-direction: column;
   }
 }
+
+/* 上下文限制设置样式 */
+.context-settings-section {
+  margin-top: 25px;
+  padding: 20px;
+  background: var(--panel-bg-color-alt);
+  border-radius: var(--border-radius-medium);
+  border: 1px solid var(--border-color);
+}
+
+.context-settings-section h4 {
+  margin: 0 0 15px 0;
+  color: var(--text-color-primary);
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+.context-settings-section .setting-group {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: var(--panel-bg-color);
+  border-radius: var(--border-radius-small);
+  border: 1px solid var(--border-color);
+}
+
+.context-settings-section .setting-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+  font-size: 14px;
+}
+
+.context-slider {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  background: linear-gradient(to right, var(--primary-color) 0%, var(--primary-color) var(--slider-progress, 50%), var(--border-color) var(--slider-progress, 50%), var(--border-color) 100%);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.context-slider:hover {
+  opacity: 1;
+}
+
+.context-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  border: 2px solid var(--panel-bg-color);
+  box-shadow: none;
+}
+
+.context-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  border: 2px solid var(--panel-bg-color);
+  box-shadow: none;
+}
+
+.context-slider::-webkit-slider-thumb:focus,
+.context-slider::-moz-range-thumb:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.context-slider::-webkit-slider-thumb:active,
+.context-slider::-moz-range-thumb:active {
+  background: var(--primary-color-dark);
+}
+
+.context-slider::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, var(--primary-color) 0%, var(--primary-color) var(--slider-progress, 50%), var(--border-color) var(--slider-progress, 50%), var(--border-color) 100%);
+  height: 6px;
+  border-radius: 3px;
+  border: none;
+  box-shadow: none;
+}
+
+.context-slider::-moz-range-track {
+  background: var(--border-color);
+  height: 6px;
+  border-radius: 3px;
+}
+
+.context-slider::-moz-range-progress {
+  background: var(--primary-color);
+  height: 6px;
+  border-radius: 3px;
+}
+
+.slider-description {
+  font-size: 11px;
+  color: var(--text-color-light);
+  margin-top: 4px;
+  line-height: 1.3;
+}
