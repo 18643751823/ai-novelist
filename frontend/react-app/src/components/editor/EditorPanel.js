@@ -5,13 +5,13 @@ import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import HardBreak from '@tiptap/extension-hard-break';
 import DiffViewer from './DiffViewer'; // 引入 DiffViewer
-import ContextMenu from '../ContextMenu'; // 引入 ContextMenu
+import ContextMenu from '../others/ContextMenu'; // 引入 ContextMenu
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faExchangeAlt } from '@fortawesome/free-solid-svg-icons'; // 移除保存图标
 
 import './EditorPanel.css';
-import NotificationModal from '../NotificationModal';
+import NotificationModal from '../others/NotificationModal.js';
 import BackgroundImage from './BackgroundImage'; // 导入新的背景图组件
  
 import useIpcRenderer from '../../hooks/useIpcRenderer';

@@ -1,0 +1,60 @@
+.text-chunking-settings {
+  padding: 0;
+}
+
+.text-chunking-settings h5 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 8px;
+}
+
+.text-chunking-settings .setting-item {
+  margin-bottom: 16px;
+}
+
+.text-chunking-settings .setting-item label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #555;
+}
+
+.text-chunking-settings .chunk-size-input,
+.text-chunking-settings .chunk-overlap-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  background-color: #fff;
+  transition: border-color 0.2s ease;
+}
+
+.text-chunking-settings .chunk-size-input.error,
+.text-chunking-settings .chunk-overlap-input.error {
+  border-color: #e74c3c;
+  background-color: #fdf2f2;
+}
+
+.text-chunking-settings .chunk-size-input:focus,
+.text-chunking-settings .chunk-overlap-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.text-chunking-settings .error-message {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.text-chunking-settings .setting-description {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}

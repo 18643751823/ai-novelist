@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import useIpcRenderer from '../../hooks/useIpcRenderer';
-import NotificationModal from '../NotificationModal';
-import ConfirmationModal from '../ConfirmationModal';
+import NotificationModal from '../others/NotificationModal';
+import ConfirmationModal from '../others/ConfirmationModal';
 import './CustomProviderSettings.css';
 
 const CustomProviderSettings = ({ onSaveComplete, editingProvider: initialEditingProvider }) => {

@@ -1511,6 +1511,7 @@ function register(store, mainWindow) { // 接收 store 和 mainWindow 参数并�
   ipcMain.handle('reinitialize-embedding-function', ragIpcHandler.reinitializeEmbeddingFunction.bind(ragIpcHandler));
   ipcMain.handle('set-embedding-dimensions', ragIpcHandler.setEmbeddingDimensions.bind(ragIpcHandler));
   ipcMain.handle('get-embedding-dimensions', ragIpcHandler.getEmbeddingDimensions.bind(ragIpcHandler));
+  ipcMain.handle('set-embedding-model', ragIpcHandler.setEmbeddingModel.bind(ragIpcHandler));
   
   // 新增：RAG分段参数处理器
   ipcMain.handle('set-rag-chunk-settings', ragIpcHandler.setRagChunkSettings.bind(ragIpcHandler));

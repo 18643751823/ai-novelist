@@ -2,15 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSync, faTimes, faBook, faTrash, faEdit } from '@fortawesome/free-solid-svg-icons';
-import ConfirmationModal from '../ConfirmationModal';
-import NotificationModal from '../NotificationModal';
+import ConfirmationModal from '../../others/ConfirmationModal';
+import NotificationModal from '../../others/NotificationModal';
 import RenameKbFileModal from './RenameKbFileModal';
+import useIpcRenderer from '../../../hooks/useIpcRenderer';
 import './KnowledgeBasePanel.css';
 
-const KnowledgeBasePanel = ({ onClose }) => {
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+const KnowledgeBasePanel = ({
+  onClose,
+  files = [],
+  loading = false,
+  error = null,
+  onRefresh,
+  onUpdate
+}) => {
+  const { invoke } = useIpcRenderer();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [renameModalOpen, setRenameModalOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
@@ -25,71 +31,29 @@ const KnowledgeBasePanel = ({ onClose }) => {
     }
   }, [notification]);
 
-  // 加载知识库文件列表
-  const loadKnowledgeBaseFiles = async () => {
-    setLoading(true);
-    setError(null);
-    console.log('开始加载知识库文件...');
-    console.log('当前 notification 状态:', notification); // 添加当前 notification 状态日志
-    
-    // 检查 ipcRenderer 是否可用
-    if (!window.ipcRenderer) {
-      const errorMsg = 'ipcRenderer 未定义，请检查预加载脚本';
-      console.error(errorMsg);
-      setError(errorMsg);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      console.log('调用 list-kb-files IPC...');
-      const result = await window.ipcRenderer.invoke('list-kb-files');
-      console.log('IPC调用结果:', result);
-      
-      if (result.success) {
-        console.log(`获取到 ${result.files?.length || 0} 个文件`);
-        console.log('文件详情:', result.files);
-        setFiles(result.files || []);
-        // 检查状态更新
-        setTimeout(() => {
-          console.log('当前 files 状态:', files);
-        }, 0);
-      } else {
-        console.error('获取文件列表失败:', result.error);
-        setError(result.error || '获取文件列表失败');
-      }
-    } catch (err) {
-      console.error('调用API失败:', err);
-      setError('调用API失败: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 初始化加载文件列表
+  // 当父组件传递的error变化时，显示错误通知
   useEffect(() => {
-    console.log('KnowledgeBasePanel 挂载，初始 notification:', notification);
-    console.log('KnowledgeBasePanel useEffect 触发，开始加载文件列表');
-    loadKnowledgeBaseFiles();
-  }, []);
-
-  // 监听 files 状态变化
-  useEffect(() => {
-    console.log('files 状态变化:', files);
-  }, [files]);
+    if (error) {
+      setNotification({
+        type: 'error',
+        message: error,
+        duration: 5000
+      });
+    }
+  }, [error]);
 
   // 处理删除文件
   const handleDeleteFile = async (filename) => {
     try {
-      const result = await window.ipcRenderer.invoke('delete-kb-file', filename);
+      const result = await invoke('delete-kb-file', filename);
       if (result.success) {
         setNotification({
           type: 'success',
           message: `文件 "${filename}" 已成功删除`,
           duration: 3000
         });
-        // 重新加载文件列表
-        await loadKnowledgeBaseFiles();
+        // 通知父组件更新文件列表
+        if (onUpdate) onUpdate();
       } else {
         setNotification({
           type: 'error',
@@ -109,20 +73,18 @@ const KnowledgeBasePanel = ({ onClose }) => {
     }
   };
 
-
   // 处理文件重命名
   const handleRenameFile = async (oldFilename, newFilename) => {
-    setLoading(true);
     try {
-      const result = await window.ipcRenderer.invoke('rename-kb-file', oldFilename, newFilename);
+      const result = await invoke('rename-kb-file', oldFilename, newFilename);
       if (result.success) {
         setNotification({
           type: 'success',
           message: `文件 "${oldFilename}" 已成功重命名为 "${newFilename}"`,
           duration: 3000
         });
-        // 重新加载文件列表
-        await loadKnowledgeBaseFiles();
+        // 通知父组件更新文件列表
+        if (onUpdate) onUpdate();
       } else {
         throw new Error(result.error || '重命名失败');
       }
@@ -133,8 +95,6 @@ const KnowledgeBasePanel = ({ onClose }) => {
         duration: 5000
       });
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -185,22 +145,21 @@ const KnowledgeBasePanel = ({ onClose }) => {
   // 刷新文件列表
   const handleRefresh = () => {
     console.log('手动刷新知识库文件列表');
-    loadKnowledgeBaseFiles();
+    if (onRefresh) onRefresh();
   };
 
   // 添加文件到知识库
   const handleAddFile = async () => {
-    setLoading(true);
     try {
-      const result = await window.ipcRenderer.invoke('add-file-to-kb');
+      const result = await invoke('add-file-to-kb');
       if (result.success) {
         setNotification({
           type: 'success',
           message: result.message || '文件添加成功',
           duration: 3000
         });
-        // 重新加载文件列表
-        await loadKnowledgeBaseFiles();
+        // 通知父组件更新文件列表
+        if (onUpdate) onUpdate();
       } else {
         setNotification({
           type: 'error',
@@ -214,13 +173,10 @@ const KnowledgeBasePanel = ({ onClose }) => {
         message: `添加操作失败: ${err.message}`,
         duration: 5000
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   console.log('KnowledgeBasePanel 渲染，files:', files, 'loading:', loading, 'error:', error);
-
   return (
     <div className="knowledge-base-panel">
       <div className="kb-header">
@@ -249,7 +205,7 @@ const KnowledgeBasePanel = ({ onClose }) => {
       {error && (
         <div className="error-message">
           {error}
-          <button onClick={loadKnowledgeBaseFiles}>重试</button>
+          <button onClick={handleRefresh}>重试</button>
         </div>
       )}
 

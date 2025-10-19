@@ -14,7 +14,7 @@ import { faTimes, faSave, faUndo, faSlidersH } from '@fortawesome/free-solid-svg
 import './PromptManagerModal.css';
 import ModeContextSettings from './ModeContextSettings';
 import useIpcRenderer from '../../hooks/useIpcRenderer';
-import NotificationModal from '../NotificationModal';
+import NotificationModal from '../others/NotificationModal';
 
 const PromptManagerModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();

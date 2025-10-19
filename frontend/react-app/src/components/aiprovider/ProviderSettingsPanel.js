@@ -13,7 +13,7 @@ import {
 } from '../../store/slices/chatSlice';
 import useIpcRenderer from '../../hooks/useIpcRenderer';
 import CustomProviderSettings from './CustomProviderSettings';
-import ConfirmationModal from '../ConfirmationModal';
+import ConfirmationModal from '../others/ConfirmationModal';
 import './ProviderSettingsPanel.css';
 
 const ProviderSettingsPanel = () => {

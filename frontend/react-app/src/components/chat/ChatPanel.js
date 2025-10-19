@@ -46,8 +46,8 @@ import { startDiff, acceptSuggestion, rejectSuggestion } from '../../store/slice
 import useIpcRenderer from '../../hooks/useIpcRenderer';
 import { restoreChatCheckpoint } from '../../ipc/checkpointIpcHandler';
 import ChatHistoryPanel from './ChatHistoryPanel';
-import NotificationModal from '../NotificationModal';
-import ConfirmationModal from '../ConfirmationModal';
+import NotificationModal from '../others/NotificationModal';
+import ConfirmationModal from '../others/ConfirmationModal';
 import CreationModeModal from './CreationModeModal';
 import PromptManagerModal from '../agent/PromptManagerModal'; // 新增：导入提示词管理模态框
 import ModeSelector from './ModeSelector'; // 新增：导入模式选择器

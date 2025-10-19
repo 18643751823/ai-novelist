@@ -10,6 +10,33 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
+/* 当前选择显示样式 */
+.embedding-current-selection {
+  padding: 16px 20px;
+  background: #1A1A1A;
+  border-bottom: 1px solid #333333;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.current-selection-label {
+  color: #B0B0B0;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.current-selection-value {
+  color: #00AD62;
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(0, 173, 98, 0.1);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 173, 98, 0.3);
+}
+
 /* 筛选区域样式 */
 .embedding-model-filter-section {
   padding: 20px;
@@ -105,7 +132,7 @@
   margin: 0;
   min-height: 0; /* 确保flex容器可以正确收缩 */
   position: relative; /* 为滚动条提供定位上下文 */
-  max-height: 100%; /* 确保容器不会无限扩展 */
+  max-height: 400px; /* 限制列表容器高度为400px，避免过长 */
 }
 
 .embedding-model-grid {
@@ -115,7 +142,7 @@
   padding: 20px;
   min-height: min-content; /* 确保网格内容高度正确 */
   box-sizing: border-box; /* 确保padding包含在高度计算中 */
-  max-height: none; /* 移除最大高度限制 */
+  max-height: 100%; /* 确保网格内容不超过容器高度 */
 }
 
 .embedding-model-card {

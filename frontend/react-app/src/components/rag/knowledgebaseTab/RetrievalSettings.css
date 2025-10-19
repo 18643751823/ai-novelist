@@ -1,0 +1,45 @@
+/* RetrievalSettings.css */
+.retrieval-settings {
+  margin-bottom: 24px;
+}
+
+.topk-input-container {
+  display: flex;
+  align-items: center;
+}
+
+.topk-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #333333;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #000000;
+  color: #E0E0E0;
+}
+
+.topk-input:focus {
+  outline: none;
+  border-color: #00AD62;
+  box-shadow: 0 0 0 2px rgba(0, 173, 98, 0.2);
+}
+
+.topk-input.error {
+  border-color: #FF6B6B;
+  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+}
+
+.error-message {
+  color: #FF6B6B;
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.setting-description {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #B0B0B0;
+  line-height: 1.4;
+}

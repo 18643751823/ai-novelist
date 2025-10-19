@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { setShowWorkspacePanel } from '../store/slices/chatSlice';
-import WorkflowEditor from './workflow-editor/components/WorkflowEditor';
+import { setShowWorkspacePanel } from '../../store/slices/chatSlice';
+import WorkflowEditor from './components/WorkflowEditor';
 import './WorkspacePanel.css';
 
 const WorkspacePanel = ({ isOpen, onClose }) => {
