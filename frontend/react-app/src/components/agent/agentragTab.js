@@ -7,7 +7,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckSquare, faSquare, faSync } from '@fortawesome/free-solid-svg-icons';
 import useIpcRenderer from '../../hooks/useIpcRenderer';
-import './agentragTab.css';
+import './AgentragTab.css';
 
 /**
  * 当前选中模式的RAG设置面板组件
