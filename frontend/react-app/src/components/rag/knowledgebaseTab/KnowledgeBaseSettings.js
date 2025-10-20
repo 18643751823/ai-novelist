@@ -6,9 +6,9 @@ import ConfirmationModal from '../../others/ConfirmationModal';
 import NotificationModal from '../../others/NotificationModal';
 import RenameKbFileModal from './RenameKbFileModal';
 import useIpcRenderer from '../../../hooks/useIpcRenderer';
-import './KnowledgeBasePanel.css';
+import './KnowledgeBaseSettings.css';
 
-const KnowledgeBasePanel = ({
+const KnowledgeBaseSettings = ({
   onClose,
   files = [],
   loading = false,
@@ -176,7 +176,7 @@ const KnowledgeBasePanel = ({
     }
   };
 
-  console.log('KnowledgeBasePanel 渲染，files:', files, 'loading:', loading, 'error:', error);
+  console.log('KnowledgeBaseSettings 渲染，files:', files, 'loading:', loading, 'error:', error);
   return (
     <div className="knowledge-base-panel">
       <div className="kb-header">
@@ -283,4 +283,4 @@ const KnowledgeBasePanel = ({
   );
 };
 
-export default KnowledgeBasePanel;
+export default KnowledgeBaseSettings;

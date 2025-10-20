@@ -17,7 +17,7 @@ import { faCog, faDatabase, faTimes, faSave, faInfoCircle, faSync } from '@forta
 import EmbeddingModelSelector from './ragsettingsTab/EmbeddingModelSelector';
 import EmbeddingDimensionsSettings from './ragsettingsTab/EmbeddingDimensionsSettings';
 import TextChunkingSettings from './ragsettingsTab/TextChunkingSettings';
-import KnowledgeBasePanel from './knowledgebaseTab/KnowledgeBasePanel';
+import KnowledgeBaseSettings from './knowledgebaseTab/KnowledgeBaseSettings';
 import RetrievalSettings from './knowledgebaseTab/RetrievalSettings';
 import IntentAnalysisSettings from './knowledgebaseTab/IntentAnalysisSettings';
 import NotificationModal from '../others/NotificationModal';
@@ -310,7 +310,7 @@ const RagManagementPanel = forwardRef(({ isOpen, onClose, onSaveComplete }, ref)
             {/* 知识库文件列表 */}
             <div className="settings-section">
               <div className="knowledge-base-panel-inline">
-                <KnowledgeBasePanel
+                <KnowledgeBaseSettings
                   onClose={null}
                   files={ragState.knowledgeBaseFiles}
                   loading={ragState.loading.knowledgeBase}
