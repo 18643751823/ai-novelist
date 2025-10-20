@@ -7,14 +7,14 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckSquare, faSquare, faSync } from '@fortawesome/free-solid-svg-icons';
 import useIpcRenderer from '../../hooks/useIpcRenderer';
-import './AgentragTab.css';
+import './AgentRagTab.css';
 
 /**
  * 当前选中模式的RAG设置面板组件
  * 只显示当前选中模式的RAG设置，允许设置是否启用RAG和选择知识库文件
  * 采用实时保存模式，通过回调通知父组件设置变化
  */
-const agentragTab = ({
+const AgentRagTab = ({
   ragSettings = {},
   onRagSettingsChange,
   customModes = [],
@@ -225,4 +225,4 @@ const agentragTab = ({
   );
 };
 
-export default agentragTab;
+export default AgentRagTab;
