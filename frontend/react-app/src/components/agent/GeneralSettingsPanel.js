@@ -3,7 +3,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUndo, faPlus, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import AiParametersSettings from './AiParametersSettings';
-import AgentragTab from './AgentragTab';
+import AgentRagTab from './AgentRagTab';
 import ConfirmationModal from '../others/ConfirmationModal';
 import './GeneralSettingsPanel.css';
 
@@ -95,7 +95,7 @@ const GeneralSettingsPanel = ({
       case 'rag':
         return (
           <div className="tab-content">
-            <AgentragTab
+            <AgentRagTab
               ragSettings={localRagSettings}
               onRagSettingsChange={onRagSettingsChange}
               customModes={customModes}
