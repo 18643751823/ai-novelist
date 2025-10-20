@@ -51,7 +51,14 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
     ```
 
 
-3.  **Build frontend application**:
+3.  **Install frontend dependencies**:
+    Enter the frontend directory (`frontend/react-app/`) and install dependencies:
+    ```bash
+    cd frontend/react-app
+    npm install
+    ```
+
+4.  **Build frontend application**:
     Return to the project root directory (`ai-novel/`) and execute the build:
     ```bash
     cd ../..
@@ -63,7 +70,7 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
 **Start Electron application**:
 Execute in the project root directory (`ai-novel/`):
 ```bash
-npm run start:full .
+npm run start:full
 ```
 
 

@@ -51,7 +51,14 @@
     ```
 
 
-3.  **构建前端应用**:
+3.  **安装前端依赖**:
+    进入前端目录 (`frontend/react-app/`) 并安装依赖：
+    ```bash
+    cd frontend/react-app
+    npm install
+    ```
+
+4.  **构建前端应用**:
     回到项目根目录 (`ai-novel/`) 并执行构建：
     ```bash
     cd ../..
@@ -63,7 +70,7 @@
 **启动 Electron 应用**:
 项目根目录 (`ai-novel/`) 执行：
 ```bash
-npm run start:full .
+npm run start:full
 ```
 
 
