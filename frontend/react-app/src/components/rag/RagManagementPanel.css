@@ -1,0 +1,314 @@
+/* RagManagementPanel.css - 统一RAG管理面板样式（包含模态框功能） */
+
+.rag-settings-modal-content {
+  height: 100%;
+  width: 100%;
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 操作按钮区域 */
+.tab-content-actions {
+  display: flex;
+  gap: 10px;
+  padding: 16px;
+  background: var(--panel-bg-color);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+  border-radius: var(--border-radius);
+}
+
+.save-button, .cancel-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.save-button {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.save-button:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.cancel-button {
+  background-color: transparent;
+  color: var(--text-color-light);
+  border: 1px solid var(--border-color);
+}
+
+.cancel-button:hover {
+  background-color: var(--hover-bg-color);
+}
+
+/* 主内容区域 */
+.rag-management-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.rag-management-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  color: var(--text-color-primary);
+}
+
+/* 标签页导航样式 */
+.tab-navigation {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tab-list {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  padding: 0;
+  background: var(--panel-bg-color);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0;
+  height: 40px;
+  align-items: stretch;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-color-light);
+  font-weight: 500;
+  border-radius: 0;
+  height: 100%;
+}
+
+.tab-item:hover {
+  background-color: var(--hover-bg-color);
+  color: var(--text-color-primary);
+}
+
+.tab-item.active {
+  background-color: var(--panel-bg-color-alt);
+  border-bottom-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.tab-item svg {
+  font-size: 14px;
+  width: 16px;
+}
+
+.tab-item span {
+  font-size: 14px;
+}
+
+/* 内容区域样式 */
+.tab-content-area {
+  flex: 1;
+  overflow-y: auto;
+  background: transparent;
+  padding: 16px;
+}
+
+/* RAG设置标签页样式 */
+.rag-settings-tab {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 知识库标签页样式 */
+.knowledge-base-tab {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 通用设置区域样式 */
+.settings-section {
+  margin-bottom: 0;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--panel-bg-color);
+}
+
+.settings-section h5 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+/* 设置项样式 */
+.setting-item {
+  margin-bottom: 16px;
+}
+
+.setting-item:last-child {
+  margin-bottom: 0;
+}
+
+.setting-item label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--text-color-primary);
+}
+
+.setting-item select,
+.setting-item input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  font-size: 14px;
+  background: var(--panel-bg-color-alt);
+  color: var(--text-color-primary);
+}
+
+.setting-item select:focus,
+.setting-item input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 173, 98, 0.2);
+}
+
+.setting-description {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-color-light);
+  line-height: 1.4;
+}
+
+/* 模型选择器样式 */
+.model-selector-container {
+  position: relative;
+  width: 100%;
+}
+
+.model-selector-button {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  background: var(--panel-bg-color-alt);
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-color-primary);
+  text-align: left;
+}
+
+.model-selector-button:hover {
+  border-color: var(--primary-color);
+}
+
+/* 当前模型显示样式 */
+.current-model-display {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  background: var(--panel-bg-color-alt);
+  font-size: 14px;
+  color: var(--text-color-primary);
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+.selected-model-name {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.no-model-selected {
+  color: var(--text-color-light);
+  font-style: italic;
+}
+
+
+
+/* 知识库面板内嵌样式 */
+.knowledge-base-panel-inline {
+  margin-top: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  background: var(--panel-bg-color-alt);
+  height: 100%;
+  min-height: 300px;
+}
+
+.knowledge-base-panel-inline .knowledge-base-panel {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+  height: 100%;
+}
+
+/* 错误样式 */
+.error-message {
+  color: #FF6B6B;
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* 滚动条样式 */
+.tab-content-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tab-content-area::-webkit-scrollbar-track {
+  background: var(--panel-bg-color);
+  border-radius: 3px;
+}
+
+.tab-content-area::-webkit-scrollbar-thumb {
+  background: var(--divider-color);
+  border-radius: 3px;
+}
+
+.tab-content-area::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .tab-list {
+    height: 36px;
+  }
+  
+  .tab-item {
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  
+  .tab-item svg {
+    font-size: 12px;
+  }
+}

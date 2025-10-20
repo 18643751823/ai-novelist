@@ -4,7 +4,7 @@ import { setShowGeneralSettingsModal } from '../../store/slices/chatSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faSave } from '@fortawesome/free-solid-svg-icons';
 import GeneralSettingsTab from './GeneralSettingsTab';
-import NotificationModal from '../NotificationModal';
+import NotificationModal from '../others/NotificationModal';
 import './PromptManagerModal.css'; // 复用标签页样式
 
 const GeneralSettingsModal = ({ isOpen, onClose }) => {

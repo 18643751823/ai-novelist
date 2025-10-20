@@ -1,21 +1,27 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { setEmbeddingModel, setRagEmbeddingModel } from '../../../store/slices/chatSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faSync, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
-import useIpcRenderer from '../../hooks/useIpcRenderer';
+import useIpcRenderer from '../../../hooks/useIpcRenderer';
 import './EmbeddingModelSelector.css';
 
 const EmbeddingModelSelector = ({
   selectedModel,
-  availableModels,
+  availableModels = [],
   onModelChange,
-  onClose
+  onClose,
+  showCurrentSelection = false
 }) => {
+  const dispatch = useDispatch();
+  const { invoke, setStoreValue } = useIpcRenderer();
+  
+  const [localEmbeddingModel, setLocalEmbeddingModel] = useState(selectedModel || '');
   const [searchText, setSearchText] = useState('');
   const [selectedProvider, setSelectedProvider] = useState('');
   const [loadingDimensions, setLoadingDimensions] = useState({});
   const [modelDimensions, setModelDimensions] = useState({});
   const [dimensionErrors, setDimensionErrors] = useState({});
-  const { invoke } = useIpcRenderer();
 
   // 获取所有提供商列表
   const providers = useMemo(() => {
@@ -44,9 +50,45 @@ const EmbeddingModelSelector = ({
   }, [availableModels, searchText, selectedProvider]);
 
   // 处理模型选择
-  const handleModelSelect = (modelId) => {
-    onModelChange(modelId);
+  const handleModelSelect = async (modelId) => {
+    setLocalEmbeddingModel(modelId);
+    
+    // 立即保存嵌入模型到持久化存储
+    try {
+      dispatch(setEmbeddingModel(modelId));
+      dispatch(setRagEmbeddingModel(modelId)); // 同时更新RAG状态
+      await setStoreValue('embeddingModel', modelId);
+      
+      // 重新初始化嵌入函数以确保新模型立即生效
+      try {
+        await invoke('reinitialize-embedding-function');
+        console.log(`[嵌入模型选择器] 嵌入函数已重新初始化，使用模型: ${modelId}`);
+      } catch (error) {
+        console.warn('重新初始化嵌入函数时出错:', error);
+      }
+    } catch (error) {
+      console.error('保存嵌入模型失败:', error);
+    }
+    
+    // 调用父组件的回调
+    if (onModelChange) {
+      onModelChange(modelId);
+    }
   };
+  // 获取当前选择的嵌入模型显示名称
+  const getSelectedEmbeddingModelName = () => {
+    const currentModel = localEmbeddingModel || selectedModel;
+    if (!currentModel) return '选择嵌入模型';
+    const model = availableModels.find(m => m.id === currentModel);
+    return model ? `${model.id} (${model.provider})` : currentModel;
+  };
+
+  // 当selectedModel属性变化时更新本地状态
+  useEffect(() => {
+    if (selectedModel && selectedModel !== localEmbeddingModel) {
+      setLocalEmbeddingModel(selectedModel);
+    }
+  }, [selectedModel]);
 
   // 处理搜索输入变化
   const handleSearchChange = (e) => {
@@ -90,8 +132,27 @@ const EmbeddingModelSelector = ({
            model.isEmbedding;
   };
 
+  // 渲染当前选择模型显示
+  const renderCurrentSelection = () => {
+    if (!showCurrentSelection) return null;
+    
+    const currentModel = localEmbeddingModel || selectedModel;
+    const model = availableModels.find(m => m.id === currentModel);
+    const displayName = model ? `${model.id} (${model.provider})` : (currentModel || '选择嵌入模型');
+    
+    return (
+      <div className="embedding-current-selection">
+        <div className="current-selection-label">当前嵌入模型:</div>
+        <div className="current-selection-value">{displayName}</div>
+      </div>
+    );
+  };
+
   return (
     <div className="embedding-model-selector-panel">
+      {/* 当前选择显示 */}
+      {renderCurrentSelection()}
+      
       {/* 搜索和过滤区域 */}
       <div className="embedding-model-filter-section">
         <div className="embedding-search-container">
@@ -139,7 +200,7 @@ const EmbeddingModelSelector = ({
               return (
                 <div
                   key={model.id}
-                  className={`embedding-model-card ${selectedModel === model.id ? 'selected' : ''}`}
+                  className={`embedding-model-card ${localEmbeddingModel === model.id ? 'selected' : ''}`}
                   onClick={() => handleModelSelect(model.id)}
                 >
                   <div className="embedding-model-info">
@@ -177,7 +238,7 @@ const EmbeddingModelSelector = ({
                       </div>
                     )}
                   </div>
-                  {selectedModel === model.id && (
+                  {localEmbeddingModel === model.id && (
                     <div className="selected-indicator">✓</div>
                   )}
                 </div>

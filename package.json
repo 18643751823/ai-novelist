@@ -4,22 +4,19 @@
   "description": "AI Novelist Application",
   "main": "main.js",
   "private": true,
-  "workspaces": [
-    "frontend/react-app"
-  ],
   "scripts": {
     "start": "npm run build:backend && electron .",
     "start:react": "cd frontend/react-app && npm start",
-    "start:full": "concurrently \"npm run start:react\" \"wait-on http://localhost:3000 && npm run start\"",
+    "start:full": "concurrently \"npm run start:react\" \"npm run start\"",
     "start:prod": "npm run build:prod && npm run launch:prod",
     "launch:prod": "electron . --no-dev-tools",
     "build:prod": "npm run build:backend && npm run build:react",
     "build:backend": "tsc -p tsconfig.backend.json",
-    "build:react": "npm run build --workspace=frontend/react-app",
+    "build:react": "cd frontend/react-app && npm run build",
     "clean:novel-data": "node -e \"require('fs').rmSync('novel', { recursive: true, force: true }); require('fs').mkdirSync('novel', { recursive: true });\"",
     "pack": "npm run clean:novel-data && npm run build:backend && npm run build:react && electron-builder --dir",
     "dist": "npm run clean:novel-data && npm run build:backend && npm run build:react && electron-builder",
-    "build": "npm run build --workspace=frontend/react-app",
+    "build": "cd frontend/react-app && npm run build",
     "lint": "eslint ."
   },
   "keywords": [],
@@ -28,31 +25,28 @@
   "dependencies": {
     "@lancedb/lancedb": "^0.19.1",
     "@langchain/community": "^0.3.57",
-    "@langchain/core": "^0.3.72",
+    "@langchain/core": "^0.3.78",
     "@langchain/textsplitters": "^0.1.0",
     "@vscode/ripgrep": "^1.15.14",
     "apache-arrow": "^18.1.0",
     "axios": "^1.9.0",
+    "concurrently": "^9.1.2",
     "electron-is-dev": "^2.0.0",
-    "electron-log": "^5.1.5",
-    "electron-store": "^10.0.1",
+    "electron-log": "^5.4.3",
+    "electron-store": "^11.0.2",
     "fastest-levenshtein": "^1.0.16",
-    "fzf": "^0.5.2",
-    "https-proxy-agent": "^7.0.6",
-    "langchain": "^0.3.31",
+    "langchain": "^0.3.36",
     "lodash": "^4.17.21",
-    "mammoth": "^1.10.0",
-    "openai": "^4.0.0",
+    "mammoth": "^1.11.0",
+    "openai": "^4.104.0",
     "p-wait-for": "^5.0.2",
     "pdf-parse": "^1.1.1",
     "simple-git": "^3.28.0"
   },
   "devDependencies": {
-    "@types/lodash": "^4.17.6",
     "electron": "^28.0.0",
     "electron-builder": "^24.0.0",
-    "eslint": "^8.57.1",
-    "license-checker": "^25.0.1"
+    "eslint": "^9.37.0"
   },
   "browserslist": {
     "production": [

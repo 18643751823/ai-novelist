@@ -416,6 +416,47 @@ class RagIpcHandler {
     }
 
     /**
+     * 设置嵌入模型
+     * @param {Object} event IPC事件对象
+     * @param {string} modelId 嵌入模型ID
+     * @returns {Promise<Object>} 设置结果
+     */
+    async setEmbeddingModel(event, modelId) {
+        try {
+            console.log(`[RagIpcHandler] 设置嵌入模型: ${modelId}`);
+            
+            if (!modelId || typeof modelId !== 'string') {
+                return { success: false, error: '无效的模型ID' };
+            }
+
+            // 保存到store
+            this.tableManager.storeInstance.set('embeddingModel', modelId);
+            
+            // 重新初始化嵌入函数以应用新模型
+            const reinitResult = await this.reinitializeEmbeddingFunction();
+            
+            if (reinitResult.success) {
+                return {
+                    success: true,
+                    message: `嵌入模型已设置为: ${modelId}，嵌入函数已重新初始化`
+                };
+            } else {
+                return {
+                    success: false,
+                    error: `嵌入模型已保存但重新初始化失败: ${reinitResult.error}`
+                };
+            }
+            
+        } catch (error) {
+            console.error('[RagIpcHandler] 设置嵌入模型失败:', error);
+            return {
+                success: false,
+                error: `设置嵌入模型失败: ${error.message}`
+            };
+        }
+    }
+
+    /**
      * 重新初始化阿里云嵌入函数（兼容性方法）
      * @returns {Promise<Object>} 重新初始化结果
      */

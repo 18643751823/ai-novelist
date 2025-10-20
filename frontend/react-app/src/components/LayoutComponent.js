@@ -6,9 +6,9 @@ import SidebarComponent from './SidebarComponent'; // 引入侧边栏组件
 import SplitViewPanel from './editor/SplitViewPanel'; // 引入分屏对比组件
 import OverlayPanel from './OverlayPanel'; // 引入覆盖层组件
 import ApiSettingsModal from './aiprovider/ApiSettingsModal'; // 引入API设置模态框
-import RagSettingsModal from './rag/RagSettingsModal'; // 引入RAG设置模态框
+import RagManagementPanel from './rag/RagManagementPanel'; // 引入RAG管理面板（已合并模态框功能）
 import GeneralSettingsModal from './agent/GeneralSettingsModal'; // 引入通用设置模态框
-// import WorkspacePanel from './WorkspacePanel'; // 引入工作区面板 - 暂时隐藏工作流功能
+import WorkspacePanel from './workflow-editor/WorkspacePanel'; // 引入工作区面板
 import PersistentMemoryPanel from './insert/PersistentMemoryPanel'; // 引入持久记忆面板
 
 function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
@@ -96,15 +96,14 @@ function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
           <ApiSettingsModal isOpen={showApiSettingsModal} />
         )}
         {showRagSettingsModal && (
-          <RagSettingsModal isOpen={showRagSettingsModal} />
+          <RagManagementPanel isOpen={showRagSettingsModal} />
         )}
         {showGeneralSettingsModal && (
           <GeneralSettingsModal isOpen={showGeneralSettingsModal} />
         )}
-        {/* 暂时隐藏工作区面板（工作流编辑器功能） */}
-        {/* {showWorkspacePanel && (
+        {showWorkspacePanel && (
           <WorkspacePanel isOpen={showWorkspacePanel} />
-        )} */}
+        )}
         {showPersistentMemoryPanel && (
           <PersistentMemoryPanel />
         )}

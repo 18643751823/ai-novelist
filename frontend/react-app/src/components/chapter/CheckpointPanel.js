@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { saveArchive, restoreNovelArchive, getHistory, deleteNovelArchive } from '../../ipc/checkpointIpcHandler';
 import './CheckpointPanel.css';
-import ConfirmationModal from '../ConfirmationModal';
+import ConfirmationModal from '../others/ConfirmationModal';
 import { triggerChapterRefresh } from '../../store/slices/novelSlice';
 
 const CheckpointPanel = ({ onClose }) => {

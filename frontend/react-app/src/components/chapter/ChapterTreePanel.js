@@ -5,10 +5,10 @@ import { setChapters, triggerChapterRefresh, openTab } from '../../store/slices/
 import './ChapterTreePanel.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGear, faCaretRight, faCaretDown, faFolderPlus, faFileCirclePlus, faFolder, faFile, faRotate, faEdit, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons'; // 导入新图标和刷新图标
-import CombinedIcon from '../CombinedIcon';
-import ContextMenu from '../ContextMenu'; // 引入 ContextMenu 组件
-import NotificationModal from '../NotificationModal'; // 新增
-import ConfirmationModal from '../ConfirmationModal'; // 新增
+import CombinedIcon from '../others/CombinedIcon';
+import ContextMenu from '../others/ContextMenu'; // 引入 ContextMenu 组件
+import NotificationModal from '../others/NotificationModal'; // 新增
+import ConfirmationModal from '../others/ConfirmationModal'; // 新增
 import CheckpointPanel from './CheckpointPanel'; // 引入版本历史面板
 import PromptManagerModal from '../agent/PromptManagerModal'; // 新增：提示词管理模态框
 import { faHistory } from '@fortawesome/free-solid-svg-icons'; // 引入历史图标

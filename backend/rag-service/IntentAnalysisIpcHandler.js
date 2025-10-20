@@ -187,6 +187,31 @@ class IntentAnalysisIpcHandler {
             }
         });
 
+        // 获取意图分析设置（统一数据流管理使用）
+        ipcMain.handle('get-intent-analysis-settings', async () => {
+            try {
+                console.log('[IntentAnalysisIpcHandler] 获取意图分析设置');
+                
+                // 获取当前意图分析模型
+                const modelId = intentAnalyzer.getDefaultAnalysisModel();
+                const isAvailable = await intentAnalyzer.checkModelAvailability(modelId);
+                const model = isAvailable ? modelId : '';
+                
+                // 获取当前意图分析提示词
+                const prompt = intentAnalyzer.getCurrentPrompt();
+                
+                // 返回统一格式的设置数据
+                return {
+                    success: true,
+                    model: model,
+                    prompt: prompt
+                };
+            } catch (error) {
+                console.error('[IntentAnalysisIpcHandler] 获取意图分析设置失败:', error);
+                return { success: false, error: error.message };
+            }
+        });
+
         // 测试意图分析功能
         ipcMain.handle('test-intent-analysis', async () => {
             try {
