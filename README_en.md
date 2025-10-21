@@ -63,7 +63,7 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
 4.  **Build frontend application**:
     Return to the project root directory (`ai-novelist/`) and execute the build:
     ```bash
-    cd ../..
+    cd ..
     npm run build
     ```
 

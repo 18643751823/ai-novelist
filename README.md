@@ -63,7 +63,7 @@
 4.  **构建前端应用**:
     回到项目根目录 (`ai-novelist/`) 并执行构建：
     ```bash
-    cd ../..
+    cd ..
     npm run build
     ```
 
