@@ -26,8 +26,8 @@ We welcome code contributions! Please follow these steps:
 1.  **Fork the Repository**: Fork this project repository to your own GitHub account.
 2.  **Clone the Repository**: Clone your forked repository to your local machine.
     ```bash
-    git clone git@github.com:18643751823/ai-novelist.git
-    cd ai-novel
+    git clone git@github.com:FlickeringLamp/ai-novelist.git
+    cd ai-novelist
     ```
 3.  **Create a Branch**: Create a new branch for your feature or bug fix.
     ```bash
@@ -53,6 +53,8 @@ To ensure the healthy development of the project, please follow these basic rule
 - **Code Quality**: Please ensure your code has good readability and maintainability.
 
 - **Test Coverage**: If possible, please add corresponding tests for your changes.
+
+- **DCO Status**: This project previously had DCO (Developer Certificate of Origin) requirements, but the checks were not properly removed. All DCO checks and requirements have now been completely removed. Contributors no longer need to sign off on their commits.
 
 ## License
 

@@ -21,7 +21,8 @@ import {
   setIntentAnalysisModel,
   setEnableStream,
   setContextLimitSettings,
-  setAiParametersForMode
+  setAiParametersForMode,
+  setCustomProviders
 } from './store/slices/chatSlice';
 
 function App() {
@@ -68,7 +69,8 @@ function App() {
           storedIntentAnalysisModel,
           storedEnableStream,
           storedContextLimitSettings,
-          storedAiParameters
+          storedAiParameters,
+          storedCustomProviders
         ] = await Promise.all([
           getStoreValue('customPrompts'),
           getStoreValue('modeFeatureSettings'),
@@ -81,7 +83,8 @@ function App() {
           getStoreValue('intentAnalysisModel'),
           getStoreValue('enableStream'),
           getStoreValue('contextLimitSettings'),
-          getStoreValue('aiParameters')
+          getStoreValue('aiParameters'),
+          getStoreValue('customProviders')
         ]);
 
         console.log('[App] 从存储获取的设置:');
@@ -132,8 +135,20 @@ function App() {
         }
 
         // 加载其他设置
-        if (storedSelectedModel) dispatch(setSelectedModel(storedSelectedModel));
-        if (storedSelectedProvider) dispatch(setSelectedProvider(storedSelectedProvider));
+        console.log(`[App] 从存储加载的selectedModel: "${storedSelectedModel}"`);
+        console.log(`[App] 从存储加载的selectedProvider: "${storedSelectedProvider}"`);
+        if (storedSelectedModel) {
+          dispatch(setSelectedModel(storedSelectedModel));
+          console.log(`[App] 已分发setSelectedModel: "${storedSelectedModel}"`);
+        } else {
+          console.log('[App] storedSelectedModel为空，未分发');
+        }
+        if (storedSelectedProvider) {
+          dispatch(setSelectedProvider(storedSelectedProvider));
+          console.log(`[App] 已分发setSelectedProvider: "${storedSelectedProvider}"`);
+        } else {
+          console.log('[App] storedSelectedProvider为空，未分发');
+        }
         if (storedDeepseekApiKey) dispatch(setDeepseekApiKey(storedDeepseekApiKey));
         if (storedOpenrouterApiKey) dispatch(setOpenrouterApiKey(storedOpenrouterApiKey));
         if (storedAliyunEmbeddingApiKey) dispatch(setAliyunEmbeddingApiKey(storedAliyunEmbeddingApiKey));
@@ -146,6 +161,12 @@ function App() {
           console.log('[App] 上下文限制设置已加载:', storedContextLimitSettings);
         } else {
           console.log('[App] 未找到保存的上下文限制设置，使用默认值');
+        }
+
+        // 加载自定义提供商数据
+        if (storedCustomProviders) {
+          dispatch(setCustomProviders(storedCustomProviders));
+          console.log('[App] 加载自定义提供商:', storedCustomProviders.length, '个');
         }
 
         console.log('[App] 设置加载完成');

@@ -1,6 +1,8 @@
-# 青烛 v2.0.1
+# 青烛 v0.1.0
 
 [English Version](README_en.md) | 中文版
+
+> **版本说明**: 由于这是个人学习项目，前期版本号管理较为混乱，故从 v0.1.0 开始重新进行版本管理。
 
 ![项目截图](images/示例图片.jpg)
 ## 项目介绍
@@ -39,13 +41,13 @@
 
 1.  **克隆仓库**:
     ```bash
-    git clone git@github.com:18643751823/ai-novelist.git
-    cd ai-novel
+    git clone git@github.com:FlickeringLamp/ai-novelist.git
+    cd ai-novelist
     ```
 
 
 2.  **安装依赖**:
-    在项目根目录 (`ai-novel/`) 下执行：
+    在项目根目录 (`ai-novelist/`) 下执行：
     ```bash
     npm install
     ```
@@ -59,7 +61,7 @@
     ```
 
 4.  **构建前端应用**:
-    回到项目根目录 (`ai-novel/`) 并执行构建：
+    回到项目根目录 (`ai-novelist/`) 并执行构建：
     ```bash
     cd ../..
     npm run build
@@ -68,7 +70,7 @@
 ### 运行应用
 
 **启动 Electron 应用**:
-项目根目录 (`ai-novel/`) 执行：
+项目根目录 (`ai-novelist/`) 执行：
 ```bash
 npm run start:full
 ```
@@ -82,6 +84,8 @@ npm run start:full
 为了保持项目的健康发展，请确保：
 - 提交的代码与 [MIT 协议](LICENSE) 兼容
 - 避免引入与 MIT 协议不兼容的代码
+
+**关于 DCO 的说明**：先前本项目有 DCO（开发者来源证书）要求，但检查未正确移除。现已完全移除所有 DCO 检查和要求。贡献者不再需要在提交时进行签名确认。
 
 感谢每一位贡献者的支持！
 

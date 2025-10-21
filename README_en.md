@@ -1,6 +1,8 @@
-# Qingzhu v2.0.1
+# Qingzhu v0.1.0
 
 [中文版](README.md) | English Version
+
+> **Version Note**: As this is a personal learning project, version management was somewhat chaotic in the early stages. Therefore, version management has been restarted from v0.1.0.
 
 ![Project Screenshot](images/示例图片.jpg)
 ## Project Introduction
@@ -39,13 +41,13 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
 
 1.  **Clone the repository**:
     ```bash
-    git clone git@github.com:18643751823/ai-novelist.git
-    cd ai-novel
+    git clone git@github.com:FlickeringLamp/ai-novelist.git
+    cd ai-novelist
     ```
 
 
 2.  **Install dependencies**:
-    Execute in the project root directory (`ai-novel/`):
+    Execute in the project root directory (`ai-novelist/`):
     ```bash
     npm install
     ```
@@ -59,7 +61,7 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
     ```
 
 4.  **Build frontend application**:
-    Return to the project root directory (`ai-novel/`) and execute the build:
+    Return to the project root directory (`ai-novelist/`) and execute the build:
     ```bash
     cd ../..
     npm run build
@@ -68,7 +70,7 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
 ### Running the Application
 
 **Start Electron application**:
-Execute in the project root directory (`ai-novel/`):
+Execute in the project root directory (`ai-novelist/`):
 ```bash
 npm run start:full
 ```
@@ -82,6 +84,8 @@ We welcome all forms of contributions! If you find bugs, have feature suggestion
 To maintain the project's healthy development, please ensure:
 - Submitted code is compatible with the [MIT License](LICENSE)
 - Avoid introducing code that is incompatible with the MIT License
+
+**Note about DCO**: Previously, this project had DCO (Developer Certificate of Origin) requirements, but the checks were not properly removed. All DCO checks and requirements have now been completely removed. Contributors no longer need to sign off on their commits.
 
 Thank you for your support!
 

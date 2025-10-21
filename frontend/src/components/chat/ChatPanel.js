@@ -55,7 +55,7 @@ import ModelSelectorPanel from './ModelSelectorPanel'; // 新增：导入模型�
 import './ChatPanel.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faTrashCan, faPaperPlane, faGear, faSpinner, faBoxArchive, faCopy, faRedo, faPencil, faPlus, faWrench, faBook, faAngleLeft, faAngleRight, faStop } from '@fortawesome/free-solid-svg-icons';
-import CustomProviderSettings from '../aiprovider/CustomProviderSettings'; // 新增
+import CustomProviderSettings from '../aiprovider/providersettings/CustomProviderSettings'; // 新增
 
 // 新增：可重用的工具调用渲染组件
 const ToolCallCard = ({ toolCall }) => {
@@ -373,28 +373,10 @@ const ChatPanel = memo(() => {
         console.log('意图分析模型未设置，将使用默认模型');
       }
 
-      // 加载选中的提供商 - 新增：确保selectedProvider与存储同步
-      const storedProvider = await getStoreValue('selectedProvider');
-      console.log(`[值传递流程] 从存储获取 selectedProvider: ${storedProvider}`);
-      if (storedProvider) {
-        dispatch(setSelectedProvider(storedProvider));
-        console.log(`[值传递流程] 分发 setSelectedProvider action: ${storedProvider}`);
-        console.log(`加载到的提供商: ${storedProvider}`);
-      } else {
-        console.log('未加载到提供商设置');
-      }
-      
-      const storedModel = await getStoreValue('selectedModel');
-      console.log(`[值传递流程-1] 从存储获取 selectedModel: ${storedModel}`);
-      if (storedModel) {
-        dispatch(setSelectedModel(storedModel));
-        console.log(`[值传递流程-2] 分发 setSelectedModel action: ${storedModel}`);
-        console.log(`加载到的模型: ${storedModel}`);
-      } else {
-        dispatch(setSelectedModel('')); // 取消默认模型
-        console.log('[值传递流程-2] 分发 setSelectedModel action: (空值)');
-        console.log('未加载到模型，不设置默认模型');
-      }
+      // 注意：selectedModel 和 selectedProvider 已经在 App.js 中加载到 Redux
+      // 这里不再重复加载，避免状态竞争问题
+      console.log(`[ChatPanel] loadSettings - 当前Redux状态中的selectedModel: "${selectedModel}"`);
+      console.log(`[ChatPanel] loadSettings - 当前Redux状态中的selectedProvider: "${selectedProvider}"`);
       // 加载当前模式设置
       const storedCurrentMode = await getStoreValue('currentMode');
       if (storedCurrentMode) {
@@ -433,17 +415,18 @@ const ChatPanel = memo(() => {
           console.log('可用模型列表已加载:', modelsResult.models.map(m => m.id));
 
           // 确保 selectedProvider 与当前选中的模型匹配
-          // 使用 storedModel 而不是 selectedModel，因为 Redux 状态更新是异步的
-          const currentSelectedModel = storedModel || selectedModel || '';
+          // 直接从存储获取当前模型，避免依赖Redux状态
+          const currentStoredModel = await getStoreValue('selectedModel');
+          const currentSelectedModel = currentStoredModel || selectedModel || '';
           const matchedModel = modelsResult.models.find(m => m.id === currentSelectedModel);
           
           // 重新同步 selectedModel 为存储值，确保 Redux 状态与存储一致
-          console.log(`[同步调试] 存储值=${storedModel}, Redux状态=${selectedModel}, 是否不一致=${storedModel && selectedModel !== storedModel}`);
-          if (storedModel && selectedModel !== storedModel) {
-              dispatch(setSelectedModel(storedModel));
-              console.log(`重新同步 selectedModel 为存储值: ${storedModel}`);
+          console.log(`[同步调试] 存储值=${currentStoredModel}, Redux状态=${selectedModel}, 是否不一致=${currentStoredModel && selectedModel !== currentStoredModel}`);
+          if (currentStoredModel && selectedModel !== currentStoredModel) {
+              dispatch(setSelectedModel(currentStoredModel));
+              console.log(`重新同步 selectedModel 为存储值: ${currentStoredModel}`);
           } else {
-              console.log(`[同步调试] 状态一致，无需同步: 存储=${storedModel}, Redux=${selectedModel}`);
+              console.log(`[同步调试] 状态一致，无需同步: 存储=${currentStoredModel}, Redux=${selectedModel}`);
           }
           if (matchedModel) {
               setSelectedProvider(matchedModel.provider);
@@ -649,8 +632,13 @@ const ChatPanel = memo(() => {
     dispatch(setQuestionCard(null));
 
     try {
-      // 检查是否有可用的模型
-      if (!selectedModel || selectedModel.trim() === '') {
+      // 检查是否有可用的模型 - 直接从存储获取，避免Redux状态同步问题
+      const currentStoredModel = await getStoreValue('selectedModel');
+      const currentModel = currentStoredModel || selectedModel || '';
+      console.log(`[ChatPanel] handleSendMessage - 存储模型: "${currentStoredModel}", Redux模型: "${selectedModel}", 最终使用: "${currentModel}"`);
+      
+      if (!currentModel || currentModel.trim() === '') {
+        console.log('[ChatPanel] 最终模型为空，显示错误消息');
         dispatch(appendMessage({
           sender: 'System',
           text: '当前没有可用的AI模型。请先前往设置页面配置API密钥。如果已经配置，请在上方重新选择模型，再次发送信息即可',
@@ -668,8 +656,8 @@ const ChatPanel = memo(() => {
       console.log(`[ChatPanel] 发送消息，模式: ${currentMode}, 自定义提示词: ${hasCustomPrompt ? '有' : '无'}`);
       console.log(`[ChatPanel] 自定义提示词详情: 类型=${typeof customPrompt}, 值="${customPrompt}"`);
       console.log(`[ChatPanel] 从存储读取的完整提示词:`, storedCustomPrompts);
-      console.log(`[值传递流程-4] 组件获取 selectedModel: ${selectedModel}`);
-      console.log(`[ChatPanel] 当前选中模型: ${selectedModel}, 将传递给后端`);
+      console.log(`[值传递流程-4] 组件获取 selectedModel: ${currentModel} (存储: ${currentStoredModel}, Redux: ${selectedModel})`);
+      console.log(`[ChatPanel] 当前选中模型: ${currentModel}, 将传递给后端`);
       // 获取当前模式的功能设置（工具功能已硬编码，只传递RAG检索状态）
       const currentModeFeatures = modeFeatureSettings[currentMode] || {
         ragRetrievalEnabled: false
@@ -689,10 +677,10 @@ const ChatPanel = memo(() => {
         mode: currentMode,
         customPrompt: customPrompt, // 添加自定义提示词参数
         ragRetrievalEnabled: currentModeFeatures.ragRetrievalEnabled, // 添加模式特定的RAG检索状态
-        model: selectedModel, // 新增：传递当前选中的模型
+        model: currentModel, // 新增：传递当前选中的模型（直接从存储获取，避免Redux延迟）
         aiParameters: currentModeAiParameters // 新增：传递当前模式的AI参数
       });
-      console.log(`[值传递流程-5] 已调用 invoke('process-command')，模型参数: ${selectedModel}`);
+      console.log(`[值传递流程-5] 已调用 invoke('process-command')，模型参数: ${currentModel}`);
       console.log(`[DEBUG][ChatPanel] 传递给后端的AI参数:`, JSON.stringify(currentModeAiParameters, null, 2));
     } catch (error) {
       console.error('Error sending message to AI:', error);

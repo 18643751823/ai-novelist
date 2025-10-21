@@ -55,6 +55,7 @@ const chatSlice = createSlice({
     intentAnalysisModel: '', // 新增：意图分析模型
     selectedModel: '',
     selectedProvider: '', // 取消默认的DeepSeek设置
+    customProviders: [], // 新增：自定义提供商列表
     isHistoryPanelVisible: false,
     showApiSettingsModal: false,
     showRagSettingsModal: false,
@@ -396,6 +397,9 @@ const chatSlice = createSlice({
     },
     setAliyunEmbeddingApiKey: (state, action) => { // 新增：设置阿里云嵌入API Key
       state.aliyunEmbeddingApiKey = action.payload;
+    },
+    setCustomProviders: (state, action) => { // 新增：设置自定义提供商列表
+      state.customProviders = action.payload;
     },
     setAvailableModels: (state, action) => { // 新增：设置可用模型列表
         state.availableModels = action.payload;
@@ -961,6 +965,7 @@ export const {
   setAliyunEmbeddingApiKey, // 新增：导出 setAliyunEmbeddingApiKey
   setIntentAnalysisModel, // 新增：导出 setIntentAnalysisModel
   setAvailableModels, // 新增：导出 setAvailableModels
+  setCustomProviders, // 新增：导出 setCustomProviders
   setCustomSystemPrompt, // 新增：导出 setCustomSystemPrompt
   resetCustomSystemPrompt, // 新增：导出 resetCustomSystemPrompt
   setCustomPromptForMode, // 新增：导出 setCustomPromptForMode
