@@ -6,7 +6,7 @@ import TabBar from './editor/TabBar'; // 引入 TabBar
 import SidebarComponent from './SidebarComponent'; // 引入侧边栏组件
 import SplitViewPanel from './editor/SplitViewPanel'; // 引入分屏对比组件
 import OverlayPanel from './OverlayPanel'; // 引入覆盖层组件
-import ApiSettingsModal from './aiprovider/ApiSettingsModal'; // 引入API设置模态框
+import ProviderSettingsPanel from './aiprovider/ProviderSettingsPanel'; // 引入合并后的提供商设置面板
 import RagManagementPanel from './rag/RagManagementPanel'; // 引入RAG管理面板（已合并模态框功能）
 import AgentPanel from './agent/AgentPanel'; // 引入统一的Agent面板
 import WorkspacePanel from './workflow-editor/WorkspacePanel'; // 引入工作区面板
@@ -95,7 +95,7 @@ function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
       <OverlayPanel isVisible={showOverlay}>
         {/* 根据当前打开的模态框显示相应的内容 */}
         {showApiSettingsModal && (
-          <ApiSettingsModal isOpen={showApiSettingsModal} />
+          <ProviderSettingsPanel isOpen={showApiSettingsModal} />
         )}
         {showRagSettingsModal && (
           <RagManagementPanel isOpen={showRagSettingsModal} />

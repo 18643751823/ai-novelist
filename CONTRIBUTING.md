@@ -26,8 +26,8 @@
 1.  **Fork 仓库**: 将本项目仓库 Fork 到您自己的 GitHub 账户。
 2.  **克隆仓库**: 将您 Fork 的仓库克隆到本地。
     ```bash
-    git clone git@github.com:18643751823/ai-novelist.git
-    cd ai-novel
+    git clone git@github.com:FlickeringLamp/ai-novelist.git
+    cd ai-novelist
     ```
 3.  **创建分支**: 为您的功能或 Bug 修复创建一个新的分支。
     ```bash
@@ -53,6 +53,8 @@
 - **代码质量**: 请确保您的代码具有良好的可读性和可维护性。
 
 - **测试覆盖**: 如果可能，请为您的更改添加相应的测试。
+
+- **DCO 状态**: 本项目先前有 DCO（开发者来源证书）要求，但检查未正确移除。现已完全移除所有 DCO 检查和要求。贡献者不再需要在提交时进行签名确认。
 
 ## 许可证
 
