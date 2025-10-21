@@ -106,7 +106,7 @@ function createWindow() {
       symbolColor: 'white' // 控制按钮颜色
     },
     webPreferences: {
-      preload: path.join(__dirname, 'frontend/react-app/public/preload.js'),
+      preload: path.join(__dirname, 'frontend/public/preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: true,
@@ -245,7 +245,7 @@ app.whenReady().then(async () => {
 
     // 处理自定义协议
     protocol.handle('app', (request) => {
-      const filePath = path.normalize(path.join(__dirname, 'frontend/react-app/build', request.url.slice('app://'.length)));
+      const filePath = path.normalize(path.join(__dirname, 'frontend/build', request.url.slice('app://'.length)));
       return net.fetch(filePath); // 使用 net.fetch 来读取本地文件
     });
 

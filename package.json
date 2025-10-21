@@ -6,17 +6,17 @@
   "private": true,
   "scripts": {
     "start": "npm run build:backend && electron .",
-    "start:react": "cd frontend/react-app && npm start",
+    "start:react": "cd frontend && npm start",
     "start:full": "concurrently \"npm run start:react\" \"npm run start\"",
     "start:prod": "npm run build:prod && npm run launch:prod",
     "launch:prod": "electron . --no-dev-tools",
     "build:prod": "npm run build:backend && npm run build:react",
     "build:backend": "tsc -p tsconfig.backend.json",
-    "build:react": "cd frontend/react-app && npm run build",
+    "build:react": "cd frontend && npm run build",
     "clean:novel-data": "node -e \"require('fs').rmSync('novel', { recursive: true, force: true }); require('fs').mkdirSync('novel', { recursive: true });\"",
     "pack": "npm run clean:novel-data && npm run build:backend && npm run build:react && electron-builder --dir",
     "dist": "npm run clean:novel-data && npm run build:backend && npm run build:react && electron-builder",
-    "build": "cd frontend/react-app && npm run build",
+    "build": "cd frontend && npm run build",
     "lint": "eslint ."
   },
   "keywords": [],
@@ -68,7 +68,7 @@
     },
     "files": [
       "**/*",
-      "!frontend/react-app/node_modules",
+      "!frontend/node_modules",
       "!dist",
       "!backend/data",
       "!novel/**/*"

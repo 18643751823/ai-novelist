@@ -1,0 +1,146 @@
+.advanced-settings {
+  padding: 20px;
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.advanced-settings h4 {
+  margin-bottom: 15px;
+  color: #ffffff;
+  border-bottom: 1px solid #333333;
+  padding-bottom: 5px;
+}
+
+/* AI参数设置样式 */
+.ai-parameters-section {
+  margin-bottom: 30px;
+}
+
+.parameter-group {
+  margin-bottom: 20px;
+}
+
+.parameter-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #cccccc;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 5px;
+}
+
+.parameter-slider,
+.context-slider {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #00ff00 var(--slider-progress, 50%), #333333 var(--slider-progress, 50%));
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.parameter-slider::-webkit-slider-thumb,
+.context-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #00ff00;
+  cursor: pointer;
+  border: 2px solid #000000;
+  box-shadow: 0 2px 4px rgba(0, 255, 0, 0.3);
+}
+
+.parameter-slider::-moz-range-thumb,
+.context-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #00ff00;
+  cursor: pointer;
+  border: 2px solid #000000;
+  box-shadow: 0 2px 4px rgba(0, 255, 0, 0.3);
+}
+
+.slider-value {
+  min-width: 40px;
+  text-align: center;
+  font-weight: 500;
+  color: #00ff00;
+}
+
+.parameter-description,
+.slider-description {
+  font-size: 12px;
+  color: #999999;
+  margin-top: 5px;
+}
+
+/* 上下文设置样式 */
+.context-settings-section {
+  margin-top: 30px;
+}
+
+.setting-group {
+  margin-bottom: 25px;
+}
+
+.setting-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #cccccc;
+}
+
+/* 操作按钮样式 */
+.parameter-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.reset-button {
+  padding: 8px 16px;
+  background-color: #333333;
+  color: #00ff00;
+  border: 1px solid #00ff00;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.reset-button:hover {
+  background-color: #00ff00;
+  color: #000000;
+}
+
+.reset-button:disabled {
+  background-color: #1a1a1a;
+  color: #666666;
+  border-color: #666666;
+  cursor: not-allowed;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .advanced-settings {
+    padding: 15px;
+  }
+  
+  .slider-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .slider-value {
+    align-self: flex-end;
+  }
+}
