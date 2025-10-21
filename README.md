@@ -52,9 +52,9 @@
 
 
 3.  **安装前端依赖**:
-    进入前端目录 (`frontend/react-app/`) 并安装依赖：
+    进入前端目录 (`frontend/`) 并安装依赖：
     ```bash
-    cd frontend/react-app
+    cd frontend
     npm install
     ```
 

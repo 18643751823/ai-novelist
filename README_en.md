@@ -52,9 +52,9 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
 
 
 3.  **Install frontend dependencies**:
-    Enter the frontend directory (`frontend/react-app/`) and install dependencies:
+    Enter the frontend directory (`frontend/`) and install dependencies:
     ```bash
-    cd frontend/react-app
+    cd frontend
     npm install
     ```
 

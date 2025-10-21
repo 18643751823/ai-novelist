@@ -1,0 +1,122 @@
+.slider-component {
+  margin-bottom: 20px;
+}
+
+.slider-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #cccccc;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 5px;
+}
+
+.slider-input {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #00ff00 var(--slider-progress, 50%), #333333 var(--slider-progress, 50%));
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #00ff00;
+  cursor: pointer;
+  border: 2px solid #000000;
+  box-shadow: 0 2px 4px rgba(0, 255, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.slider-input::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  background: #00cc00;
+}
+
+.slider-input::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #00ff00;
+  cursor: pointer;
+  border: 2px solid #000000;
+  box-shadow: 0 2px 4px rgba(0, 255, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.slider-input::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  background: #00cc00;
+}
+
+.slider-value {
+  min-width: 40px;
+  text-align: center;
+  font-weight: 500;
+  color: #00ff00;
+  font-size: 14px;
+}
+
+.slider-description {
+  font-size: 12px;
+  color: #999999;
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
+/* 不同类型的滑动条样式 */
+.slider-parameter .slider-input {
+  background: linear-gradient(to right, #00ff00 var(--slider-progress, 50%), #333333 var(--slider-progress, 50%));
+}
+
+.slider-parameter .slider-input::-webkit-slider-thumb {
+  background: #00ff00;
+}
+
+.slider-parameter .slider-input::-webkit-slider-thumb:hover {
+  background: #00cc00;
+}
+
+.slider-parameter .slider-value {
+  color: #00ff00;
+}
+
+.slider-context .slider-input {
+  background: linear-gradient(to right, #00ff00 var(--slider-progress, 50%), #333333 var(--slider-progress, 50%));
+}
+
+.slider-context .slider-input::-webkit-slider-thumb {
+  background: #00ff00;
+}
+
+.slider-context .slider-input::-webkit-slider-thumb:hover {
+  background: #00cc00;
+}
+
+.slider-context .slider-value {
+  color: #00ff00;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .slider-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .slider-value {
+    align-self: flex-end;
+  }
+}

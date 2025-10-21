@@ -7,12 +7,12 @@ yarn-error.log*
 
 # Dependency directories
 node_modules/
-frontend/react-app/node_modules/
+frontend/node_modules/
 
 # Build artifacts
 dist/
 dist-backend/
-frontend/react-app/build/
+frontend/build/
 
 # IDE and Editor files
 .idea/
