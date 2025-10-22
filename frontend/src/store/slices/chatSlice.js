@@ -140,9 +140,6 @@ const chatSlice = createSlice({
         characterSettings: ''
       }
     },
-    // 新增：创作模式状态
-    isCreationModeEnabled: true,
-    showCreationModal: false,
     // 新增：AI参数设置（按模式管理）
     // 注意：自定义模式的AI参数会在运行时动态创建
     aiParameters: {
@@ -503,14 +500,6 @@ const chatSlice = createSlice({
           characterSettings: ''
         };
       }
-    },
-    // 新增：设置创作模式启用状态
-    setIsCreationModeEnabled: (state, action) => {
-      state.isCreationModeEnabled = action.payload;
-    },
-    // 新增：设置创作模式弹窗显示状态
-    setShowCreationModal: (state, action) => {
-      state.showCreationModal = action.payload;
     },
     // 新增：批量更新所有模式的附加信息
     setAdditionalInfoForAllModes: (state, action) => {
@@ -979,8 +968,6 @@ export const {
   setAdditionalInfoForMode, // 新增：导出 setAdditionalInfoForMode
   setAdditionalInfoFieldForMode, // 新增：导出 setAdditionalInfoFieldForMode
   resetAdditionalInfoForMode, // 新增：导出 resetAdditionalInfoForMode
-  setIsCreationModeEnabled, // 新增：导出 setIsCreationModeEnabled
-  setShowCreationModal, // 新增：导出 setShowCreationModal
   setAdditionalInfoForAllModes, // 新增：导出 setAdditionalInfoForAllModes
   setAiParameterForMode, // 新增：导出 setAiParameterForMode
   setAiParametersForMode, // 新增：导出 setAiParametersForMode

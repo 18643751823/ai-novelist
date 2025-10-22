@@ -10,7 +10,6 @@ import NotificationModal from '../others/NotificationModal';
 import ConfirmationModal from '../others/ConfirmationModal';
 import ModalManager from '../others/ModalManager';
 import CheckpointPanel from './CheckpointPanel';
-import PromptManagerModal from '../agent/promptTab/PromptManagerModal';
 import { faHistory } from '@fortawesome/free-solid-svg-icons';
 import FileOperations from './FileOperations';
 import chapterIpcHandler from '../../ipc/chapterIpcHandler';
@@ -35,7 +34,6 @@ function ChapterTreePanel() {
   const [confirmationMessage, setConfirmationMessage] = useState('');
   const [onConfirmCallback, setOnConfirmCallback] = useState(null);
   const [onCancelCallback, setOnCancelCallback] = useState(null);
-  const [showPromptManager, setShowPromptManager] = useState(false);
 
   // 前缀编辑状态
   const [editingPrefix, setEditingPrefix] = useState({
@@ -361,13 +359,6 @@ function ChapterTreePanel() {
         onCancelCallback={onCancelCallback}
       />
 
-      {/* 提示词管理模态框 */}
-      {showPromptManager && (
-        <PromptManagerModal
-          isOpen={showPromptManager}
-          onClose={() => setShowPromptManager(false)}
-        />
-      )}
     </div>
   );
 }
