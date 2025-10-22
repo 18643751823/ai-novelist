@@ -92,7 +92,6 @@
 .chapter-item-content {
     display: flex;
     align-items: center;
-    padding: 5px 8px;
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s ease;

@@ -944,11 +944,17 @@ const handleCreateNovelFile = async (event, { filePath, content = '' }) => { // 
     const novelRootPath = getNovelPath();
     // 移除 filePath 开头的 'novel/' 前缀，因为 novelRootPath 已经指向 novel 目录
     const cleanFilePath = filePath.startsWith('novel/') ? filePath.substring(6) : filePath;
-    const fullPath = path.join(novelRootPath, cleanFilePath); // 使用清理后的路径
-
+    
+    // 获取目标目录和原始文件名
+    const targetDir = path.join(novelRootPath, path.dirname(cleanFilePath));
+    const originalFileName = path.basename(cleanFilePath);
+    
     // 确保目标目录存在
-    const targetDir = path.dirname(fullPath);
     await fs.mkdir(targetDir, { recursive: true }).catch(() => {}); // 忽略目录已存在的错误
+
+    // 使用 generateUniqueName 来获取最终的文件名
+    const finalUniqueFileName = await generateUniqueName(targetDir, originalFileName, false); // false 表示是文件
+    const fullPath = path.join(targetDir, finalUniqueFileName);
 
     try {
         await fs.writeFile(fullPath, content, 'utf8');
@@ -963,7 +969,7 @@ const handleCreateNovelFile = async (event, { filePath, content = '' }) => { // 
             message: `文件 '${relativeFilePath}' 创建成功`
         };
     } catch (error) {
-        console.error(`[handlers.js] 创建小说文件失败: ${newFilePath}`, error);
+        console.error(`[handlers.js] 创建小说文件失败: ${fullPath}`, error);
         return { success: false, error: error.message };
     }
 };
