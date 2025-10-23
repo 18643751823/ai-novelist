@@ -126,24 +126,37 @@ const VditorEditor = forwardRef(({
               
               if (result.success) {
                 console.log('图片上传成功:', result.data);
-                return [
-                  {
-                    originalURL: result.data.url,
-                    url: result.data.url,
+                // 使用自定义处理器时，需要手动插入 Markdown 图片语法
+                const markdownImage = `![${result.data.filename}](${result.data.url})\n`;
+                // 使用 ref 来访问最新的 Vditor 实例
+                setTimeout(() => {
+                  const currentInstance = vditorInstanceRef.current;
+                  if (currentInstance && currentInstance.insertValue) {
+                    // 插入图片并在后面添加换行，确保光标在图片后面
+                    currentInstance.insertValue(markdownImage);
+                    console.log('已插入图片:', markdownImage);
+                  } else {
+                    console.warn('Vditor 实例不可用，无法插入图片', currentInstance);
                   }
-                ];
+                }, 0);
+                return true; // 返回 true 表示成功
               } else {
                 console.error('图片上传失败:', result.error);
                 throw new Error(result.error);
               }
             } else {
               // 如果没有 IPC，使用本地 URL
-              return [
-                {
-                  originalURL: URL.createObjectURL(files[0]),
-                  url: URL.createObjectURL(files[0]),
+              const markdownImage = `![${files[0].name}](${URL.createObjectURL(files[0])})\n`;
+              setTimeout(() => {
+                const currentInstance = vditorInstanceRef.current;
+                if (currentInstance && currentInstance.insertValue) {
+                  currentInstance.insertValue(markdownImage);
+                  console.log('已插入图片:', markdownImage);
+                } else {
+                  console.warn('Vditor 实例不可用，无法插入图片', currentInstance);
                 }
-              ];
+              }, 0);
+              return true;
             }
           } catch (error) {
             console.error('上传处理错误:', error);
@@ -202,6 +215,12 @@ const VditorEditor = forwardRef(({
       }
     }
   }, [value, vditorInstance]);
+
+  // 使用 ref 来存储 vditorInstance，确保上传处理器能访问到最新的实例
+  const vditorInstanceRef = useRef(null);
+  useEffect(() => {
+    vditorInstanceRef.current = vditorInstance;
+  }, [vditorInstance]);
 
   // 提供编辑器实例的方法给父组件
   React.useImperativeHandle(ref, () => ({
