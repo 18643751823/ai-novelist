@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateNovelTitle, updateTabContent, startDiff, endDiff } from '../../store/slices/novelSlice';
-import { Editor } from '@tiptap/core';
-import StarterKit from '@tiptap/starter-kit';
+import VditorEditor from './VditorEditor'; // 引入 Vditor 编辑器
 import DiffViewer from './DiffViewer'; // 引入 DiffViewer
 import ContextMenu from '../others/ContextMenu'; // 引入 ContextMenu
 
@@ -12,11 +11,11 @@ import BackgroundImage from './BackgroundImage'; // 导入新的背景图组件
 
 import useIpcRenderer from '../../hooks/useIpcRenderer';
 import { useAutoSave } from './services/AutoSaveService';
-import { useEditorLifecycle } from './services/EditorLifecycleManager';
+import { useVditorLifecycle } from './services/VditorLifecycleManager';
 import { useCharacterCount } from './services/CharacterCountService';
 import { useTitleManager } from './services/TitleManager';
 import { useContextMenu } from './hooks/useContextMenu';
-import { getContextMenuItems, handleMenuItemClick, convertTiptapJsonToText, convertTextToTiptapJson } from './utils/editorHelpers';
+import { getContextMenuItems, handleMenuItemClick } from './utils/editorHelpers';
 
 function EditorPanel({ splitViewTabId = null }) {
   const dispatch = useDispatch();
@@ -33,8 +32,6 @@ function EditorPanel({ splitViewTabId = null }) {
   
   // 状态管理
   const [title, setTitle] = useState('未命名');
-  const [paragraphs, setParagraphs] = useState([]);
-  const lineNumbersRef = useRef(null);
   const [characterCount, setCharacterCount] = useState(0);
   const [lastSavedTime, setLastSavedTime] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -46,23 +43,8 @@ function EditorPanel({ splitViewTabId = null }) {
   const { calculateCharacterCount } = useCharacterCount();
 
   // 定义函数
-  const updateParagraphs = useCallback(() => {
-    requestAnimationFrame(() => {
-      if (editorRef.current) {
-        const paragraphNodes = editorRef.current.querySelectorAll('.ProseMirror p');
-        const newParagraphs = Array.from(paragraphNodes).map(p => ({
-          top: p.offsetTop,
-        }));
-        setParagraphs(newParagraphs);
-      }
-    });
-  }, []);
-
-  const handleEditorChange = useCallback(({ editor }) => {
+  const handleEditorChange = useCallback((newContent) => {
     if (!activeTab) return;
-
-    const jsonContent = editor.getJSON();
-    const newContent = convertTiptapJsonToText(jsonContent);
     
     // 派发 action 更新 tab 内容和 isDirty 状态
     dispatch(updateTabContent({ tabId: activeTab.id, content: newContent }));
@@ -74,9 +56,7 @@ function EditorPanel({ splitViewTabId = null }) {
     if (window.electron) {
         window.electron.setUnsavedChanges(changed);
     }
-
-    updateParagraphs();
-  }, [dispatch, activeTab?.id, updateParagraphs, calculateCharacterCount]); // 依赖于 activeTab.id 而不是整个对象
+  }, [dispatch, activeTab?.id, calculateCharacterCount]); // 依赖于 activeTab.id 而不是整个对象
 
   const { saveContent, saveContentRef } = useAutoSave(
     activeTab,
@@ -88,11 +68,10 @@ function EditorPanel({ splitViewTabId = null }) {
     setShowModal
   );
 
-  const { TiptapEditorInstance } = useEditorLifecycle(
+  const { VditorEditorInstance } = useVditorLifecycle(
     activeTab,
     editorRef,
     handleEditorChange,
-    updateParagraphs,
     calculateCharacterCount,
     setCharacterCount,
     initialContentRef
@@ -104,9 +83,8 @@ function EditorPanel({ splitViewTabId = null }) {
     title,
     setTitle,
     setIsTitleEditing,
-    TiptapEditorInstance
+    VditorEditorInstance
   );
-
   const {
     showContextMenu,
     contextMenuPos,
@@ -115,20 +93,7 @@ function EditorPanel({ splitViewTabId = null }) {
   } = useContextMenu();
 
   const handleEditorClick = useCallback((e) => {
-    const editor = TiptapEditorInstance.current;
-    if (!editor) return;
-
-    const { clientY } = e;
-    const editorBounds = editorRef.current.getBoundingClientRect();
-
-    const proseMirrorContent = editorRef.current.querySelector('.ProseMirror');
-    if (!proseMirrorContent) return;
-
-    const contentBottom = proseMirrorContent.getBoundingClientRect().bottom;
-
-    if (clientY > contentBottom && clientY < editorBounds.bottom) {
-      editor.commands.focus('end');
-    }
+    // Vditor 编辑器会自动处理点击焦点，这里不需要额外逻辑
   }, []);
 
   // Effect for updating the 'isDirty' status in the main process
@@ -216,26 +181,13 @@ function EditorPanel({ splitViewTabId = null }) {
           ) : (
             <>
               <div className="editor-container">
-                <div className="line-numbers-gutter" ref={lineNumbersRef}>
-                  <div className="line-number-container">
-                    {paragraphs.map((p, index) => (
-                      <div key={index} className="line-number" style={{ top: `${p.top}px` }}>
-                        {index + 1}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div
+                <VditorEditor
                   ref={editorRef}
-                  className="tiptap-editor"
-                  onContextMenu={handleContextMenu}
-                  onClick={handleEditorClick}
-                  onScroll={(e) => {
-                    const container = lineNumbersRef.current?.querySelector('.line-number-container');
-                    if (container) {
-                      container.style.transform = `translateY(-${e.target.scrollTop}px)`;
-                    }
-                  }}
+                  value={activeTab.content}
+                  onChange={handleEditorChange}
+                  height={1000}
+                  mode="ir"
+                  placeholder="开始编写您的 Markdown 内容..."
                 />
               </div>
               {/* 字符统计显示 - 移动到编辑框外的右下角 */}
@@ -248,8 +200,8 @@ function EditorPanel({ splitViewTabId = null }) {
                 <ContextMenu
                   x={contextMenuPos.x}
                   y={contextMenuPos.y}
-                  items={getContextMenuItems(TiptapEditorInstance.current, (action) => 
-                    handleMenuItemClick(TiptapEditorInstance.current, action)
+                  items={getContextMenuItems(VditorEditorInstance.current, (action) =>
+                    handleMenuItemClick(VditorEditorInstance.current, action)
                   )}
                   onClose={handleCloseContextMenu}
                 />

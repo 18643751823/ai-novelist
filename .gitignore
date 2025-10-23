@@ -28,6 +28,7 @@ frontend/build/
 # User data
 novel/
 backend/data/
+uploads/
 
 # Lock files
 mcp-filesystem-server.lock

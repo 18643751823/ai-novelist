@@ -1,6 +1,5 @@
 /* 工作区面板样式 - 自定义工作流编辑器 */
 .workspace-panel {
-  background-color: var(--panel-bg-color);
   width: 100%;
   height: 100%;
   display: flex;
