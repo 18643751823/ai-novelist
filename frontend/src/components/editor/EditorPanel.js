@@ -185,7 +185,6 @@ function EditorPanel({ splitViewTabId = null }) {
                   ref={editorRef}
                   value={activeTab.content}
                   onChange={handleEditorChange}
-                  height={1000}
                   mode="ir"
                   placeholder="开始编写您的 Markdown 内容..."
                 />

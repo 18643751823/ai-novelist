@@ -2,6 +2,8 @@ import React, { useRef, useEffect, useState, forwardRef } from 'react';
 import Vditor from 'vditor';
 import 'vditor/dist/index.css';
 import useIpcRenderer from '../../hooks/useIpcRenderer';
+import { convertMarkdownToPlainText, copyToClipboard } from '../../utils/markdownToPlainText';
+import NotificationModal from '../others/NotificationModal';
 
 const VditorEditor = forwardRef(({
   value = '',
@@ -12,13 +14,15 @@ const VditorEditor = forwardRef(({
 }, ref) => {
   const vditorRef = useRef(null);
   const [vditorInstance, setVditorInstance] = useState(null);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
   const ipcRenderer = useIpcRenderer();
 
   useEffect(() => {
     if (!vditorRef.current) return;
 
     const vditor = new Vditor(vditorRef.current, {
-      height,
+      height: '100%', // 使用百分比高度，由CSS控制
       mode,
       placeholder,
       value,
@@ -72,6 +76,31 @@ const VditorEditor = forwardRef(({
         'fullscreen',
         'edit-mode',
         {
+          name: 'copy-as-plain-text',
+          tip: '复制为纯文本',
+          className: 'right',
+          icon: '<svg t="1740213545598" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2423" width="16" height="16"><path d="M832 64H296c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h496v688c0 4.4 3.6 8 8 8h56c4.4 0 8-3.6 8-8V96c0-17.7-14.3-32-32-32z" fill="#707070" p-id="2424"></path><path d="M704 192H192c-17.7 0-32 14.3-32 32v530.7c0 8.5 3.4 16.6 9.4 22.6l173.3 173.3c2.2 2.2 4.7 4 7.4 5.5v1.9h4.2c3.5 1.3 7.2 2 11 2H704c17.7 0 32-14.3 32-32V224c0-17.7-14.3-32-32-32zM350 856.2L263.9 770H350v86.2zM664 888H414V746c0-22.1-17.9-40-40-40H232V264h432v624z" fill="#707070" p-id="2425"></path></svg>',
+          click: async () => {
+            try {
+              const content = vditor.getValue();
+              const plainText = convertMarkdownToPlainText(content);
+              const success = await copyToClipboard(plainText);
+              
+              if (success) {
+                setNotificationMessage('内容已成功复制为纯文本！');
+                setShowNotification(true);
+              } else {
+                setNotificationMessage('复制失败，请重试');
+                setShowNotification(true);
+              }
+            } catch (error) {
+              console.error('复制纯文本失败:', error);
+              setNotificationMessage('复制失败，请重试');
+              setShowNotification(true);
+            }
+          }
+        },
+        {
           name: 'more',
           toolbar: [
             'both',
@@ -91,7 +120,7 @@ const VditorEditor = forwardRef(({
           toc: true,
           mark: true,
           footnotes: true,
-          autoSpace: true,
+          autoSpace: false, // 禁用自动空格，避免影响手动输入的空格
         },
         math: {
           engine: 'KaTeX',
@@ -187,6 +216,13 @@ const VditorEditor = forwardRef(({
           'rocket': '🚀',
         },
       },
+      // 禁用自动格式化，确保空格输入正常
+      after: () => {
+        // 确保编辑器不会自动移除空格
+        console.log('Vditor 编辑器初始化完成，空格处理已优化');
+      },
+      // 禁用可能导致空格问题的其他选项
+      sanitize: (html) => html, // 禁用 HTML 清理，直接返回原始内容
     });
 
     setVditorInstance(vditor);
@@ -261,6 +297,14 @@ const VditorEditor = forwardRef(({
   return (
     <div className="vditor-editor">
       <div ref={vditorRef} />
+      
+      {/* 自定义通知弹窗 */}
+      {showNotification && (
+        <NotificationModal
+          message={notificationMessage}
+          onClose={() => setShowNotification(false)}
+        />
+      )}
     </div>
   );
 });
