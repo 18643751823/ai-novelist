@@ -20,11 +20,11 @@ function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
   const [rightPanelSize, setRightPanelSize] = useState(20);
   
   // 获取模态框状态
-  const showApiSettingsModal = useSelector(state => state.chat.showApiSettingsModal);
-  const showRagSettingsModal = useSelector(state => state.chat.showRagSettingsModal);
-  const showGeneralSettingsModal = useSelector(state => state.chat.showGeneralSettingsModal);
-  const showWorkspacePanel = useSelector(state => state.chat.showWorkspacePanel);
-  const showPersistentMemoryPanel = useSelector(state => state.chat.showPersistentMemoryPanel);
+  const showApiSettingsModal = useSelector(state => state.chat.ui.showApiSettingsModal);
+  const showRagSettingsModal = useSelector(state => state.chat.ui.showRagSettingsModal);
+  const showGeneralSettingsModal = useSelector(state => state.chat.ui.showGeneralSettingsModal);
+  const showWorkspacePanel = useSelector(state => state.chat.ui.showWorkspacePanel);
+  const showPersistentMemoryPanel = useSelector(state => state.chat.ui.showPersistentMemoryPanel);
   
   // 如果有任何模态框打开，就显示覆盖层
   const showOverlay = showApiSettingsModal || showRagSettingsModal ||

@@ -8,7 +8,7 @@ import './CustomProviderSettings.css';
 const CustomProviderSettings = ({ onSaveComplete, editingProvider: initialEditingProvider }) => {
     const dispatch = useDispatch();
     const { setStoreValue, reinitializeModelProvider } = useIpcRenderer();
-    const customProviders = useSelector((state) => state.chat.customProviders || []);
+    const customProviders = useSelector((state) => state.chat.api.customProviders || []);
     
     const [editingProvider, setEditingProvider] = useState(initialEditingProvider || null);
     const [isEditing, setIsEditing] = useState(!!initialEditingProvider);

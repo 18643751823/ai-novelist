@@ -6,7 +6,7 @@ import './WorkspacePanel.css';
 
 const WorkspacePanel = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
-  const showWorkspacePanel = useSelector(state => state.chat.showWorkspacePanel);
+  const showWorkspacePanel = useSelector(state => state.chat.ui.showWorkspacePanel);
 
   const handleClose = () => {
     dispatch(setShowWorkspacePanel(false));

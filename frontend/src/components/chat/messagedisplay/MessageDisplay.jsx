@@ -1,25 +1,56 @@
 import React, { useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { deleteMessage, restoreMessages, updateMessageContent } from '../../../store/slices/chatSlice';
+import { deleteMessage, restoreMessages } from '../../../store/slices/chatSlice';
 import { restoreChatCheckpoint } from '../../../ipc/checkpointIpcHandler';
 import { ToolCallCard } from '../services/ToolCallManager';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCopy, faTrashCan, faSpinner, faClock, faEdit, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faCopy, faTrashCan, faSpinner, faClock } from '@fortawesome/free-solid-svg-icons';
 import MarkdownMessageRenderer from './MarkdownMessageRenderer';
 
 // 消息显示组件
-const MessageDisplay = ({
+const MessageDisplay = React.forwardRef(({
   messages,
   currentMode,
   currentSessionId,
   onSetConfirmation,
   onSetNotification,
   onEnterAdjustmentMode
-}) => {
+}, ref) => {
   const dispatch = useDispatch();
-  const [editingMessageId, setEditingMessageId] = useState(null);
-  const [editedContent, setEditedContent] = useState('');
   const editorRefs = useRef({});
+
+  // 新增：获取所有消息的最新内容
+  const getAllMessagesLatestContent = () => {
+    const updatedMessages = messages.map(msg => {
+      const editor = editorRefs.current[msg.id];
+      let latestContent = msg.content || msg.text || '';
+      
+      // 如果消息有对应的编辑器实例，获取编辑器中的最新内容
+      if (editor && typeof editor.getValue === 'function') {
+        try {
+          const editorContent = editor.getValue();
+          if (editorContent !== undefined && editorContent !== null) {
+            latestContent = editorContent;
+          }
+        } catch (error) {
+          console.warn(`获取消息 ${msg.id} 编辑器内容失败:`, error);
+        }
+      }
+      
+      return {
+        ...msg,
+        content: latestContent,
+        text: latestContent // 确保 text 和 content 同步
+      };
+    });
+    
+    return updatedMessages;
+  };
+
+  // 提供获取最新内容的方法给父组件
+  React.useImperativeHandle(ref, () => ({
+    getAllMessagesLatestContent
+  }));
 
   const handleCopyMessage = (content) => {
     navigator.clipboard.writeText(content);
@@ -61,12 +92,19 @@ const MessageDisplay = ({
 
   // 渲染AI消息
   const renderAIMessage = (msg) => {
-    const isEditing = editingMessageId === msg.id;
-    const content = isEditing ? editedContent : (msg.content || msg.text || '');
-    
+    const content = msg.content || msg.text || '';
     return (
       <>
-        <div className="message-header">AI:</div>
+        <div className="message-header">
+          AI:
+          {/* 流式传输时在消息头部显示加载指示器 */}
+          {msg.isLoading && (
+            <div className="streaming-indicator-header">
+              <FontAwesomeIcon icon={faSpinner} spin className="ai-typing-spinner" />
+              <span className="streaming-text">AI正在思考中...</span>
+            </div>
+          )}
+        </div>
         {msg.reasoning_content && (
           <details className="reasoning-details">
             <summary className="reasoning-summary">思考过程 (点击展开)</summary>
@@ -90,22 +128,15 @@ const MessageDisplay = ({
         )}
 
         <div className="message-content">
-          {/* 如果没有工具调用，则在文本流式传输时显示加载图标 */}
-          {msg.isLoading && (!msg.toolCalls || msg.toolCalls.length === 0) && (
-            <FontAwesomeIcon icon={faSpinner} spin className="ai-typing-spinner" />
-          )}
-          
-          {/* 使用Markdown渲染器显示消息内容 */}
-          {!msg.isLoading && (
-            <MarkdownMessageRenderer
-              ref={(el) => {
-                if (el) editorRefs.current[msg.id] = el;
-              }}
-              value={content}
-              onChange={isEditing ? handleContentChange : undefined}
-              height="auto"
-            />
-          )}
+          {/* 使用Markdown渲染器显示消息内容 - 流式传输时也显示内容 */}
+          <MarkdownMessageRenderer
+            ref={(el) => {
+              if (el) editorRefs.current[msg.id] = el;
+            }}
+            value={content}
+            height="auto"
+            isStreaming={msg.isLoading} // 传递流式传输状态
+          />
         </div>
 
         {/* 正文生成后的选项按钮 */}
@@ -116,33 +147,16 @@ const MessageDisplay = ({
         )}
         
         <div className="message-actions">
-          {!isEditing ? (
-            <>
-              <button title="编辑" onClick={() => handleEditMessage(msg.id, msg.content || msg.text)}>
-                <FontAwesomeIcon icon={faEdit} />
-              </button>
-              <button title="复制" onClick={() => handleCopyMessage(msg.content || msg.text)}>
-                <FontAwesomeIcon icon={faCopy} />
-              </button>
-              <button title="删除" onClick={() => handleDeleteMessage(msg.id)}>
-                <FontAwesomeIcon icon={faTrashCan} />
-              </button>
-            </>
-          ) : (
-            <>
-              <button title="保存" onClick={() => handleSaveMessage(msg.id)}>
-                <FontAwesomeIcon icon={faSave} />
-              </button>
-              <button title="取消" onClick={handleCancelEdit}>
-                <FontAwesomeIcon icon={faTrashCan} />
-              </button>
-            </>
-          )}
+          <button title="复制" onClick={() => handleCopyMessage(msg.content || msg.text)}>
+            <FontAwesomeIcon icon={faCopy} />
+          </button>
+          <button title="删除" onClick={() => handleDeleteMessage(msg.id)}>
+            <FontAwesomeIcon icon={faTrashCan} />
+          </button>
         </div>
       </>
     );
   };
-
   // 渲染系统消息
   const renderSystemMessage = (msg) => (
     <>
@@ -155,8 +169,7 @@ const MessageDisplay = ({
 
   // 渲染用户消息
   const renderUserMessage = (msg) => {
-    const isEditing = editingMessageId === msg.id;
-    const content = isEditing ? editedContent : (msg.content || msg.text || '[消息内容缺失]');
+    const content = msg.content || msg.text || '[消息内容缺失]';
     
     return (
       <>
@@ -167,33 +180,16 @@ const MessageDisplay = ({
               if (el) editorRefs.current[msg.id] = el;
             }}
             value={content}
-            onChange={isEditing ? handleContentChange : undefined}
             height="auto"
           />
         </div>
         <div className="message-actions">
-          {!isEditing ? (
-            <>
-              <button title="编辑" onClick={() => handleEditMessage(msg.id, msg.content || msg.text)}>
-                <FontAwesomeIcon icon={faEdit} />
-              </button>
-              <button title="复制" onClick={() => handleCopyMessage(msg.content || msg.text)}>
-                <FontAwesomeIcon icon={faCopy} />
-              </button>
-              <button title="删除" onClick={() => handleDeleteMessage(msg.id)}>
-                <FontAwesomeIcon icon={faTrashCan} />
-              </button>
-            </>
-          ) : (
-            <>
-              <button title="保存" onClick={() => handleSaveMessage(msg.id)}>
-                <FontAwesomeIcon icon={faSave} />
-              </button>
-              <button title="取消" onClick={handleCancelEdit}>
-                <FontAwesomeIcon icon={faTrashCan} />
-              </button>
-            </>
-          )}
+          <button title="复制" onClick={() => handleCopyMessage(msg.content || msg.text)}>
+            <FontAwesomeIcon icon={faCopy} />
+          </button>
+          <button title="删除" onClick={() => handleDeleteMessage(msg.id)}>
+            <FontAwesomeIcon icon={faTrashCan} />
+          </button>
         </div>
       </>
     );
@@ -248,6 +244,6 @@ const MessageDisplay = ({
       ))}
     </div>
   );
-};
+});
 
 export default MessageDisplay;

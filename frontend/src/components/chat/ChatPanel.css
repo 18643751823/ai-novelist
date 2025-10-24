@@ -69,6 +69,39 @@
     margin-right: auto;
     text-align: left;
     border-bottom-left-radius: 3px;
+    position: relative; /* 为流式指示器定位做准备 */
+}
+
+/* 消息头部样式 */
+.message-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #cccccc;
+}
+
+/* 流式传输指示器 - 位于消息头部 */
+.streaming-indicator-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background-color: #444444;
+    border-radius: 6px;
+    font-size: 0.8em;
+    color: #cccccc;
+    font-weight: normal;
+}
+
+.streaming-indicator-header .ai-typing-spinner {
+    color: #4CAF50; /* 绿色加载图标 */
+    font-size: 0.8em;
+}
+
+.streaming-indicator-header .streaming-text {
+    font-style: italic;
 }
 
 #chatDisplay .message.system-message {

@@ -3,10 +3,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   setQuestionCard,
   setMessages,
-  setDeepSeekHistory,
   stopStreaming,
   setSelectedModel,
 } from '../../store/slices/chatSlice';
+import {
+  setDeepSeekHistory
+} from '../../store/slices/messageSlice';
 import useIpcRenderer from '../../hooks/useIpcRenderer';
 import SettingsManager from './services/SettingsManager';
 import MessageService from './services/MessageService';
@@ -41,7 +43,21 @@ const ChatPanel = memo(() => {
     toolCallState,
     pendingToolCalls,
     availableModels
-  } = useSelector((state) => state.chat);
+  } = useSelector((state) => ({
+    messages: state.chat.message.messages,
+    questionCard: state.chat.message.questionCard,
+    isHistoryPanelVisible: state.chat.message.isHistoryPanelVisible,
+    aliyunEmbeddingApiKey: state.chat.api.aliyunEmbeddingApiKey,
+    selectedModel: state.chat.api.selectedModel,
+    enableStream: state.chat.tool.enableStream,
+    modeFeatureSettings: state.chat.rag.modeFeatureSettings,
+    isStreaming: state.chat.message.isStreaming,
+    aiParameters: state.chat.mode.aiParameters,
+    deepSeekHistory: state.chat.message.deepSeekHistory,
+    toolCallState: state.chat.tool.toolCallState,
+    pendingToolCalls: state.chat.tool.pendingToolCalls,
+    availableModels: state.chat.api.availableModels
+  }));
   
   // 使用 ref 来获取最新的状态值，避免闭包问题
   const latestAliyunEmbeddingApiKey = useRef(aliyunEmbeddingApiKey);
@@ -52,6 +68,7 @@ const ChatPanel = memo(() => {
   const { openTabs } = useSelector((state) => state.novel);
  
   const chatDisplayRef = useRef(null);
+  const messageDisplayRef = useRef(null);
   const currentSessionIdRef = useRef(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState('');
@@ -128,7 +145,8 @@ const ChatPanel = memo(() => {
         aiParameters,
         messages,
         getStoreValue,
-        selectedModel
+        selectedModel,
+        messageDisplayRef // 新增：传递消息显示组件的引用
       });
     } catch (error) {
       console.error('ChatPanel: 发送消息失败:', error);
@@ -260,6 +278,7 @@ const ChatPanel = memo(() => {
         
         {/* 消息展示框 */}
         <MessageDisplay
+          ref={messageDisplayRef}
           messages={messages}
           currentMode={currentMode}
           currentSessionId={currentSessionIdRef.current}

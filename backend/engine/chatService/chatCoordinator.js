@@ -5,6 +5,7 @@ const { state } = require('../../state-manager');
 const systemPromptBuilder = require('./systemPromptBuilder');
 const ragRetrievalService = require('./ragRetrievalService');
 const requestBuilder = require('./requestBuilder');
+const requestBodyBuilder = require('./requestBodyBuilder');
 const toolCallService = require('./toolCallService');
 const messageProcessor = require('./messageProcessor');
 
@@ -57,7 +58,6 @@ async function getContextLimitSettings() {
   }
   return contextLimitSettings;
 }
-
 // 主聊天函数
 async function* chatWithAI(messages, modelId, customSystemPrompt, mode = 'general', ragRetrievalEnabled, aiParameters = {}) {
   console.log(`[ChatCoordinator] 开始处理聊天请求:`, {
@@ -86,61 +86,30 @@ async function* chatWithAI(messages, modelId, customSystemPrompt, mode = 'genera
       return { type: 'error', payload: errorMessage };
     }
 
-    // 获取上下文限制设置并应用
-    const contextLimitSettings = await getContextLimitSettings();
-
-    // 应用上下文限制（只对对话消息，不包括系统消息）
-    const filteredMessages = contextManager.truncateMessages(
+    // 使用RequestBodyBuilder构建完整的请求体
+    const requestBody = await requestBodyBuilder.buildRequestBody({
       messages,
-      contextLimitSettings,
+      modelId,
       mode,
-      false // 不是RAG上下文
-    );
-    
-    // 获取对话模型的上下文配置用于日志显示
-    const chatContextConfig = contextManager.getContextConfig(contextLimitSettings, mode, false);
-    console.log(`[ChatCoordinator] 对话模型上下文约束: ${chatContextConfig.type === 'tokens' && chatContextConfig.value === 'full' ? '满tokens' : '附加' + chatContextConfig.value + '轮上下文'}, 原始消息 ${messages.length} 条, 过滤后 ${filteredMessages.length} 条`);
-
-    // 获取文件结构树内容
-    const fileTreeContent = await systemPromptBuilder.getFileTreeContent();
-
-    // 获取系统提示词
-    const effectiveSystemPrompt = systemPromptBuilder.getSystemPrompt(mode, customSystemPrompt);
-
-    // 执行 RAG 检索
-    const { ragContext, retrievalInfo } = await ragRetrievalService.performRagRetrieval(filteredMessages, ragRetrievalEnabled, mode);
-
-    // 获取持久记忆信息
-    const additionalInfo = await systemPromptBuilder.getAdditionalInfo(mode);
-
-    // 构建完整的系统消息
-    const systemMessageContent = systemPromptBuilder.buildSystemPrompt(effectiveSystemPrompt, {
-      fileTreeContent: fileTreeContent,
-      ragRetrievalEnabled: ragRetrievalEnabled,
-      ragContent: ragContext,
-      additionalInfo: additionalInfo
+      customSystemPrompt,
+      ragRetrievalEnabled,
+      aiParameters,
+      isStreaming: serviceState.isStreaming
     });
 
-    // 构建消息数组
-    const messagesToSend = filteredMessages.filter(msg => msg.role !== 'system');
-    messagesToSend.unshift({ role: "system", content: systemMessageContent, name: "system" });
+    // 验证请求体
+    const validationResult = requestBodyBuilder.validateRequestBody(requestBody);
+    if (!validationResult.valid) {
+      const errorMessage = `请求体验证失败: ${validationResult.error}`;
+      console.error(`[ChatCoordinator] ${errorMessage}`);
+      messageProcessor._sendAiResponseToFrontend('error', errorMessage);
+      return { type: 'error', payload: errorMessage };
+    }
 
-    // 清理消息，移除非标准的OpenAI API字段
-    const sanitizedMessages = requestBuilder.sanitizeMessagesForAI(messagesToSend);
-    console.log('[ChatCoordinator] 消息清理完成，移除非标准字段');
+    console.log(`[ChatCoordinator] 请求体构建完成 - 系统提示词长度: ${requestBody.metadata.systemPromptLength}, 总消息数: ${requestBody.metadata.totalMessages}`);
 
-    console.log(`[ChatCoordinator] chatWithAI - 工具功能已强制启用`);
-    
-    // 构建请求参数
-    const { requestOptions, mergedAiParameters } = requestBuilder.buildRequestOptions(modelId, aiParameters, serviceState.isStreaming);
-    
-    // 打印完整的消息内容用于调试
-    requestBuilder.logMessagesForDebugging(sanitizedMessages);
-
-    // 构建适配器选项
-    const adapterOptions = requestBuilder.buildAdapterOptions(modelId, mergedAiParameters, serviceState.isStreaming);
-    
-    const aiResponse = await adapter.generateCompletion(sanitizedMessages, adapterOptions);
+    // 使用构建好的请求体调用AI
+    const aiResponse = await adapter.generateCompletion(requestBody.messages, requestBody.adapterOptions);
 
     let currentSessionId = state.conversationHistory.length > 0
       ? state.conversationHistory[0].sessionId
@@ -238,15 +207,6 @@ async function* sendToolResultToAI(toolResultsArray, modelId, customSystemPrompt
     await initializeModelProvider();
     const modelRegistry = getModelRegistry();
     const adapter = modelRegistry.getAdapterForModel(modelId);
-    
-    // 获取系统提示词
-    const effectiveSystemPrompt = systemPromptBuilder.getSystemPrompt(mode, customSystemPrompt);
-
-    // 获取文件结构树内容
-    const fileTreeContent = await systemPromptBuilder.getFileTreeContent();
-
-    // 获取持久记忆信息
-    const additionalInfo = await systemPromptBuilder.getAdditionalInfo(mode);
 
     if (!adapter) {
       const errorMessage = `模型 '${modelId}' 不可用或未注册。`;
@@ -254,9 +214,6 @@ async function* sendToolResultToAI(toolResultsArray, modelId, customSystemPrompt
       yield { type: 'error', payload: errorMessage };
       return;
     }
-
-    // 获取上下文限制设置并应用
-    const contextLimitSettings = await getContextLimitSettings();
 
     // 构建工具消息
     const toolMessages = toolCallService.buildToolMessages(toolResultsArray);
@@ -266,51 +223,68 @@ async function* sendToolResultToAI(toolResultsArray, modelId, customSystemPrompt
       state.conversationHistory.push(...toolMessages);
     }
 
-    // 构建消息数组
-    const filteredMessages = state.conversationHistory.filter(
-      msg => msg && ['user', 'assistant', 'tool'].includes(msg.role)
-    );
+    // 获取最新的对话上下文（只更新 user 和 assistant 角色的内容，保留 tool 消息）
+    let latestMessages = state.conversationHistory;
+    try {
+      const handlers = require('../ipc/handlers');
+      const contextResult = await handlers.handleGetConversationContext();
+      if (contextResult.success && contextResult.messages) {
+        const frontendMessages = contextResult.messages;
+        
+        // 创建一个映射，用于快速查找前端消息
+        const frontendMessageMap = new Map();
+        frontendMessages.forEach(msg => {
+          if (msg.role === 'user' || msg.role === 'assistant') {
+            const key = `${msg.role}_${msg.content?.substring(0, 50)}`; // 使用角色和内容前50字符作为键
+            frontendMessageMap.set(key, msg);
+          }
+        });
 
-    // 应用上下文限制
-    const truncatedMessages = contextManager.truncateMessages(
-      filteredMessages,
-      contextLimitSettings,
+        // 更新后端消息中的 user 和 assistant 内容，保留 tool 消息
+        latestMessages = state.conversationHistory.map(backendMsg => {
+          if (backendMsg.role === 'user' || backendMsg.role === 'assistant') {
+            const key = `${backendMsg.role}_${backendMsg.content?.substring(0, 50)}`;
+            const frontendMsg = frontendMessageMap.get(key);
+            if (frontendMsg && frontendMsg.content !== backendMsg.content) {
+              console.log(`[ChatCoordinator] 更新 ${backendMsg.role} 消息内容`);
+              return { ...backendMsg, content: frontendMsg.content };
+            }
+          }
+          return backendMsg; // 保持 tool 消息和其他消息不变
+        });
+
+        console.log(`[ChatCoordinator] 已同步最新的 user 和 assistant 消息内容`);
+      } else {
+        console.warn('[ChatCoordinator] 获取最新对话上下文失败，使用后端存储的上下文');
+      }
+    } catch (error) {
+      console.warn('[ChatCoordinator] 获取最新对话上下文时出错:', error.message);
+    }
+
+    // 使用RequestBodyBuilder构建完整的请求体（使用最新的对话上下文）
+    const requestBody = await requestBodyBuilder.buildRequestBody({
+      messages: latestMessages,
+      modelId,
       mode,
-      false // 不是RAG上下文
-    );
-    console.log(`[ChatCoordinator] 上下文限制应用: 原始消息 ${filteredMessages.length} 条, 过滤后 ${truncatedMessages.length} 条`);
-
-    const messagesToSend = truncatedMessages.filter(msg => msg.role !== 'system');
-    
-    // 构建完整的系统提示词
-    const fullSystemPrompt = systemPromptBuilder.buildSystemPrompt(effectiveSystemPrompt, {
-      fileTreeContent: fileTreeContent,
+      customSystemPrompt,
       ragRetrievalEnabled: false, // 工具结果反馈通常不需要RAG
-      ragContent: '',
-      additionalInfo: additionalInfo
+      aiParameters,
+      isStreaming: serviceState.isStreaming
     });
-    
-    console.log('[ChatCoordinator] 构建的系统提示词长度:', fullSystemPrompt.length);
-    console.log('[ChatCoordinator] 系统提示词包含文件树:', fullSystemPrompt.includes('文件结构树'));
-    
-    messagesToSend.unshift({ role: "system", content: fullSystemPrompt, name: "system" });
 
-    // 清理消息
-    const sanitizedMessages = requestBuilder.sanitizeMessagesForAI(messagesToSend);
-    console.log('[ChatCoordinator] 消息清理完成，移除非标准字段');
+    // 验证请求体
+    const validationResult = requestBodyBuilder.validateRequestBody(requestBody);
+    if (!validationResult.valid) {
+      const errorMessage = `请求体验证失败: ${validationResult.error}`;
+      console.error(`[ChatCoordinator] ${errorMessage}`);
+      yield { type: 'error', payload: errorMessage };
+      return;
+    }
 
-    console.log(`[ChatCoordinator] sendToolResultToAI - 工具功能已强制启用`);
-    
-    // 构建请求参数
-    const { requestOptions, mergedAiParameters } = requestBuilder.buildRequestOptions(modelId, aiParameters, serviceState.isStreaming);
-    
-    // 打印完整的消息内容用于调试
-    requestBuilder.logMessagesForDebugging(sanitizedMessages, '工具反馈 - 完整的AI请求体 - 消息内容:');
+    console.log(`[ChatCoordinator] 工具反馈请求体构建完成 - 系统提示词长度: ${requestBody.metadata.systemPromptLength}, 总消息数: ${requestBody.metadata.totalMessages}`);
 
-    // 构建适配器选项
-    const adapterOptions = requestBuilder.buildAdapterOptions(modelId, mergedAiParameters, serviceState.isStreaming);
-    
-    const aiResponse = await adapter.generateCompletion(sanitizedMessages, adapterOptions);
+    // 使用构建好的请求体调用AI
+    const aiResponse = await adapter.generateCompletion(requestBody.messages, requestBody.adapterOptions);
 
     let currentSessionId = state.conversationHistory.length > 0 ? state.conversationHistory.find(m => m.sessionId)?.sessionId : `${Date.now()}`;
 

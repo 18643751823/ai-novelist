@@ -24,12 +24,12 @@ const SidebarComponent = () => {
   const [activeItem, setActiveItem] = useState(null);
 
   // 获取当前模态框状态
-  const showApiSettingsModal = useSelector(state => state.chat.showApiSettingsModal);
-  const showRagSettingsModal = useSelector(state => state.chat.showRagSettingsModal);
-  const showGeneralSettingsModal = useSelector(state => state.chat.showGeneralSettingsModal);
-  const showHomePage = useSelector(state => state.chat.showHomePage);
-  const showWorkspacePanel = useSelector(state => state.chat.showWorkspacePanel);
-  const showPersistentMemoryPanel = useSelector(state => state.chat.showPersistentMemoryPanel);
+  const showApiSettingsModal = useSelector(state => state.chat.ui.showApiSettingsModal);
+  const showRagSettingsModal = useSelector(state => state.chat.ui.showRagSettingsModal);
+  const showGeneralSettingsModal = useSelector(state => state.chat.ui.showGeneralSettingsModal);
+  const showHomePage = useSelector(state => state.chat.ui.showHomePage);
+  const showWorkspacePanel = useSelector(state => state.chat.ui.showWorkspacePanel);
+  const showPersistentMemoryPanel = useSelector(state => state.chat.ui.showPersistentMemoryPanel);
 
   // 关闭所有模态框并显示主页面的函数
   const showHomePageAndCloseModals = () => {

@@ -1,4 +1,5 @@
 import { appendMessage, setQuestionCard } from '../../../store/slices/chatSlice';
+import contextManager from './ContextManager'; // 导入单例实例
 
 /**
  * 消息处理服务
@@ -8,6 +9,7 @@ class MessageService {
   constructor(ipcRenderer, dispatch) {
     this.ipcRenderer = ipcRenderer;
     this.dispatch = dispatch;
+    this.contextManager = contextManager; // 使用导入的单例实例
   }
 
   /**
@@ -65,7 +67,8 @@ class MessageService {
       modeFeatureSettings,
       aiParameters,
       messages,
-      getStoreValue
+      getStoreValue,
+      messageDisplayRef // 新增：消息显示组件的引用
     } = options;
 
     if (!messageText.trim()) return;
@@ -80,6 +83,20 @@ class MessageService {
     // --- 以下是常规消息发送逻辑 ---
     const currentSessionId = currentSessionIdRef.current || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     currentSessionIdRef.current = currentSessionId;
+
+    // 使用ContextManager获取对话上下文
+    let latestMessages = messages;
+    try {
+      const contextData = await this.contextManager.exportContextForBackend({
+        messages,
+        messageDisplayRef,
+        includeStatistics: false
+      });
+      latestMessages = contextData.messages;
+      console.log('[MessageService] 已通过ContextManager获取对话上下文');
+    } catch (error) {
+      console.warn('[MessageService] 通过ContextManager获取上下文失败，使用原始消息:', error);
+    }
 
     const newUserMessage = {
       sender: 'User',
@@ -144,7 +161,7 @@ class MessageService {
       await this.ipcRenderer.invoke('process-command', {
         message: messageText,
         sessionId: currentSessionId,
-        currentMessages: messages,
+        currentMessages: latestMessages, // 使用最新的消息内容
         mode: currentMode,
         customPrompt: customPrompt,
         ragRetrievalEnabled: currentModeFeatures.ragRetrievalEnabled,

@@ -1,17 +1,19 @@
 import React, { memo, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-    setIsHistoryPanelVisible,
+    setIsHistoryPanelVisible
+} from '../../../store/slices/chatSlice';
+import {
     restoreMessages,
     setDeepSeekHistory
-} from '../../../store/slices/chatSlice';
+} from '../../../store/slices/messageSlice';
 import useIpcRenderer from '../../../hooks/useIpcRenderer';
 import ConfirmationModal from '../../others/ConfirmationModal';
 import './ChatHistoryPanel.css';
 
 const ChatHistoryPanel = memo(({ history }) => {
     const dispatch = useDispatch();
-    const { deepSeekHistory } = useSelector((state) => state.chat);
+    const { deepSeekHistory } = useSelector((state) => state.chat.message);
     const { getDeepSeekChatHistory, deleteDeepSeekChatHistory } = useIpcRenderer();
     
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);

@@ -18,7 +18,7 @@ const AdvancedSettings = ({
   mode = 'general'
 }) => {
   const dispatch = useDispatch();
-  const contextLimitSettings = useSelector(state => state.chat.contextLimitSettings);
+  const contextLimitSettings = useSelector(state => state.chat.mode.contextLimitSettings);
   
   // 本地状态管理
   const [localParameters, setLocalParameters] = useState({});
