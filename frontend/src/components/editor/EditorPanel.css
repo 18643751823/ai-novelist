@@ -5,7 +5,6 @@
     flex-direction: column;
     height: 100%;
     padding: var(--border-radius-medium); /* 使用全局间距变量 */
-    background-color: var(--panel-bg-color);
     overflow: hidden; /* 防止内容溢出 */
 }
 
@@ -14,6 +13,10 @@
     display: flex;
     align-items: center;
     margin-bottom: 10px;
+    background-color: #000000; /* 纯黑色背景 */
+    color: #ffffff; /* 白色字体 */
+    padding: 8px 12px;
+    border-radius: var(--border-radius-small);
 }
 
 .unsaved-indicator {
@@ -26,9 +29,9 @@
     padding: 8px 10px;
     font-size: 1.5em;
     font-weight: bold;
-    color: var(--text-color-primary);
-    background-color: var(--panel-bg-color);
-    border: 1px solid var(--border-color);
+    color: #ffffff; /* 白色字体 */
+    background-color: #000000; /* 黑色背景 */
+    border: 1px solid #333333; /* 深灰色边框 */
     border-radius: var(--border-radius-small);
     box-sizing: border-box;
     outline: none;
@@ -36,8 +39,8 @@
 }
 
 .novel-title-input:focus {
-    border-color: var(--primary-color); /* 聚焦时的边框颜色 */
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2); /* 聚焦时的阴影 */
+    border-color: #ffffff; /* 聚焦时的白色边框 */
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3); /* 聚焦时的白色阴影 */
 }
 
 .new-chapter-button {
@@ -56,61 +59,89 @@
 }
 .editor-container {
   display: flex;
-  flex-direction: row;
-  height: 1000px; /* 固定高度，确保标签页有足够空间 */
+  flex-direction: column;
+  height: calc(100% - 60px); /* 减去标题栏和字符统计的高度 */
+  min-height: 200px; /* 最小高度确保可见 */
   overflow: hidden; /* 确保子元素滚动 */
 }
+/* Vditor 编辑器样式适配 */
+.vditor-editor {
+  flex-grow: 1;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  overflow: hidden;
+  min-height: 300px; /* 确保编辑器有最小高度 */
+  display: flex;
+  flex-direction: column;
+}
 
-.line-numbers-gutter {
-  width: 40px;
-  min-width: 40px;
+/* 确保 Vditor 内部容器正确填充空间 */
+.vditor-editor > div {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 确保 Vditor 工具栏固定高度 */
+.vditor-toolbar {
+  flex-shrink: 0; /* 防止工具栏被压缩 */
+}
+
+/* 确保 Vditor 内容区域可滚动 */
+.vditor-content {
+  flex-grow: 1;
+  overflow: auto;
+}
+
+/* 调整 Vditor 工具栏和内容区域的间距 */
+.vditor-toolbar {
   background-color: var(--panel-bg-color-alt);
-  color: var(--text-color-light);
-  padding: 10px 5px;
-  box-sizing: border-box;
-  text-align: right;
-  font-family: monospace;
-  font-size: 0.9em;
-  user-select: none;
-  overflow: hidden; /* 隐藏自身的滚动条 */
-  position: relative; /* 为了定位子元素 */
-  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 8px; /* 减少工具栏内边距 */
 }
 
-.line-number-container {
-  position: relative;
-  width: 100%;
+.vditor-toolbar__item {
+  color: var(--text-color-primary);
+  margin: 0 2px; /* 减少工具栏项间距 */
+}
+
+.vditor-toolbar__item:hover {
+  background-color: var(--hover-bg-color);
+}
+
+/* 调整 Vditor 内容区域样式 */
+.vditor-content {
+  color: var(--text-color-primary);
+}
+
+/* Vditor 预览区域样式适配 */
+.vditor-preview {
+  color: var(--text-color-primary);
+}
+
+
+
+/* 覆盖 Vditor 编辑器主体的内边距 */
+.vditor {
+  padding: 0 !important; /* 移除编辑器主体内边距 */
+}
+
+
+
+
+/* 调整编辑器面板内容区域的间距 */
+.editor-panel-content {
+  display: flex;
+  flex-direction: column;
   height: 100%;
-}
-
-.line-number {
-  position: absolute;
-  left: 5px;
-  right: 5px;
-  text-align: right;
-}
-.tiptap-editor {
-    flex-grow: 1; /* 让编辑器占据剩余空间 */
-    border: 1px solid var(--border-color); /* 添加边框 */
-    border-radius: var(--border-radius-small); /* 添加圆角 */
-    overflow-y: auto; /* 确保内容不溢出 */
-    padding: 10px;
-}
-
-/* 移除 Tiptap 编辑器聚焦时的默认轮廓 */
-.ProseMirror:focus {
-    outline: none;
-    box-shadow: none;
-}
-/* 修复 Tiptap 段落间距问题 */
-.ProseMirror p {
-  margin: 0;
+  padding: 8px; /* 减少整体内边距 */
+  overflow: hidden;
+  box-sizing: border-box; /* 确保padding包含在高度内 */
 }
 
 /* 右键菜单样式 */
 .context-menu {
     position: fixed;
-    background-color: var(--panel-bg-color); /* 改为深色背景 */
     border: 1px solid var(--border-color); /* 改为深色边框 */
     box-shadow: var(--shadow-medium); /* 改为深色阴影 */
     z-index: 1000;
@@ -134,9 +165,6 @@
     background-color: var(--panel-bg-color-alt); /* 改为深灰色系 */
 }
 
-.context-menu-item.disabled:hover {
-    background-color: var(--panel-bg-color-alt); /* 禁用状态下悬停无变化 */
-}
 
 
 /* 未选择文件时的面板样式 */
@@ -234,6 +262,7 @@
   margin-right: 10px;
   font-size: 0.9em;
   font-weight: 500;
+  color: #ffffff; /* 白色字体 */
 }
 
 .saving-indicator {
@@ -260,6 +289,21 @@
   100% {
     opacity: 1;
   }
+}
+
+/* 字符统计容器样式 */
+.character-count-container {
+  text-align: right;
+  font-size: 0.9em;
+  color: var(--text-color-secondary);
+  height: 20px; /* 固定高度 */
+}
+
+.character-count {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: var(--panel-bg-color-alt);
+  border-radius: var(--border-radius-small);
 }
 
 /* 移除EditorPanel中的保存按钮样式 */

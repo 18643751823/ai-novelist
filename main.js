@@ -24,7 +24,8 @@ console.log('日志服务已启动。');
 
 // 必须在 app.ready 事件之前注册协议
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { standard: true, secure: true, bypassCSP: true, allowServiceWorkers: true, supportFetchAPI: true, corsEnabled: true } }
+  { scheme: 'app', privileges: { standard: true, secure: true, bypassCSP: true, allowServiceWorkers: true, supportFetchAPI: true, corsEnabled: true } },
+  { scheme: 'uploads', privileges: { standard: true, secure: true, bypassCSP: true, allowServiceWorkers: true, supportFetchAPI: true, corsEnabled: true } }
 ]);
 
 const {
@@ -37,6 +38,7 @@ const {
 } = require('./backend/engine/ipc/handlers');
 const { setMainWindow } = require('./backend/state-manager');
 const { initializeServices } = require('./backend/service-registry');
+const ImageUploadService = require('./backend/storage/image-upload-service');
 
 let mainWindow;
 let novelDirWatcher;
@@ -245,9 +247,21 @@ app.whenReady().then(async () => {
 
     // 处理自定义协议
     protocol.handle('app', (request) => {
-      const filePath = path.normalize(path.join(__dirname, 'frontend/build', request.url.slice('app://'.length)));
+      let filePath;
+      const urlPath = request.url.slice('app://'.length);
+      
+      // 如果请求的是 uploads 目录下的文件
+      if (urlPath.startsWith('uploads/')) {
+        filePath = path.normalize(path.join(__dirname, urlPath));
+      } else {
+        // 否则从 frontend/build 目录加载
+        filePath = path.normalize(path.join(__dirname, 'frontend/build', urlPath));
+      }
+      
       return net.fetch(filePath); // 使用 net.fetch 来读取本地文件
     });
+
+    // 移除自定义协议处理，改用相对路径
 
     console.log('[main] Initializing services...');
     await initializeServices();
@@ -260,6 +274,11 @@ app.whenReady().then(async () => {
     console.log('[main] 注册 IPC 处理器...');
     registerIpcHandlers(store, mainWindow); // 传递 store 和 mainWindow 对象
     console.log('[main] IPC 处理器注册完成。');
+
+    // 初始化图片上传服务
+    console.log('[main] 初始化图片上传服务...');
+    const imageUploadService = new ImageUploadService();
+    console.log('[main] 图片上传服务初始化完成。');
 
     const novelDirPath = path.join(__dirname, 'novel');
     await fs.mkdir(novelDirPath, { recursive: true }).catch(() => {});

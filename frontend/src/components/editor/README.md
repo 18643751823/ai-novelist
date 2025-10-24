@@ -2,6 +2,8 @@
 
 本目录包含小说编辑器的主要组件，负责文本编辑、差异对比、分屏显示等功能。
 
+**重要变更**: 项目已从 Tiptap 编辑器重构为 Vditor 编辑器，提供更好的 Markdown 编辑体验。
+
 ## 文件结构概览
 
 ```
@@ -16,7 +18,17 @@ editor/
 ├── SplitViewPanel.css     # 分屏对比样式
 ├── TabBar.js              # 标签栏组件
 ├── TabBar.css             # 标签栏样式
-└── README.md              # 本说明文档
+├── VditorEditor.jsx       # Vditor 编辑器封装组件
+├── README.md              # 本说明文档
+├── hooks/                 # 自定义 React Hooks
+│   └── useContextMenu.js  # 上下文菜单 Hook
+├── services/              # 编辑器服务模块
+│   ├── AutoSaveService.js # 自动保存服务
+│   ├── CharacterCountService.js # 字符计数服务
+│   ├── TitleManager.js    # 标题管理服务
+│   └── VditorLifecycleManager.js # Vditor 生命周期管理
+└── utils/                 # 工具函数
+    └── editorHelpers.js   # 编辑器辅助函数
 ```
 
 ## 组件详细说明
@@ -40,7 +52,31 @@ editor/
 - `雷云.png`: 雷云背景图片  
 - `烛火.png`: 烛火背景图片
 
-### 2. DiffViewer.js
+### 2. VditorEditor.jsx
+
+**功能**: Vditor Markdown 编辑器封装组件，提供完整的 Markdown 编辑体验
+
+**主要特性**:
+- 基于 Vditor 的 Markdown 编辑器
+- 支持即时渲染 (IR) 模式
+- 丰富的工具栏功能（标题、粗体、斜体、列表、表格等）
+- 图片上传和拖拽上传支持
+- 复制为纯文本功能
+- 语法高亮和代码块支持
+- 数学公式渲染 (KaTeX)
+- 深色主题支持
+
+**核心方法**:
+- `useEffect`: 处理 Vditor 实例的初始化和销毁
+- `useImperativeHandle`: 提供编辑器 API 给父组件
+- 图片上传处理器：集成 IPC 进行文件上传
+
+**技术依赖**:
+- `vditor`: Markdown 编辑器核心
+- `vditor/dist/index.css`: 编辑器样式
+- IPC 通信：图片上传功能
+
+### 3. DiffViewer.js
 
 **功能**: 文本差异对比查看器，支持并排显示原始版本和修改后版本
 
@@ -49,47 +85,49 @@ editor/
 - 左侧显示原始版本（删除内容高亮）
 - 右侧显示修改后版本（新增内容高亮）
 - 双编辑器滚动同步
-- 基于 Tiptap 的富文本编辑器
+- 基于 Vditor 的 Markdown 编辑器
 
 **核心方法**:
-- `DiffHighlightExtension`: 自定义 Tiptap 扩展，用于差异高亮
 - `useEffect`: 处理差异计算和编辑器初始化
 - 滚动同步机制防止循环触发
 
 **技术依赖**:
-- `@tiptap/core`: 富文本编辑器核心
-- `@tiptap/starter-kit`: 基础编辑器功能
 - `diff`: 差异计算库
-- `prosemirror-view`: 编辑器视图层
+- `vditor`: Markdown 编辑器
 
-### 3. EditorPanel.js
+### 4. EditorPanel.js
 
 **功能**: 主编辑器面板，提供完整的文本编辑功能
 
 **主要特性**:
-- 基于 Tiptap 的富文本编辑器
+- 基于 Vditor 的 Markdown 编辑器
 - 自动保存机制（3秒延迟）
-- 手动保存支持
 - 字符计数统计
-- 行号显示
 - 右键上下文菜单
 - 支持分屏模式
 - 差异对比模式
+- 标题编辑功能
 
 **核心状态管理**:
-- `TiptapEditorInstance`: Tiptap 编辑器实例引用
+- `editorRef`: Vditor 编辑器实例引用
 - `autoSaveTimerRef`: 自动保存定时器
 - `initialContentRef`: 初始内容引用，用于判断是否修改
 
 **主要方法**:
 - `saveContent`: 文件保存逻辑
 - `handleEditorChange`: 编辑器内容变化处理
-- `updateParagraphs`: 更新行号显示
 - `calculateCharacterCount`: 字符计数计算
 
+**服务模块集成**:
+- `useAutoSave`: 自动保存服务
+- `useVditorLifecycle`: Vditor 生命周期管理
+- `useCharacterCount`: 字符计数服务
+- `useTitleManager`: 标题管理服务
+- `useContextMenu`: 上下文菜单管理
+
 **生命周期管理**:
-- 组件挂载时创建 Tiptap 实例
-- 标签页切换时销毁/重新创建实例
+- 组件挂载时初始化 Vditor 编辑器
+- 标签页切换时管理编辑器实例
 - 内容同步确保编辑器与 Redux 状态一致
 
 ### 4. SplitViewPanel.js
@@ -150,10 +188,3 @@ Tiptap Editor Instance
 3. **性能优化**: 合理使用 `useCallback` 和 `useRef` 避免不必要的重渲染
 4. **错误处理**: 完善的错误捕获和用户提示机制
 5. **自动保存**: 智能的自动保存策略，避免数据丢失
-
-## 使用注意事项
-
-1. 编辑器实例在标签页切换时会销毁重建，确保内存管理
-2. 自动保存有 3 秒延迟，避免频繁 IO 操作
-3. 分屏模式需要至少打开两个文件
-4. 差异对比功能需要提供原始内容和修改后内容

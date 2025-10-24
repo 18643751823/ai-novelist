@@ -38,6 +38,7 @@
     "langchain": "^0.3.36",
     "lodash": "^4.17.21",
     "mammoth": "^1.11.0",
+    "multer": "^2.0.2",
     "openai": "^4.104.0",
     "p-wait-for": "^5.0.2",
     "pdf-parse": "^1.1.1",
