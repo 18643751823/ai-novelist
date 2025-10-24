@@ -28,6 +28,7 @@ frontend/build/
 # User data
 novel/
 backend/data/
+uploads/
 
 # Lock files
 mcp-filesystem-server.lock
@@ -42,7 +43,7 @@ python_portable/
 db/
 
 # Static assets (unless they are source files)
-public/
+# public/ - Removed to allow frontend public directory to be tracked
 
 # Build outputs and temporary files
 *.tmp
