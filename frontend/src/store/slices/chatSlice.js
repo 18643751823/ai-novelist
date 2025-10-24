@@ -216,6 +216,14 @@ const chatSlice = createSlice({
         state.messages.splice(messageIndex);
       }
     },
+    updateMessageContent: (state, action) => {
+      const { messageId, content } = action.payload;
+      const message = state.messages.find(msg => msg.id === messageId);
+      if (message) {
+        message.content = content;
+        message.text = content; // 确保 text 和 content 同步
+      }
+    },
     startEditing: (state, action) => {
       const { messageId } = action.payload;
       state.editingMessageId = messageId;
@@ -988,6 +996,7 @@ export const {
   setRagIntentAnalysisSettings,
   setRagEmbeddingDimensions,
   deleteMessage,
+  updateMessageContent, // 新增：导出 updateMessageContent
   startEditing,
   // submitEdit,
 } = chatSlice.actions;
