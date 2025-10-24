@@ -1,21 +1,21 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateNovelTitle, updateTabContent, startDiff, endDiff } from '../../store/slices/novelSlice';
-import VditorEditor from './VditorEditor'; // 引入 Vditor 编辑器
-import DiffViewer from './DiffViewer'; // 引入 DiffViewer
-import ContextMenu from '../others/ContextMenu'; // 引入 ContextMenu
+import { updateNovelTitle, updateTabContent, startDiff, endDiff } from '../../store/slices/novelSlice.js';
+import VditorEditor from './VditorEditor.jsx'; // 引入 Vditor 编辑器
+import DiffViewer from './DiffViewer.jsx'; // 引入 DiffViewer
+import ContextMenu from '../others/ContextMenu.jsx'; // 引入 ContextMenu
 
 import './EditorPanel.css';
-import NotificationModal from '../others/NotificationModal.js';
-import BackgroundImage from './BackgroundImage'; // 导入新的背景图组件
+import NotificationModal from '../others/NotificationModal.jsx';
+import BackgroundImage from './BackgroundImage.jsx'; // 导入新的背景图组件
 
-import useIpcRenderer from '../../hooks/useIpcRenderer';
-import { useAutoSave } from './services/AutoSaveService';
-import { useVditorLifecycle } from './services/VditorLifecycleManager';
-import { useCharacterCount } from './services/CharacterCountService';
-import { useTitleManager } from './services/TitleManager';
-import { useContextMenu } from './hooks/useContextMenu';
-import { getContextMenuItems, handleMenuItemClick } from './utils/editorHelpers';
+import useIpcRenderer from '../../hooks/useIpcRenderer.js';
+import { useAutoSave } from './services/AutoSaveService.js';
+import { useVditorLifecycle } from './services/VditorLifecycleManager.js';
+import { useCharacterCount } from './services/CharacterCountService.js';
+import { useTitleManager } from './services/TitleManager.js';
+import { useContextMenu } from './hooks/useContextMenu.js';
+import { getContextMenuItems, handleMenuItemClick } from './utils/editorHelpers.js';
 
 function EditorPanel({ splitViewTabId = null }) {
   const dispatch = useDispatch();
