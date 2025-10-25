@@ -41,7 +41,7 @@ async function callMcpTool(toolName, args) {
 }
 
 // 核心工具执行逻辑
-async function performToolExecution(toolCallId, toolName, toolArgs, mainWindow) {
+async function performToolExecution(toolCallId, toolName, toolArgs, mainWindow, sessionId = null) {
     let toolResult;
     let finalMessage = '';
 
@@ -74,15 +74,61 @@ async function performToolExecution(toolCallId, toolName, toolArgs, mainWindow) 
             finalMessage = `${toolName} 操作失败: ${toolResult.error}`;
         }
         
-        // 发送工具执行状态给渲染进程
-        mainWindow.webContents.send('ai-response', {
-            type: 'tool_execution_status',
-            payload: {
-                toolName: toolName,
-                success: toolResult.success,
-                message: toolResult.success ? `${toolName} 工具执行成功！${finalMessage}` : `${toolName} 工具执行失败: ${toolResult.error}`
+        // 发送工具执行结果作为tool角色消息
+        if (toolResult.success) {
+            // 直接发送原始工具结果内容，不进行格式化
+            let toolResultContent;
+            
+            // 根据工具结果类型选择合适的内容
+            if (toolResult.content && typeof toolResult.content === 'string') {
+                toolResultContent = toolResult.content;
+            } else if (toolResult.message) {
+                toolResultContent = toolResult.message;
+            } else if (toolResult.results) {
+                toolResultContent = JSON.stringify(toolResult.results, null, 2);
+            } else {
+                toolResultContent = `${toolName} 执行成功`;
             }
-        });
+            
+            console.log(`[DEBUG][executor.js] 准备发送 tool_result 消息，工具: ${toolName}, 内容长度: ${toolResultContent.length}`);
+            console.log(`[DEBUG][executor.js] tool_result 内容预览: ${toolResultContent.substring(0, 100)}...`);
+            
+            // 发送工具结果消息
+            const toolResultPayload = {
+                toolCallId: String(toolCallId), // 确保是字符串
+                toolName: toolName,
+                content: toolResultContent,
+                sessionId: String(sessionId || toolArgs.sessionId || 'default-session') // 确保是字符串
+            };
+            
+            console.log(`[DEBUG][executor.js] 准备发送的 payload:`, JSON.stringify(toolResultPayload, null, 2).substring(0, 200));
+            
+            mainWindow.webContents.send('ai-response', {
+                type: 'tool_result',
+                payload: toolResultPayload
+            });
+            
+            console.log(`[DEBUG][executor.js] tool_result 消息已发送`);
+        } else {
+            // 工具执行失败时发送错误信息
+            console.log(`[DEBUG][executor.js] 准备发送失败 tool_result 消息，工具: ${toolName}, 错误: ${toolResult.error}`);
+            
+            const errorPayload = {
+                toolCallId: String(toolCallId), // 确保是字符串
+                toolName: toolName,
+                content: `${toolName} 操作失败: ${toolResult.error}`,
+                sessionId: String(sessionId || toolArgs.sessionId || 'default-session') // 确保是字符串
+            };
+            
+            console.log(`[DEBUG][executor.js] 准备发送的错误 payload:`, JSON.stringify(errorPayload, null, 2));
+            
+            mainWindow.webContents.send('ai-response', {
+                type: 'tool_result',
+                payload: errorPayload
+            });
+            
+            console.log(`[DEBUG][executor.js] 失败 tool_result 消息已发送`);
+        }
         
         // 写入调试日志到文件
         const debugLogPath = path.join(__dirname, '../debug_tool_action.log');
@@ -107,14 +153,19 @@ async function performToolExecution(toolCallId, toolName, toolArgs, mainWindow) 
     } catch (error) {
         finalMessage = `执行工具 ${toolName} 时发生异常: ${error.message}`;
         toolResult = { success: false, error: error.message };
+        // 工具执行失败时发送错误信息
+        const catchErrorPayload = {
+            toolCallId: String(toolCallId), // 确保是字符串
+            toolName: toolName,
+            content: `${toolName} 操作失败: ${toolResult.error}`,
+            sessionId: String(sessionId || toolArgs.sessionId || 'default-session') // 确保是字符串
+        };
+        
+        console.log(`[DEBUG][executor.js] 准备发送的catch错误 payload:`, JSON.stringify(catchErrorPayload, null, 2));
         
         mainWindow.webContents.send('ai-response', {
-            type: 'tool_execution_status',
-            payload: {
-                toolName: toolName,
-                success: toolResult.success,
-                message: `${toolName} 工具执行失败: ${toolResult.error}`
-            }
+            type: 'tool_result',
+            payload: catchErrorPayload
         });
         // 写入调试日志到文件
         const debugLogPath = path.join(__dirname, '../debug_tool_action.log');

@@ -105,14 +105,66 @@
 }
 
 #chatDisplay .message.system-message {
-    background-color: #444444; /* 深灰色背景 */
-    border-color: #666666;
-    color: #cccccc; /* 浅灰色文字 */
-    text-align: center;
-    width: 100%;
-    max-width: none;
-    font-weight: bold;
-    border-radius: 5px;
+  background-color: #444444; /* 深灰色背景 */
+  border-color: #666666;
+  color: #cccccc; /* 浅灰色文字 */
+  text-align: center;
+  width: 100%;
+  max-width: none;
+  font-weight: bold;
+  border-radius: 5px;
+}
+
+#chatDisplay .message.tool-message {
+  background-color: #2a4e7a; /* 深蓝色背景，表示工具执行结果 */
+  border-color: #357abd;
+  color: #ffffff; /* 白色文字 */
+  align-self: flex-start;
+  margin-right: auto;
+  text-align: left;
+  border-bottom-left-radius: 3px;
+  max-width: 80%; /* 比AI消息稍宽一些 */
+}
+
+/* 工具消息头部样式 */
+.tool-message-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* 折叠按钮样式 */
+.collapse-toggle-button {
+  background: transparent;
+  border: none;
+  color: #cccccc;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
+}
+
+.collapse-toggle-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.collapse-toggle-button:active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 折叠状态下的工具消息样式 */
+.message.tool-message.collapsed .message-content {
+  display: none;
+}
+
+/* 折叠状态下的工具消息头部样式 */
+.message.tool-message.collapsed .tool-message-header-content {
+  opacity: 0.8;
 }
 
 .chat-input-group {

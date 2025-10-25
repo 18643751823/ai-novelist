@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { deleteMessage, restoreMessages } from '../../../store/slices/chatSlice';
+import { toggleToolMessageCollapse } from '../../../store/slices/messageSlice';
 import { restoreChatCheckpoint } from '../../../ipc/checkpointIpcHandler';
 import { ToolCallCard } from '../services/ToolCallManager';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCopy, faTrashCan, faSpinner, faClock } from '@fortawesome/free-solid-svg-icons';
+import { faCopy, faTrashCan, faSpinner, faClock, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import MarkdownMessageRenderer from './MarkdownMessageRenderer';
 
 // 消息显示组件
@@ -18,6 +19,9 @@ const MessageDisplay = React.forwardRef(({
 }, ref) => {
   const dispatch = useDispatch();
   const editorRefs = useRef({});
+  
+  // 获取tool消息折叠状态
+  const collapsedToolMessages = useSelector((state) => state.chat.message.collapsedToolMessages);
 
   // 新增：获取所有消息的最新内容
   const getAllMessagesLatestContent = () => {
@@ -167,6 +171,47 @@ const MessageDisplay = React.forwardRef(({
     </>
   );
 
+  // 渲染工具消息
+  const renderToolMessage = (msg) => {
+    const content = msg.content || msg.text || '[工具执行结果]';
+    const isCollapsed = collapsedToolMessages[msg.id];
+    
+    return (
+      <>
+        <div className="message-header">
+          <div className="tool-message-header-content">
+            <span>工具执行结果: {msg.toolName ? `${msg.toolName}` : ''}</span>
+            <button
+              className="collapse-toggle-button"
+              onClick={() => dispatch(toggleToolMessageCollapse({ messageId: msg.id }))}
+              title={isCollapsed ? '展开' : '折叠'}
+            >
+              <FontAwesomeIcon icon={isCollapsed ? faChevronDown : faChevronUp} />
+            </button>
+          </div>
+        </div>
+        {!isCollapsed && (
+          <div className="message-content">
+            <MarkdownMessageRenderer
+              ref={(el) => {
+                if (el) editorRefs.current[msg.id] = el;
+              }}
+              value={content}
+              height="auto"
+            />
+          </div>
+        )}
+        <div className="message-actions">
+          <button title="复制" onClick={() => handleCopyMessage(msg.content || msg.text)}>
+            <FontAwesomeIcon icon={faCopy} />
+          </button>
+          <button title="删除" onClick={() => handleDeleteMessage(msg.id)}>
+            <FontAwesomeIcon icon={faTrashCan} />
+          </button>
+        </div>
+      </>
+    );
+  };
   // 渲染用户消息
   const renderUserMessage = (msg) => {
     const content = msg.content || msg.text || '[消息内容缺失]';
@@ -237,6 +282,8 @@ const MessageDisplay = React.forwardRef(({
             renderSystemMessage(msg)
           ) : msg.role === 'assistant' ? (
             renderAIMessage(msg)
+          ) : msg.role === 'tool' ? (
+            renderToolMessage(msg)
           ) : (
             renderUserMessage(msg)
           )}

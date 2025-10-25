@@ -9,7 +9,8 @@ const messageSlice = createSlice({
     isHistoryPanelVisible: false,
     deepSeekHistory: [],
     isStreaming: false,
-    abortController: null
+    abortController: null,
+    collapsedToolMessages: {} // 新增：存储tool消息的折叠状态
   },
   reducers: {
     // 消息操作
@@ -100,26 +101,20 @@ const messageSlice = createSlice({
             isLoading: false,
           });
         } else if (msg.role === 'tool') {
-            // 将工具执行结果格式化为一条易于阅读的系统消息
-            let resultText = `[Tool execution: ${msg.name}]`;
-            try {
-                const result = JSON.parse(msg.content);
-                if (result.success) {
-                    resultText = `✅ 工具 [${msg.name}] 已成功执行。`;
-                } else {
-                    resultText = `❌ 工具 [${msg.name}] 执行失败: ${result.error || '未知错误'}`;
-                }
-            } catch(e) { /* 忽略解析错误，使用默认文本 */ }
-
-            newMessages.push({
+            // 直接显示原始工具执行结果内容，不进行格式化
+            const restoredToolMessage = {
                 id,
-                sender: 'System',
-                text: resultText,
-                role: 'system',
-                content: resultText,
-                className: 'system-message',
+                sender: 'Tool',
+                text: msg.content,
+                role: 'tool',
+                content: msg.content,
+                className: 'tool-message',
                 sessionId: msg.sessionId,
-            });
+            };
+            newMessages.push(restoredToolMessage);
+            
+            // 新增：默认折叠从历史记录恢复的工具消息
+            state.collapsedToolMessages[id] = true;
         }
         // 我们在此处特意过滤掉 role === 'system' 的消息，因为它们是给AI的上下文，通常不在对话中展示。
       }
@@ -156,7 +151,6 @@ const messageSlice = createSlice({
     setQuestionCard: (state, action) => {
       state.questionCard = action.payload;
     },
-    
     // 历史面板管理
     setIsHistoryPanelVisible: (state, action) => {
       state.isHistoryPanelVisible = action.payload;
@@ -164,6 +158,25 @@ const messageSlice = createSlice({
     
     setDeepSeekHistory: (state, action) => {
       state.deepSeekHistory = action.payload;
+    },
+
+    // 新增：tool消息折叠状态管理
+    toggleToolMessageCollapse: (state, action) => {
+      const { messageId } = action.payload;
+      if (state.collapsedToolMessages[messageId]) {
+        delete state.collapsedToolMessages[messageId];
+      } else {
+        state.collapsedToolMessages[messageId] = true;
+      }
+    },
+
+    setToolMessageCollapse: (state, action) => {
+      const { messageId, collapsed } = action.payload;
+      if (collapsed) {
+        state.collapsedToolMessages[messageId] = true;
+      } else {
+        delete state.collapsedToolMessages[messageId];
+      }
     },
     
     // 流式消息处理
@@ -323,25 +336,59 @@ const messageSlice = createSlice({
         case 'tool_action_status':
         case 'tool_execution_status':
           const messageText = `工具 ${payload.toolName} 执行${payload.success ? '成功' : '失败'}：${payload.message}`;
-          currentMessages.push({
-            sender: 'System',
+          const toolStatusMessage = {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            sender: 'Tool',
             text: messageText,
-            role: 'system',
+            role: 'tool',
             content: messageText,
-            className: 'system-message',
+            className: 'tool-message',
             sessionId: payload.sessionId,
-          });
+            toolName: payload.toolName
+          };
+          currentMessages.push(toolStatusMessage);
+          
+          // 新增：默认折叠工具状态消息
+          state.collapsedToolMessages[toolStatusMessage.id] = true;
           break;
           
         case 'batch_action_status':
-          currentMessages.push({
-            sender: 'System',
+          const batchActionMessage = {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            sender: 'Tool',
             text: payload.message,
-            role: 'system',
+            role: 'tool',
             content: payload.message,
-            className: 'system-message',
+            className: 'tool-message',
             sessionId: payload.sessionId,
-          });
+          };
+          currentMessages.push(batchActionMessage);
+          
+          // 新增：默认折叠批量操作状态消息
+          state.collapsedToolMessages[batchActionMessage.id] = true;
+          break;
+          
+        case 'tool_result':
+          // 处理工具执行结果，作为tool角色消息显示
+          console.log(`[DEBUG][messageSlice] 收到 tool_result 消息，工具: ${payload.toolName}, 内容长度: ${payload.content.length}`);
+          console.log(`[DEBUG][messageSlice] tool_result 内容预览: ${payload.content.substring(0, 100)}...`);
+          
+          const toolMessage = {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            sender: 'Tool',
+            text: payload.content,
+            role: 'tool',
+            content: payload.content,
+            className: 'tool-message',
+            sessionId: payload.sessionId,
+            toolCallId: payload.toolCallId,
+            toolName: payload.toolName
+          };
+          currentMessages.push(toolMessage);
+          
+          // 新增：默认折叠工具消息
+          state.collapsedToolMessages[toolMessage.id] = true;
+          console.log(`[DEBUG][messageSlice] tool_result 消息已添加到消息列表，并设置为默认折叠`);
           break;
           
         case 'tool_suggestions':
@@ -375,6 +422,11 @@ const messageSlice = createSlice({
           state.isStreaming = false;
           break;
           
+        case 'batch_processing_complete':
+          // 批量工具处理完成，不需要显示消息，静默处理
+          console.log('[messageSlice] 批量工具处理完成');
+          break;
+          
         default:
           console.warn(`[messageSlice] 未知消息类型: ${type}`);
       }
@@ -401,7 +453,9 @@ export const {
   setQuestionCard,
   setIsHistoryPanelVisible,
   setDeepSeekHistory,
-  handleStreamingMessage
+  handleStreamingMessage,
+  toggleToolMessageCollapse,
+  setToolMessageCollapse
 } = messageSlice.actions;
 
 export default messageSlice.reducer;

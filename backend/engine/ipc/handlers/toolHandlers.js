@@ -155,7 +155,6 @@ const handleProcessToolAction = async (event, { actionType, toolCalls }) => {
     }
 
     if (actionType === 'approve') {
-        chatService._sendAiResponseToFrontend('batch_action_status', { status: 'executing_all', message: `正在批量执行所有待处理工具...` });
         for (const tool of toolCalls) {
             let toolToProcess = state.pendingToolCalls.find(t => t.toolCallId === tool.toolCallId);
             if (!toolToProcess) {
@@ -172,7 +171,7 @@ const handleProcessToolAction = async (event, { actionType, toolCalls }) => {
                 toolToProcess.function.name, // Use the name from the pending call
                 toolToProcess.toolArgs,
                 state.mainWindow,
-                serviceRegistry.toolService
+                toolToProcess.sessionId // 传递 sessionId
             );
 
             toolToProcess.status = executionResult.result.success ? 'executed' : 'failed';

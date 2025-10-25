@@ -81,11 +81,13 @@ class ToolCallService {
     } catch (error) {
       console.error('ToolCallService: 处理工具操作失败:', error);
       // Optionally dispatch an error message to the UI
-      this.dispatch(appendMessage({ 
-        sender: 'System', 
-        text: `工具操作失败: ${error.message}`, 
-        role: 'system', 
-        className: 'system-error' 
+      this.dispatch(appendMessage({
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        sender: 'Tool',
+        text: `工具操作失败: ${error.message}`,
+        role: 'tool',
+        content: `工具操作失败: ${error.message}`,
+        className: 'tool-message'
       }));
       throw error;
     }
