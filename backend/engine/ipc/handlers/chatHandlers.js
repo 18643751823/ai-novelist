@@ -1,6 +1,6 @@
 const { ipcMain } = require('electron');
-const chatService = require('../chatService');
-const simpleChatService = require('../simpleChatService');
+const chatService = require('../../chatService');
+const simpleChatService = require('../../simpleChatService');
 const { state, setSessionState, getSessionState } = require('../../../state-manager');
 const { getCheckpointDirs } = require('./sharedUtils');
 const checkpointService = require('../../../../dist-backend/checkpoint-service');

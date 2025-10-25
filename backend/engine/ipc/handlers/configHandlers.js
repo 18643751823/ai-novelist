@@ -1,5 +1,5 @@
 const { ipcMain, shell } = require('electron');
-const contextManager = require('../contextManager');
+const contextManager = require('../../contextManager');
 const sortConfigManager = require('../../../utils/sortConfigManager');
 const { getNovelPath } = require('./sharedUtils');
 

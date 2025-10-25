@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const { getModelRegistry, initializeModelProvider, reinitializeModelProvider } = require('../models/modelProvider');
+const { getModelRegistry, initializeModelProvider, reinitializeModelProvider } = require('../../models/modelProvider');
 
 let storeInstance = null;
 
@@ -178,10 +178,8 @@ function registerModelHandlers() {
     ipcMain.handle('get-available-models', handleListAllModels); // 新增：注册get-available-models别名处理器
     ipcMain.handle('get-models-by-provider', handleGetModelsByProvider); // 新增：注册按提供商获取模型列表处理器
     ipcMain.handle('redetect-ollama', handleRedetectOllama); // 新增：注册重新检测Ollama服务处理器
-    ipcMain.handle('get-embedding-dimensions', handleGetEmbeddingDimensions); // 新增：注册获取嵌入模型维度处理器
     ipcMain.handle('reinitialize-model-provider', handleReinitializeModelProvider); // 新增：注册重新初始化模型提供者处理器
 }
-
 module.exports = {
     registerModelHandlers,
     handleListAllModels,

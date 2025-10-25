@@ -1,7 +1,7 @@
 const { ipcMain, dialog } = require('electron');
-const knowledgeBaseManager = require('../../rag-service/knowledgeBaseManager');
-const ragIpcHandler = require('../../rag-service/ragIpcHandler');
-const intentAnalysisIpcHandler = require('../../rag-service/IntentAnalysisIpcHandler');
+const knowledgeBaseManager = require('../../../rag-service/knowledgeBaseManager');
+const ragIpcHandler = require('../../../rag-service/ragIpcHandler');
+const intentAnalysisIpcHandler = require('../../../rag-service/IntentAnalysisIpcHandler');
 const { state } = require('../../../state-manager');
 
 let storeInstance = null;

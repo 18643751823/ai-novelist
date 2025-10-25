@@ -1,8 +1,8 @@
 const { ipcMain } = require('electron');
-const toolExecutor = require('../../tool-service/tools/executor');
-const chatService = require('../chatService');
+const toolExecutor = require('../../../tool-service/tools/executor');
+const chatService = require('../../chatService');
 const { state, getSessionState } = require('../../../state-manager');
-const { getNovelPath } = require('./sharedUtils');
+const { getNovelPath, getCheckpointDirs } = require('./sharedUtils');
 const fs = require('fs').promises;
 const path = require('path');
 const checkpointService = require('../../../../dist-backend/checkpoint-service');

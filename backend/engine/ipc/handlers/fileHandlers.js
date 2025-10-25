@@ -6,7 +6,7 @@ const { state } = require('../../../state-manager');
 const { getFileTree } = require('../../../utils/file-tree-builder');
 const sortConfigManager = require('../../../utils/sortConfigManager');
 const { getNovelPath, generateUniqueName, copyRecursive, flattenFileTree } = require('./sharedUtils');
-const chatService = require('../chatService');
+const chatService = require('../../chatService');
 
 // 获取章节列表并更新前端
 const getChaptersAndUpdateFrontend = async (mainWindow) => {
