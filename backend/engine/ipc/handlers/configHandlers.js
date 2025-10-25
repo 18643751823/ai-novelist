@@ -234,7 +234,7 @@ const handleGetAdditionalInfo = async (mode) => {
 const handleGetDefaultPrompts = async () => {
   try {
     // 导入prompts模块
-    const prompts = require('../prompts');
+    const prompts = require('../../prompts');
     return { success: true, prompts };
   } catch (error) {
     console.error('[configHandlers.js] 获取默认提示词失败:', error);

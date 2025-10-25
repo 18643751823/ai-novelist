@@ -30,9 +30,10 @@ const RagManagementPanel = forwardRef(({ isOpen, onClose, onSaveComplete }, ref)
   const { invoke, setStoreValue } = useIpcRenderer();
   const {
     availableModels,
-    embeddingModel,
-    ragState
+    embeddingModel
   } = useSelector((state) => state.chat);
+  
+  const ragState = useSelector((state) => state.chat.rag.ragState);
   
   const [activeTab, setActiveTab] = useState('rag-settings'); // 'rag-settings', 'knowledge-base'
   const [notification, setNotification] = useState({

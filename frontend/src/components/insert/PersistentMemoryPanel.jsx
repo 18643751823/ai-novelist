@@ -15,7 +15,7 @@ import '../agent/promptTab/PromptManagerModal.css';
 const PersistentMemoryPanel = forwardRef(({ onSaveComplete }, ref) => {
   const dispatch = useDispatch();
   const { invoke } = useIpcRenderer();
-  const { additionalInfo } = useSelector((state) => state.chat);
+  const { additionalInfo } = useSelector((state) => state.chat.mode);
   
   const [localAdditionalInfo, setLocalAdditionalInfo] = useState({});
   const [selectedMode, setSelectedMode] = useState('general');

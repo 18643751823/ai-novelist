@@ -49,6 +49,14 @@ const modeSlice = createSlice({
       adjustment: ''
     },
     
+    // 模式功能设置
+    modeFeatureSettings: {
+      general: {},
+      outline: {},
+      writing: {},
+      adjustment: {}
+    },
+    
     // 上下文限制设置
     contextLimitSettings: {
       modes: {
@@ -269,6 +277,12 @@ const modeSlice = createSlice({
         outline: '',
         writing: '',
         adjustment: ''
+      };
+      state.modeFeatureSettings = {
+        general: {},
+        outline: {},
+        writing: {},
+        adjustment: {}
       };
       state.contextLimitSettings = {
         modes: {

@@ -4,8 +4,8 @@ import {
   setQuestionCard,
   setMessages,
   stopStreaming,
-  setSelectedModel,
 } from '../../store/slices/chatSlice';
+import { setSelectedModel } from '../../store/slices/apiSlice';
 import {
   setDeepSeekHistory
 } from '../../store/slices/messageSlice';
@@ -50,7 +50,7 @@ const ChatPanel = memo(() => {
     aliyunEmbeddingApiKey: state.chat.api.aliyunEmbeddingApiKey,
     selectedModel: state.chat.api.selectedModel,
     enableStream: state.chat.tool.enableStream,
-    modeFeatureSettings: state.chat.rag.modeFeatureSettings,
+    modeFeatureSettings: state.chat.mode.modeFeatureSettings,
     isStreaming: state.chat.message.isStreaming,
     aiParameters: state.chat.mode.aiParameters,
     deepSeekHistory: state.chat.message.deepSeekHistory,

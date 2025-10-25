@@ -73,6 +73,18 @@ const messageSlice = createSlice({
           // 解析工具调用，并为历史记录添加 'historical' 状态
           const toolCalls = (msg.tool_calls || []).map(tc => {
             let toolArgs;
+            // 安全检查：确保 tc.function 存在
+            if (!tc.function) {
+              console.warn('工具调用缺少 function 属性:', tc);
+              return {
+                id: tc.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                function: { name: 'unknown', arguments: '{}' },
+                type: 'function',
+                toolArgs: { error: 'missing function property' },
+                status: 'historical',
+              };
+            }
+            
             try {
               toolArgs = JSON.parse(tc.function.arguments || '{}');
             } catch (e) {

@@ -26,7 +26,7 @@ const ProviderSettingsPanel = ({ isOpen, onClose }) => {
     aliyunEmbeddingApiKey,
     intentAnalysisModel,
     ollamaBaseUrl
-  } = useSelector((state) => state.chat);
+  } = useSelector((state) => state.chat.api);
 
   // 使用数据管理钩子
   const {

@@ -9,21 +9,21 @@ import { registerMainIpcListeners } from './ipc/mainIpcHandler'; // 导入新的
 import { setNovelContent, setCurrentFile, triggerChapterRefresh } from './store/slices/novelSlice';
 import useIpcRenderer from './hooks/useIpcRenderer';
 import {
-  setCustomPromptForMode,
-  setModeFeatureSetting,
-  setRagTableNames,
-  setAdditionalInfoForMode,
   setSelectedModel,
   setSelectedProvider,
   setDeepseekApiKey,
   setOpenrouterApiKey,
   setAliyunEmbeddingApiKey,
   setIntentAnalysisModel,
-  setEnableStream,
-  setContextLimitSettings,
-  setAiParametersForMode,
   setCustomProviders
-} from './store/slices/chatSlice';
+} from './store/slices/apiSlice';
+import { setEnableStream } from './store/slices/toolSlice';
+import {
+  setCustomPromptForMode,
+  setAdditionalInfoForMode,
+  setAiParametersForMode,
+  setContextLimitSettings
+} from './store/slices/modeSlice';
 
 function App() {
   const dispatch = useDispatch();
@@ -100,16 +100,8 @@ function App() {
           });
         }
         
-        if (storedModeFeatureSettings) {
-          Object.entries(storedModeFeatureSettings).forEach(([mode, settings]) => {
-            if (settings.ragRetrievalEnabled !== undefined) {
-              dispatch(setModeFeatureSetting({ mode, feature: 'ragRetrievalEnabled', enabled: settings.ragRetrievalEnabled }));
-            }
-            if (settings.ragTableNames !== undefined) {
-              dispatch(setRagTableNames({ mode, tableNames: settings.ragTableNames }));
-            }
-          });
-        }
+        // 注意：setModeFeatureSetting 和 setRagTableNames 不再可用
+        // 如果需要这些功能，需要在 modeSlice 中添加相应的 actions
         
         if (storedAdditionalInfo) {
           Object.entries(storedAdditionalInfo).forEach(([mode, info]) => {

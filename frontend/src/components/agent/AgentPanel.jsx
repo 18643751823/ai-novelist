@@ -37,7 +37,7 @@ const AgentPanel = ({ isOpen = true, onClose }) => {
     additionalInfo,
     aiParameters,
     contextLimitSettings
-  } = useSelector((state) => state.chat);
+  } = useSelector((state) => state.chat.mode);
   
   // UI状态 - 专注于展示和交互
   const [defaultPrompts, setDefaultPrompts] = useState({});

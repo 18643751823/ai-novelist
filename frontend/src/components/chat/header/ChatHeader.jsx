@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { setIsHistoryPanelVisible, setSelectedModel } from '../../../store/slices/chatSlice';
+import { setIsHistoryPanelVisible } from '../../../store/slices/chatSlice';
+import { setSelectedModel } from '../../../store/slices/apiSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock } from '@fortawesome/free-solid-svg-icons';
 
@@ -12,10 +13,13 @@ const ChatHeader = ({
   const dispatch = useDispatch();
   
   const {
-    isHistoryPanelVisible,
+    isHistoryPanelVisible
+  } = useSelector((state) => state.chat.message);
+  
+  const {
     selectedModel,
     availableModels
-  } = useSelector((state) => state.chat);
+  } = useSelector((state) => state.chat.api);
 
   const handleHistoryToggle = () => {
     dispatch(setIsHistoryPanelVisible(!isHistoryPanelVisible));

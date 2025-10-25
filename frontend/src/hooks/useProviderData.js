@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   setAvailableModels,
   setCustomProviders as setCustomProvidersAction
-} from '../store/slices/chatSlice';
+} from '../store/slices/apiSlice';
 import useIpcRenderer from './useIpcRenderer';
 
 // 内置提供商配置
@@ -20,7 +20,7 @@ const useProviderData = () => {
   const { invoke } = useIpcRenderer();
   
   // 从 Redux Store 获取自定义提供商数据
-  const customProviders = useSelector((state) => state.chat.customProviders || []);
+  const customProviders = useSelector((state) => state.chat.api.customProviders || []);
   
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(false);

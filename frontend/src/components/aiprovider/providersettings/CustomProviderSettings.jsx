@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { setCustomProviders } from '../../../store/slices/chatSlice';
+import { setCustomProviders } from '../../../store/slices/apiSlice';
 import useIpcRenderer from '../../../hooks/useIpcRenderer';
 import NotificationModal from '../../others/NotificationModal';
 import './CustomProviderSettings.css';

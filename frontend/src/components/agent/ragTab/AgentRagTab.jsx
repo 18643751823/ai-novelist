@@ -24,7 +24,7 @@ const AgentRagTab = ({
   const { invoke } = useIpcRenderer();
   const {
     modeFeatureSettings
-  } = useSelector((state) => state.chat);
+  } = useSelector((state) => state.chat.mode);
   
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(false);

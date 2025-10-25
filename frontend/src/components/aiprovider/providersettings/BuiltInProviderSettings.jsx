@@ -58,7 +58,7 @@ const ACTION_MAP = {
 
 const BuiltInProviderSettings = ({ providerId, onRedetectOllama }) => {
   const dispatch = useDispatch();
-  const { availableModels, ollamaBaseUrl, deepseekApiKey, openrouterApiKey, siliconflowApiKey, aliyunApiKey } = useSelector((state) => state.chat);
+  const { availableModels, ollamaBaseUrl, deepseekApiKey, openrouterApiKey, siliconflowApiKey, aliyunApiKey } = useSelector((state) => state.chat.api);
 
   const config = PROVIDER_CONFIGS[providerId] || {};
 

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
-import { setAvailableModels, setSelectedModel } from '../../../store/slices/chatSlice';
+import { setAvailableModels, setSelectedModel } from '../../../store/slices/apiSlice';
 import useIpcRenderer from '../../../hooks/useIpcRenderer';
 import './ModelSelectorPanel.css';
 
