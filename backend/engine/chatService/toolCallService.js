@@ -110,10 +110,7 @@ function processToolCalls(finalToolCalls, currentSessionId) {
 
 // 构建工具消息
 function buildToolMessages(toolResultsArray) {
-  // **关键修复**：在映射之前过滤掉 end_task，因为它不应该有执行结果被发送回AI
-  const filteredToolResults = toolResultsArray.filter(item => item.toolName !== "end_task");
-
-  const toolMessages = filteredToolResults.map(item => {
+  const toolMessages = toolResultsArray.map(item => {
     // 确保 result 存在且有意义，避免创建空的 tool message
     if (!item.result) {
       return null;

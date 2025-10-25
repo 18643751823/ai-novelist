@@ -122,6 +122,9 @@ const messageSlice = createSlice({
                 content: msg.content,
                 className: 'tool-message',
                 sessionId: msg.sessionId,
+                tool_call_id: msg.tool_call_id, // 修复：恢复 tool_call_id 字段
+                toolCallId: msg.tool_call_id || msg.toolCallId, // 保持向后兼容
+                toolName: msg.toolName
             };
             newMessages.push(restoredToolMessage);
             
@@ -393,7 +396,8 @@ const messageSlice = createSlice({
             content: payload.content,
             className: 'tool-message',
             sessionId: payload.sessionId,
-            toolCallId: payload.toolCallId,
+            tool_call_id: payload.toolCallId, // 修复：使用标准的 tool_call_id 字段
+            toolCallId: payload.toolCallId,   // 保持向后兼容
             toolName: payload.toolName
           };
           currentMessages.push(toolMessage);

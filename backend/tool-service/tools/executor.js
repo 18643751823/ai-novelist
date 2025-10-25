@@ -18,8 +18,6 @@ async function callMcpTool(toolName, args) {
             case 'read_file':
                 result = await services.filesystem.readFile(args);
                 return { success: result.success, content: result.content };
-            case 'end_task': // 添加对 end_task 的处理
-                return { success: true, message: args.final_message || "任务已结束。" };
            case 'insert_content':
                result = await services.filesystem.insertContent(args);
                return { success: result.success, content: result.success ? "内容插入成功。" : result.error };
@@ -59,12 +57,6 @@ async function performToolExecution(toolCallId, toolName, toolArgs, mainWindow, 
                 finalMessage = `章节 '${chapterId}' 已创建/更新，并已加载到编辑框。`;
             } else if (toolName === "read_file") {
                 finalMessage = `文件 '${toolArgs.path}' 读取成功。`;
-            } else if (toolName === "end_task") {
-                // end_task 工具的执行结果不应被添加到 conversationHistory
-                // AI 已经通过 _sendAiResponseToFrontend('end_task', ...) 接收到最终消息
-                // 这里只需要返回一个成功的状态，不包含 content
-                finalMessage = toolResult.message || "任务已结束。";
-                return { result: { success: true, message: finalMessage } };
             } else if (toolName === "insert_content" || toolName === "search_and_replace" || toolName === "apply_diff") {
                // 对于这些文件修改工具，我们可以发送一个通用消息，并更新文件树
                mainWindow.webContents.send('update-current-file', toolArgs.path);

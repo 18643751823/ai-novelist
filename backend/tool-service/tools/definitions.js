@@ -49,23 +49,6 @@ const tools = [
   {
     type: "function",
     function: {
-      name: "end_task",
-      description: "表示当前多轮工具调用任务已完成，AI将给出最终回复并结束当前对话循环。",
-      parameters: {
-        type: "object",
-        properties: {
-          summary: {
-            type: "string",
-            description: "对已完成任务的最终总结性回复。"
-          }
-        },
-        required: ["summary"]
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
       name: "ask_user_question",
       description: "当AI需要用户提供更多信息时，向用户提问并提供可选答案。",
       parameters: {

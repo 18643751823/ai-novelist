@@ -17,7 +17,6 @@ const ToolCallCard = ({ toolCall }) => {
     const nameMap = {
       'write_file': '写入文件',
       'ask_user_question': '提问',
-      'end_task': '结束任务',
       'apply_diff': '应用差异',
       'insert_content': '插入内容',
     };

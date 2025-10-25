@@ -58,15 +58,10 @@ const toolSlice = createSlice({
     handleToolSuggestions: (state, action) => {
       const suggestions = action.payload;
       
-      // 处理 end_task 和 ask_user_question 特殊工具
-      const endTaskTool = suggestions.find(tool => tool.function && tool.function.name === 'end_task');
+      // 处理 ask_user_question 特殊工具
       const askUserQuestionTool = suggestions.find(tool => tool.function && tool.function.name === 'ask_user_question');
 
-      if (endTaskTool) {
-        // 如果是结束任务工具，清空待处理工具调用
-        state.pendingToolCalls = [];
-        state.toolCallState = 'idle';
-      } else if (askUserQuestionTool) {
+      if (askUserQuestionTool) {
         // 如果是提问工具，清空待处理工具调用
         state.pendingToolCalls = [];
         state.toolCallState = 'idle';

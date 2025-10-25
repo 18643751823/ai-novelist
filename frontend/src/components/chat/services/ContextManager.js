@@ -56,7 +56,7 @@ class ContextManager {
     }
 
     return messages
-      .filter(message => message && message.role && (message.content || message.tool_calls))
+      .filter(message => message && message.role && (message.content || message.tool_calls || message.toolCalls))
       .map(message => {
         const formattedMessage = {
           role: message.role,
@@ -66,10 +66,28 @@ class ContextManager {
 
         // 添加可选字段
         if (message.id) formattedMessage.id = message.id;
-        if (message.tool_calls) formattedMessage.tool_calls = message.tool_calls;
+        
+        // 关键修复：将前端的 toolCalls 字段转换为后端的 tool_calls 字段
+        if (message.tool_calls) {
+          formattedMessage.tool_calls = message.tool_calls;
+        } else if (message.toolCalls) {
+          // 将前端的 toolCalls 格式转换为标准的 tool_calls 格式
+          formattedMessage.tool_calls = message.toolCalls.map(toolCall => ({
+            id: toolCall.id,
+            type: toolCall.type || 'function',
+            function: toolCall.function || {
+              name: toolCall.toolName || 'unknown',
+              arguments: JSON.stringify(toolCall.toolArgs || {})
+            }
+          }));
+          console.log('[ContextManager] 已将 toolCalls 转换为 tool_calls:', formattedMessage.tool_calls);
+        }
+        
         if (message.tool_call_id) formattedMessage.tool_call_id = message.tool_call_id;
+        if (message.toolCallId) formattedMessage.tool_call_id = message.toolCallId; // 修复：兼容 toolCallId 字段
         if (message.name) formattedMessage.name = message.name;
         if (message.reasoning_content) formattedMessage.reasoning_content = message.reasoning_content;
+        if (message.toolName) formattedMessage.toolName = message.toolName; // 保留工具名称
 
         return formattedMessage;
       });
@@ -141,11 +159,14 @@ class ContextManager {
     return messages.map(message => {
       const sanitized = { ...message };
       
-      // 移除前端特定的字段
+      // 移除前端特定的字段，但保留工具相关的字段
       delete sanitized.sender;
       delete sanitized.text;
       delete sanitized.className;
       delete sanitized.isLoading;
+      
+      // 修复：确保 tool_call_id 和 toolCallId 字段不被删除
+      // 这些字段对于工具调用关联至关重要
       
       return sanitized;
     });
