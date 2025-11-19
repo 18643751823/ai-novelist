@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { useSelector, useDispatch } from 'react-redux';
-import { setShowGeneralSettingsModal } from '../store/slices/chatSlice';
+import {
+  setShowGeneralSettingsModal,
+  setShowApiSettingsModal
+} from '../store/slices/chatSlice';
 import TabBar from './editor/TabBar'; // 引入 TabBar
 import SidebarComponent from './SidebarComponent'; // 引入侧边栏组件
 import SplitViewPanel from './editor/SplitViewPanel'; // 引入分屏对比组件
@@ -9,7 +12,7 @@ import OverlayPanel from './OverlayPanel'; // 引入覆盖层组件
 import ProviderSettingsPanel from './aiprovider/ProviderSettingsPanel'; // 引入合并后的提供商设置面板
 import RagManagementPanel from './rag/RagManagementPanel'; // 引入RAG管理面板（已合并模态框功能）
 import AgentPanel from './agent/AgentPanel'; // 引入统一的Agent面板
-import WorkspacePanel from './workflow-editor/WorkspacePanel'; // 引入工作区面板
+// import WorkspacePanel from './workflow-editor/WorkspacePanel'; // 引入工作区面板 - 暂时注释掉
 import PersistentMemoryPanel from './insert/PersistentMemoryPanel'; // 引入持久记忆面板
 
 function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
@@ -20,15 +23,15 @@ function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
   const [rightPanelSize, setRightPanelSize] = useState(20);
   
   // 获取模态框状态
-  const showApiSettingsModal = useSelector(state => state.chat.showApiSettingsModal);
-  const showRagSettingsModal = useSelector(state => state.chat.showRagSettingsModal);
-  const showGeneralSettingsModal = useSelector(state => state.chat.showGeneralSettingsModal);
-  const showWorkspacePanel = useSelector(state => state.chat.showWorkspacePanel);
-  const showPersistentMemoryPanel = useSelector(state => state.chat.showPersistentMemoryPanel);
+  const showApiSettingsModal = useSelector(state => state.chat.ui.showApiSettingsModal);
+  const showRagSettingsModal = useSelector(state => state.chat.ui.showRagSettingsModal);
+  const showGeneralSettingsModal = useSelector(state => state.chat.ui.showGeneralSettingsModal);
+  // const showWorkspacePanel = useSelector(state => state.chat.ui.showWorkspacePanel); // 暂时注释掉
+  const showPersistentMemoryPanel = useSelector(state => state.chat.ui.showPersistentMemoryPanel);
   
   // 如果有任何模态框打开，就显示覆盖层
   const showOverlay = showApiSettingsModal || showRagSettingsModal ||
-                     showGeneralSettingsModal || showWorkspacePanel || showPersistentMemoryPanel;
+                     showGeneralSettingsModal || /* showWorkspacePanel || */ showPersistentMemoryPanel;
 
   // 处理左侧面板尺寸变化
   const handleLeftPanelChange = (size) => {
@@ -95,7 +98,10 @@ function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
       <OverlayPanel isVisible={showOverlay}>
         {/* 根据当前打开的模态框显示相应的内容 */}
         {showApiSettingsModal && (
-          <ProviderSettingsPanel isOpen={showApiSettingsModal} />
+          <ProviderSettingsPanel
+            isOpen={showApiSettingsModal}
+            onClose={() => dispatch(setShowApiSettingsModal(false))}
+          />
         )}
         {showRagSettingsModal && (
           <RagManagementPanel isOpen={showRagSettingsModal} />
@@ -103,9 +109,11 @@ function LayoutComponent({ chapterPanel, editorPanel, chatPanel }) {
         {showGeneralSettingsModal && (
           <AgentPanel isOpen={showGeneralSettingsModal} onClose={() => dispatch(setShowGeneralSettingsModal(false))} />
         )}
+        {/* 暂时注释掉工作流面板
         {showWorkspacePanel && (
           <WorkspacePanel isOpen={showWorkspacePanel} />
         )}
+        */}
         {showPersistentMemoryPanel && (
           <PersistentMemoryPanel />
         )}

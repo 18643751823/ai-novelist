@@ -4,7 +4,7 @@ import WorkflowCanvas from './WorkflowCanvas';
 import NodeLibrary from './NodeLibrary';
 import NodeConfigPanel from './NodeConfigPanel';
 import Toolbar from './Toolbar';
-import workflowIpcHandler from '../../../ipc/workflowIpcHandler';
+import workflowService from '../../../services/workflowService';
 
 const WorkflowEditor = () => {
   const [isRunning, setIsRunning] = useState(false);
@@ -43,7 +43,8 @@ const WorkflowEditor = () => {
       }
 
       // 验证工作流
-      const validationResult = await workflowIpcHandler.validateWorkflow(workflow);
+      // 验证工作流
+      const validationResult = await workflowService.validateWorkflow(workflow);
       if (!validationResult.success) {
         showNotification(`工作流验证失败: ${validationResult.error}`, 'error');
         setIsRunning(false);
@@ -58,7 +59,7 @@ const WorkflowEditor = () => {
       }
 
       // 执行工作流
-      const executionResult = await workflowIpcHandler.executeWorkflow(workflow, {});
+      const executionResult = await workflowService.executeWorkflow(workflow, {});
       
       if (executionResult.success) {
         showNotification('工作流执行成功', 'success');
@@ -66,7 +67,6 @@ const WorkflowEditor = () => {
       } else {
         showNotification(`工作流执行失败: ${executionResult.error}`, 'error');
       }
-
     } catch (error) {
       console.error('工作流执行错误:', error);
       showNotification(`执行错误: ${error.message}`, 'error');
@@ -83,7 +83,7 @@ const WorkflowEditor = () => {
         return;
       }
 
-      const saveResult = await workflowIpcHandler.saveWorkflow(workflow);
+      const saveResult = await workflowService.saveWorkflow(workflow);
       if (saveResult.success) {
         showNotification('工作流保存成功', 'success');
       } else {

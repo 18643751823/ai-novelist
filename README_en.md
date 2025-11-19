@@ -7,37 +7,33 @@
 ![Project Screenshot](images/示例图片.jpg)
 ## Project Introduction
 
-Qingzhu (Official Name) is a desktop application built on the Electron framework, aiming to be a writing version AI IDE.
+Qingzhu (Official Name) is an intelligent writing assistant tool with a Python backend and JavaScript frontend architecture, providing comprehensive writing support.
 
 **Core Features**:
-*   **AI Smart Interaction**: Real-time conversation with AI, from providing inspiration to content writing, revision and polishing, intelligent assistance throughout the entire writing process.
-*   **Chapter Management**: Users/AI can intuitively create, edit, delete, and organize novel chapters, clearly presenting the work's structure.
-*   **Content Editor**: Provides a basic text editing interface, supporting the writing and modification of novel content.
-*   **Writing Style Imitation**: Based on RAG technology, analyzes text fragments and imitates writing styles.
-*   **Tool Calling**: Supports calling tools to solve problems, similar to vibecoding.
+*   **AI Smart Interaction**: Real-time conversation with AI to assist in creative writing.
+*   **Chapter Management**: Create, edit, delete, and organize chapters.
+*   **Content Editor**: Rich text editor based on Tiptap.
+*   **Writing Style Imitation**: Based on RAG technology, retrieves text fragments to enhance AI capabilities.
+*   **Tool Calling**: Supports tool calling similar to vibecoding to solve problems, with some features still under development.
 
 ## Technology Stack
 
-*   **Electron**: Used to build cross-platform desktop applications, combining web technologies (HTML, CSS, JavaScript) with native capabilities.
-*   **React.js**: Frontend user interface framework, providing efficient component-based development patterns and excellent user experience.
-*   **Node.js**: Backend service runtime environment, responsible for handling AI interactions, file system operations, and IPC communication with the frontend.
-*   **AI API Integration**: Supports DeepSeek, Open Router, Ollama, Silicon Flow model providers, providing a unified interface calling experience.
-*   **LanceDB**: Vector database for RAG (Retrieval-Augmented Generation) functionality, providing semantic search and knowledge base management.
-*   **Redux**: Frontend state management library, used to uniformly manage the application's complex state.
-*   **Tiptap**: Excellent rich text editor.
-*   **electron-store**: Lightweight Electron configuration storage library, used to persist application settings, such as API Key.
-*   **LangChain**: Toolchain for building AI applications, currently has simple applications, and will further expand LangChain functionality implementation in the future.
+### Frontend Technologies
+*   **React**: Frontend user interface framework
+*   **Redux**: Frontend state management library
+*   **Tiptap**: Rich text editor framework
+
+### Backend Technologies
+*   **LangChain**: Toolchain for building AI applications
+*   **LangGraph**: Graph-based AI workflow orchestration framework
+*   **LiteLLM**: Unified AI model calling interface
+*   **LanceDB**: Vector database providing semantic search and knowledge base management
 
 
 
 ## Quick Start
 
-### Prerequisites
-
-*   Node.js (LTS version recommended)
-*   npm or yarn
-
-### Installation
+### Installation & Startup
 
 1.  **Clone the repository**:
     ```bash
@@ -46,34 +42,37 @@ Qingzhu (Official Name) is a desktop application built on the Electron framework
     ```
 
 
-2.  **Install dependencies**:
-    Execute in the project root directory (`ai-novelist/`):
-    ```bash
-    npm install
-    ```
-
-
-3.  **Install frontend dependencies**:
-    Enter the frontend directory (`frontend/`) and install dependencies:
+2.  **Install frontend dependencies**:
+    Enter the frontend directory (`frontend/`) and install dependencies, build frontend, and start:
     ```bash
     cd frontend
     npm install
-    ```
-
-4.  **Build frontend application**:
-    Return to the project root directory (`ai-novelist/`) and execute the build:
-    ```bash
-    cd ..
     npm run build
+    npm start
     ```
 
-### Running the Application
 
-**Start Electron application**:
-Execute in the project root directory (`ai-novelist/`):
-```bash
-npm run start:full
-```
+3.  **Install backend dependencies**:
+    From the root directory (`ai-novelist`), create a virtual environment, activate it, install backend dependencies, and start:
+    ```bash
+    python -m venv backend_env
+    backend_env\Scripts\activate
+    cd backend
+    pip install -r requirements.txt
+    python main.py
+    ```
+
+4.  **Install litellm gateway**:
+    Enter the root directory (`ai-novelist`), create a virtual environment (any name), install litellm, and start it. (Configure `backend/api_provider/config.yaml` yourself)
+    ```bash
+    python -m venv litellm_env
+    litellm_env\Scripts\activate
+    pip install 'litellm[proxy]'
+    litellm --config backend/api_provider/config.yaml --port 4000 --host 0.0.0.0 --debug
+    ```
+
+5.  **Browser Access**:
+    Access localhost:3000 in your browser
 
 
 

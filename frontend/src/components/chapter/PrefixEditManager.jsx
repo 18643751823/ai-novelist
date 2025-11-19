@@ -1,5 +1,5 @@
 import React from 'react';
-import chapterIpcHandler from '../../ipc/chapterIpcHandler';
+import chapterService from '../../services/chapterService';
 
 /**
  * 前缀编辑管理模块
@@ -57,19 +57,51 @@ const PrefixEditManager = ({
         return;
       }
 
-      // 移动项目到新位置
-      const [movedItem] = newOrder.splice(currentIndex, 1);
-      const newIndex = Math.min(Math.max(newPosition - 1, 0), newOrder.length);
-      newOrder.splice(newIndex, 0, movedItem);
+      // 分离文件和文件夹
+      const files = currentItems.filter(item => !item.isFolder);
+      const folders = currentItems.filter(item => item.isFolder);
+      
+      let newFileIds = [...files.map(item => item.id)];
+      let newFolderIds = [...folders.map(item => item.id)];
 
-      // 提取项目ID列表
-      const itemIds = newOrder.map(item => item.id);
+      // 根据项目类型和用户输入的位置重新计算实际位置
+      if (targetItem.isFolder) {
+        // 处理文件夹排序
+        const currentFolderIndex = newFolderIds.indexOf(targetItem.id);
+        if (currentFolderIndex !== -1) {
+          // 从原位置移除
+          newFolderIds.splice(currentFolderIndex, 1);
+          // 插入到新位置（文件夹从1开始编号）
+          const newFolderIndex = Math.min(Math.max(newPosition - 1, 0), newFolderIds.length);
+          newFolderIds.splice(newFolderIndex, 0, targetItem.id);
+        }
+      } else {
+        // 处理文件排序
+        const currentFileIndex = newFileIds.indexOf(targetItem.id);
+        if (currentFileIndex !== -1) {
+          // 从原位置移除
+          newFileIds.splice(currentFileIndex, 1);
+          // 插入到新位置（文件从1开始编号，独立于文件夹）
+          const newFileIndex = Math.min(Math.max(newPosition - 1, 0), newFileIds.length);
+          newFileIds.splice(newFileIndex, 0, targetItem.id);
+        }
+      }
 
       // 调用后端API更新排序顺序
-      const result = await chapterIpcHandler.updateItemOrder(
-        editingPrefix.currentPath || '',
-        itemIds
-      );
+      let result;
+      if (targetItem.isFolder) {
+        // 如果是文件夹，更新文件夹顺序
+        result = await chapterService.updateFolderOrder(
+          editingPrefix.currentPath || '',
+          newFolderIds
+        );
+      } else {
+        // 如果是文件，更新文件顺序
+        result = await chapterService.updateFileOrder(
+          editingPrefix.currentPath || '',
+          newFileIds
+        );
+      }
 
       if (result.success) {
         setNotificationMessage(result.message || '排序顺序更新成功！');

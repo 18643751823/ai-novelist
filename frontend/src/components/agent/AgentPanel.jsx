@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
@@ -11,16 +10,21 @@ import {
   resetAdditionalInfoForMode,
   setAiParametersForMode,
   resetAiParametersForMode,
-  setRagTableNames
+  // setRagTableNames, // 已废弃的RAG设置标签页相关
+  setAutoApproveEnabled,
+  setAutoApproveDelay,
+  setAutoApproveSettings
 } from '../../store/slices/chatSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUndo, faSave, faTimes, faPlus, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import useIpcRenderer from '../../hooks/useIpcRenderer';
+import useHttpService from '../../hooks/useHttpService';
 import useModeManager from './ModeManager';
 import NotificationModal from '../others/NotificationModal';
 import ConfirmationModal from '../others/ConfirmationModal';
 import ChatParameters from '././parameterTab/ChatParameters';
-import AgentRagTab from './ragTab/AgentRagTab';
+// import AgentRagTab from './ragTab/AgentRagTab'; // 已废弃的RAG设置标签页
+import ToolConfigTab from './toolTab/ToolConfigTab';
 import './AgentPanel.css';
 
 /**
@@ -29,6 +33,7 @@ import './AgentPanel.css';
 const AgentPanel = ({ isOpen = true, onClose }) => {
   const dispatch = useDispatch();
   const { invoke, getStoreValue, setStoreValue } = useIpcRenderer();
+  const { updateModeToolConfig } = useHttpService();
   
   // 统一使用Redux状态作为单一数据源
   const {
@@ -36,13 +41,17 @@ const AgentPanel = ({ isOpen = true, onClose }) => {
     modeFeatureSettings,
     additionalInfo,
     aiParameters,
-    contextLimitSettings
-  } = useSelector((state) => state.chat);
+    contextLimitSettings,
+    autoApproveSettings
+  } = useSelector((state) => state.chat.mode);
+  
+  // 工具配置状态管理
+  const [toolConfigs, setToolConfigs] = useState({});
   
   // UI状态 - 专注于展示和交互
   const [defaultPrompts, setDefaultPrompts] = useState({});
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
-  const [selectedMode, setSelectedMode] = useState('general');
+  const [selectedMode, setSelectedMode] = useState('outline');
   const [searchText, setSearchText] = useState('');
   const [showCustomModeForm, setShowCustomModeForm] = useState(false);
   const [editingMode, setEditingMode] = useState(null);
@@ -122,7 +131,7 @@ const AgentPanel = ({ isOpen = true, onClose }) => {
     dispatch(setAiParametersForMode({ mode, parameters: newParameters }));
   };
 
-  const handleRagSettingsChange = (newRagSettings) => {
+  /* const handleRagSettingsChange = (newRagSettings) => {
     // 直接更新Redux状态
     for (const mode of Object.keys(newRagSettings)) {
       const settings = newRagSettings[mode];
@@ -144,6 +153,14 @@ const AgentPanel = ({ isOpen = true, onClose }) => {
         }));
       }
     }
+  }; */
+  
+  // 处理工具配置变更
+  const handleToolConfigChange = (mode, newConfig) => {
+    setToolConfigs(prev => ({
+      ...prev,
+      [mode]: newConfig
+    }));
   };
 
   const handleReset = (mode) => {
@@ -152,19 +169,38 @@ const AgentPanel = ({ isOpen = true, onClose }) => {
     dispatch(resetAdditionalInfoForMode({ mode }));
   };
 
-  // 保存设置 - 直接使用Redux状态
+  // 保存设置 - 直接使用Redux状态和工具配置
   const handleSave = async () => {
     try {
-      console.log('[AgentPanel] 开始保存通用设置');
+      console.log('[AgentPanel] 开始保存通用设置和工具配置');
       
       // 保存到持久化存储 - 直接使用Redux状态
       await invoke('set-store-value', 'customPrompts', customPrompts);
       await invoke('set-store-value', 'modeFeatureSettings', modeFeatureSettings);
       await invoke('set-store-value', 'additionalInfo', additionalInfo);
       await invoke('set-store-value', 'aiParameters', aiParameters);
+      await invoke('set-store-value', 'autoApproveSettings', autoApproveSettings);
+      
+      // 保存工具配置到后端
+      for (const [mode, config] of Object.entries(toolConfigs)) {
+        if (config && config.enabled_tools) {
+          try {
+            const result = await updateModeToolConfig(mode, {
+              enabled_tools: config.enabled_tools
+            });
+            if (result.success) {
+              console.log(`模式 ${mode} 的工具配置保存成功`);
+            } else {
+              console.error(`模式 ${mode} 的工具配置保存失败:`, result.error);
+            }
+          } catch (error) {
+            console.error(`保存模式 ${mode} 的工具配置失败:`, error);
+          }
+        }
+      }
       
       // 通知保存成功
-      showNotification('通用设置保存成功！', true);
+      showNotification('通用设置和工具配置保存成功！', true);
     } catch (error) {
       console.error('保存通用设置失败:', error);
       showNotification('通用设置保存失败，请重试。', false);
@@ -294,7 +330,7 @@ const AgentPanel = ({ isOpen = true, onClose }) => {
   // 渲染标签页内容
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'rag':
+      /* case 'rag':
         return (
           <div className="tab-content">
             <AgentRagTab
@@ -302,6 +338,16 @@ const AgentPanel = ({ isOpen = true, onClose }) => {
               onRagSettingsChange={handleRagSettingsChange}
               customModes={modeManager.customModes}
               selectedMode={selectedMode}
+            />
+          </div>
+        ); */
+      case 'tools':
+        return (
+          <div className="tab-content">
+            <ToolConfigTab
+              mode={selectedMode}
+              modeType={selectedModeDetail.type}
+              onToolConfigChange={handleToolConfigChange}
             />
           </div>
         );
@@ -337,27 +383,6 @@ const AgentPanel = ({ isOpen = true, onClose }) => {
               </button>
             </div>
 
-            {/* 功能设置 */}
-            <div className="feature-settings">
-              <h4>功能设置:</h4>
-              
-              {/* 工具功能状态说明 */}
-              {selectedMode === 'general' ? (
-                <div className="feature-info">
-                  <strong>工具功能：始终启用</strong>
-                  <div className="feature-description">
-                    通用模式下AI可以自动使用工具进行文件操作、代码编辑等
-                  </div>
-                </div>
-              ) : (
-                <div className="feature-info">
-                  <strong>工具功能：禁用</strong>
-                  <div className="feature-description">
-                    此模式下AI仅提供对话功能，无法使用工具
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         );
     }
@@ -529,11 +554,17 @@ const AgentPanel = ({ isOpen = true, onClose }) => {
                     提示词设置
                   </button>
                   <button
+                    className={`tab-button ${activeTab === 'tools' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('tools')}
+                  >
+                    工具配置
+                  </button>
+                  {/* <button
                     className={`tab-button ${activeTab === 'rag' ? 'active' : ''}`}
                     onClick={() => setActiveTab('rag')}
                   >
                     RAG设置
-                  </button>
+                  </button> */}
                   <button
                     className={`tab-button ${activeTab === 'ai' ? 'active' : ''}`}
                     onClick={() => setActiveTab('ai')}

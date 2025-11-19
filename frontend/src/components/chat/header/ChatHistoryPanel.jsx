@@ -1,18 +1,17 @@
 import React, { memo, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-    setIsHistoryPanelVisible,
     restoreMessages,
-    setDeepSeekHistory
-} from '../../../store/slices/chatSlice';
-import useIpcRenderer from '../../../hooks/useIpcRenderer';
+    setSessionHistory,
+    setIsHistoryPanelVisible
+} from '../../../store/slices/messageSlice';
+import sessionService from '../../../services/sessionService';
 import ConfirmationModal from '../../others/ConfirmationModal';
 import './ChatHistoryPanel.css';
 
 const ChatHistoryPanel = memo(({ history }) => {
     const dispatch = useDispatch();
-    const { deepSeekHistory } = useSelector((state) => state.chat);
-    const { getDeepSeekChatHistory, deleteDeepSeekChatHistory } = useIpcRenderer();
+    const { sessionHistory } = useSelector((state) => state.chat.message);
     
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
     const [confirmationMessage, setConfirmationMessage] = useState('');
@@ -26,15 +25,40 @@ const ChatHistoryPanel = memo(({ history }) => {
 
     const handleSelectConversation = useCallback(async (sessionId) => {
         try {
-            const conversation = deepSeekHistory.find(conv => conv.sessionId === sessionId);
-            if (conversation) {
-                dispatch(restoreMessages(conversation.messages));
+            // 获取会话消息
+            const messagesResult = await sessionService.getSessionMessages(sessionId);
+            if (messagesResult.success) {
+                // 将消息转换为前端期望的格式
+                const messages = messagesResult.messages.map(msg => {
+                    // 将后端消息类型转换为前端角色
+                    let role;
+                    if (msg.message_type === 'human') {
+                        role = 'user';
+                    } else if (msg.message_type === 'ai') {
+                        role = 'assistant';
+                    } else {
+                        role = msg.message_type; // 'tool' 或其他类型
+                    }
+                    
+                    return {
+                        id: msg.message_id || `msg_${msg.index}`,
+                        role: role,
+                        content: msg.content,
+                        tool_calls: msg.tool_calls
+                    };
+                });
+                
+                dispatch(restoreMessages(messages));
                 dispatch(setIsHistoryPanelVisible(false));
+                
+                console.log(`已加载会话 ${sessionId}，包含 ${messages.length} 条消息`);
+            } else {
+                console.error('加载会话消息失败:', messagesResult.error);
             }
         } catch (error) {
-            console.error('Error selecting conversation:', error);
+            console.error('选择会话失败:', error);
         }
-    }, [dispatch, deepSeekHistory]);
+    }, [dispatch]);
 
     const handleDeleteConversation = useCallback(async (sessionId) => {
         setSessionIdToDelete(sessionId);
@@ -42,10 +66,18 @@ const ChatHistoryPanel = memo(({ history }) => {
         setOnConfirmCallback(() => async () => {
             setShowConfirmationModal(false);
             try {
-                await deleteDeepSeekChatHistory(sessionId);
-                // 重新加载历史记录
-                const updatedHistory = await getDeepSeekChatHistory();
-                dispatch(setDeepSeekHistory(updatedHistory));
+                // 使用会话服务删除会话
+                const result = await sessionService.deleteSession(sessionId);
+                if (result.success) {
+                    // 重新加载历史记录
+                    const sessionsResult = await sessionService.listSessions();
+                    if (sessionsResult.success) {
+                        // 直接使用后端返回的会话数据
+                        dispatch(setSessionHistory(sessionsResult.sessions));
+                    }
+                } else {
+                    console.error('删除会话失败:', result.error);
+                }
             } catch (error) {
                 console.error('Error deleting conversation:', error);
             }
@@ -55,7 +87,7 @@ const ChatHistoryPanel = memo(({ history }) => {
             setSessionIdToDelete(null);
         });
         setShowConfirmationModal(true);
-    }, [deleteDeepSeekChatHistory, getDeepSeekChatHistory, dispatch]);
+    }, [dispatch]);
 
     return (
         <div className="chat-history-panel">
@@ -63,27 +95,45 @@ const ChatHistoryPanel = memo(({ history }) => {
             <button className="close-history-panel-button" onClick={handleClosePanel}>
                 &times;
             </button>
-            {history.length === 0 ? (
+            {!history || !Array.isArray(history) || history.length === 0 ? (
                 <p className="no-history-message">暂无历史对话。</p>
             ) : (
                 <ul className="history-list">
                     {console.log('ChatHistoryPanel received history (before map):', history)}
-                    {history.map((conv, index) => {
-                        console.log(`Processing conv[${index}]:`, conv);
-                        console.log(`conv[${index}].messages:`, conv.messages);
+                    {history.map((session, index) => {
+                        console.log(`Processing session[${index}]:`, session);
+                        // 后端会话格式：session_id, created_at, last_accessed, message_count, is_current, preview
+                        const sessionId = session.session_id || session.sessionId;
+                        const messageCount = session.message_count || 0;
+                        const createdAt = session.created_at || '';
+                        const isCurrent = session.is_current || false;
+                        const preview = session.preview || '';
+                        
+                        // 格式化创建时间
+                        const formattedDate = createdAt ? new Date(createdAt).toLocaleString('zh-CN') : '未知时间';
+                        
                         return (
-                            <li key={conv.sessionId} className="history-item">
-                                <span onClick={() => handleSelectConversation(conv.sessionId)} className="history-text">
-                                    {/* 检查 conv.messages 是否存在且为数组，并有内容。优先使用 content，否则使用 text */}
-                                    {conv && conv.messages && Array.isArray(conv.messages) && conv.messages.length > 0 ?
-                                        (conv.messages[0].content || conv.messages[0].text || '[无内容]').substring(0, 20) : '无内容'}...
-                                </span>
-                                <button
-                                    className="delete-button"
-                                    onClick={() => handleDeleteConversation(conv.sessionId)}
+                            <li key={sessionId} className={`history-item ${isCurrent ? 'current-session' : ''}`}>
+                                <div
+                                    className="history-text"
+                                    onClick={() => handleSelectConversation(sessionId)}
                                 >
-                                    &times;
-                                </button>
+                                    <div className="session-preview">{preview || `会话: ${sessionId}`}</div>
+                                    <div className="session-info">
+                                        <span className="message-count">{messageCount} 条消息</span>
+                                        <span className="created-time">{formattedDate}</span>
+                                    </div>
+                                    {isCurrent && <span className="current-badge">当前</span>}
+                                </div>
+                                {!isCurrent && (
+                                    <button
+                                        className="delete-button"
+                                        onClick={() => handleDeleteConversation(sessionId)}
+                                        title="删除此会话"
+                                    >
+                                        &times;
+                                    </button>
+                                )}
                             </li>
                         );
                     })}

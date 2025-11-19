@@ -18,13 +18,13 @@ const AgentRagTab = ({
   ragSettings = {},
   onRagSettingsChange,
   customModes = [],
-  selectedMode = 'general'
+  selectedMode = 'outline'
 }) => {
   const dispatch = useDispatch();
   const { invoke } = useIpcRenderer();
   const {
     modeFeatureSettings
-  } = useSelector((state) => state.chat);
+  } = useSelector((state) => state.chat.mode);
   
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -51,7 +51,6 @@ const AgentRagTab = ({
   // 获取当前选中模式的显示名称
   const getCurrentModeDisplayName = () => {
     const names = {
-      general: '通用',
       outline: '细纲',
       writing: '写作',
       adjustment: '调整'
@@ -123,7 +122,6 @@ const AgentRagTab = ({
 
   const getModeDisplayName = (mode) => {
     const names = {
-      general: '通用',
       outline: '细纲',
       writing: '写作',
       adjustment: '调整'

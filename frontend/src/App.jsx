@@ -5,40 +5,74 @@ import LayoutComponent from './components/LayoutComponent';
 import EditorPanel from './components/editor/EditorPanel';
 import ChatPanel from './components/chat/ChatPanel';
 import ChapterTreePanel from './components/chapter/ChapterTreePanel';
-import { registerMainIpcListeners } from './ipc/mainIpcHandler'; // 导入新的 IPC 处理模块
+import { registerWebSocketListeners } from './services/websocketListener'; // 导入新的 WebSocket 处理模块
+import websocketClient from './services/websocketClient'; // 导入 WebSocket 客户端
 import { setNovelContent, setCurrentFile, triggerChapterRefresh } from './store/slices/novelSlice';
-import useIpcRenderer from './hooks/useIpcRenderer';
+import useHttpService from './hooks/useHttpService';
 import {
-  setCustomPromptForMode,
-  setModeFeatureSetting,
-  setRagTableNames,
-  setAdditionalInfoForMode,
-  setSelectedModel,
-  setSelectedProvider,
   setDeepseekApiKey,
   setOpenrouterApiKey,
   setAliyunEmbeddingApiKey,
-  setIntentAnalysisModel,
-  setEnableStream,
-  setContextLimitSettings,
-  setAiParametersForMode,
   setCustomProviders
-} from './store/slices/chatSlice';
+} from './store/slices/apiSlice';
+import { setEnableStream } from './store/slices/toolSlice';
+import {
+  setCustomPromptForMode,
+  setAdditionalInfoForMode,
+  setAiParametersForMode,
+  setContextLimitSettings
+} from './store/slices/modeSlice';
 
 function App() {
   const dispatch = useDispatch();
+  const { openTabs, activeTabId } = useSelector((state) => state.novel);
 
-  const { getStoreValue } = useIpcRenderer();
+  const { getStoreValue, invoke } = useHttpService();
 
   // 添加快捷键监听器
   useEffect(() => {
     const handleKeyDown = (event) => {
+      // Ctrl+S 保存编辑器内容
+      if (event.ctrlKey && event.key === 's') {
+        event.preventDefault(); // 阻止浏览器默认保存行为
+        
+        // 获取当前活动标签页
+        const activeTab = openTabs.find(tab => tab.id === activeTabId);
+        
+        if (activeTab && activeTab.isDirty) {
+          console.log('[App] Ctrl+S pressed - 保存编辑器内容:', activeTab.title);
+          
+          // 使用HTTP服务保存文件
+          console.log('[App] 使用HTTP服务保存文件');
+          invoke('save-novel-content', activeTab.id, activeTab.content)
+            .then(result => {
+              if (result.success) {
+                console.log('[App] 文件保存成功');
+                // 更新标签页状态为已保存
+                dispatch({
+                  type: 'novel/updateTabContent',
+                  payload: {
+                    tabId: activeTab.id,
+                    content: activeTab.content,
+                    isDirty: false
+                  }
+                });
+              } else {
+                console.error('[App] 文件保存失败:', result.error);
+              }
+            })
+            .catch(error => {
+              console.error('[App] 保存文件时发生错误:', error);
+            });
+        } else {
+          console.log('[App] Ctrl+S pressed - 没有需要保存的内容');
+        }
+      }
+      
       // Ctrl+Shift+I 或 F12 切换开发者工具
       if ((event.ctrlKey && event.shiftKey && event.key === 'I') || event.key === 'F12') {
         event.preventDefault();
-        if (window.electron && window.electron.toggleDevTools) {
-          window.electron.toggleDevTools();
-        }
+        // 开发者工具功能在浏览器环境中不可用
       }
     };
 
@@ -47,31 +81,20 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [openTabs, activeTabId, invoke, dispatch]);
 
   useEffect(() => {
-    const cleanupListeners = registerMainIpcListeners(dispatch); // 注册 IPC 监听器
+    const cleanupListeners = registerWebSocketListeners(dispatch); // 注册 WebSocket 监听器
 
+    // 启动 WebSocket 连接
+    console.log('[App] 启动 WebSocket 连接');
+    websocketClient.connect();
 
     // 项目启动时加载所有设置
     const loadAppSettings = async () => {
       try {
         console.log('[App] 开始从存储加载设置...');
-        const [
-          storedCustomPrompts,
-          storedModeFeatureSettings,
-          storedAdditionalInfo,
-          storedSelectedModel,
-          storedSelectedProvider,
-          storedDeepseekApiKey,
-          storedOpenrouterApiKey,
-          storedAliyunEmbeddingApiKey,
-          storedIntentAnalysisModel,
-          storedEnableStream,
-          storedContextLimitSettings,
-          storedAiParameters,
-          storedCustomProviders
-        ] = await Promise.all([
+        const results = await Promise.all([
           getStoreValue('customPrompts'),
           getStoreValue('modeFeatureSettings'),
           getStoreValue('additionalInfo'),
@@ -87,6 +110,21 @@ function App() {
           getStoreValue('customProviders')
         ]);
 
+        // 提取实际的值
+        // 提取实际的值（getStoreValue现在直接返回值，不再返回嵌套对象）
+        const storedCustomPrompts = results[0] !== null && results[0] !== undefined ? results[0] : null;
+        const storedModeFeatureSettings = results[1] !== null && results[1] !== undefined ? results[1] : null;
+        const storedAdditionalInfo = results[2] !== null && results[2] !== undefined ? results[2] : null;
+        const storedSelectedModel = results[3] !== null && results[3] !== undefined ? results[3] : null;
+        const storedSelectedProvider = results[4] !== null && results[4] !== undefined ? results[4] : null;
+        const storedDeepseekApiKey = results[5] !== null && results[5] !== undefined ? results[5] : null;
+        const storedOpenrouterApiKey = results[6] !== null && results[6] !== undefined ? results[6] : null;
+        const storedAliyunEmbeddingApiKey = results[7] !== null && results[7] !== undefined ? results[7] : null;
+        const storedIntentAnalysisModel = results[8] !== null && results[8] !== undefined ? results[8] : null;
+        const storedEnableStream = results[9] !== null && results[9] !== undefined ? results[9] : null;
+        const storedContextLimitSettings = results[10] !== null && results[10] !== undefined ? results[10] : null;
+        const storedAiParameters = results[11] !== null && results[11] !== undefined ? results[11] : null;
+        const storedCustomProviders = results[12] !== null && results[12] !== undefined ? results[12] : null;
         console.log('[App] 从存储获取的设置:');
         console.log('[App] customPrompts:', JSON.stringify(storedCustomPrompts, null, 2));
         console.log('[App] modeFeatureSettings:', JSON.stringify(storedModeFeatureSettings, null, 2));
@@ -100,16 +138,8 @@ function App() {
           });
         }
         
-        if (storedModeFeatureSettings) {
-          Object.entries(storedModeFeatureSettings).forEach(([mode, settings]) => {
-            if (settings.ragRetrievalEnabled !== undefined) {
-              dispatch(setModeFeatureSetting({ mode, feature: 'ragRetrievalEnabled', enabled: settings.ragRetrievalEnabled }));
-            }
-            if (settings.ragTableNames !== undefined) {
-              dispatch(setRagTableNames({ mode, tableNames: settings.ragTableNames }));
-            }
-          });
-        }
+        // 注意：setModeFeatureSetting 和 setRagTableNames 不再可用
+        // 如果需要这些功能，需要在 modeSlice 中添加相应的 actions
         
         if (storedAdditionalInfo) {
           Object.entries(storedAdditionalInfo).forEach(([mode, info]) => {
@@ -137,22 +167,10 @@ function App() {
         // 加载其他设置
         console.log(`[App] 从存储加载的selectedModel: "${storedSelectedModel}"`);
         console.log(`[App] 从存储加载的selectedProvider: "${storedSelectedProvider}"`);
-        if (storedSelectedModel) {
-          dispatch(setSelectedModel(storedSelectedModel));
-          console.log(`[App] 已分发setSelectedModel: "${storedSelectedModel}"`);
-        } else {
-          console.log('[App] storedSelectedModel为空，未分发');
-        }
-        if (storedSelectedProvider) {
-          dispatch(setSelectedProvider(storedSelectedProvider));
-          console.log(`[App] 已分发setSelectedProvider: "${storedSelectedProvider}"`);
-        } else {
-          console.log('[App] storedSelectedProvider为空，未分发');
-        }
+        // 注意：setSelectedModel 和 setSelectedProvider 已废弃，不再分发
         if (storedDeepseekApiKey) dispatch(setDeepseekApiKey(storedDeepseekApiKey));
         if (storedOpenrouterApiKey) dispatch(setOpenrouterApiKey(storedOpenrouterApiKey));
         if (storedAliyunEmbeddingApiKey) dispatch(setAliyunEmbeddingApiKey(storedAliyunEmbeddingApiKey));
-        if (storedIntentAnalysisModel) dispatch(setIntentAnalysisModel(storedIntentAnalysisModel));
         if (storedEnableStream !== undefined) dispatch(setEnableStream(storedEnableStream !== false));
         
         // 加载上下文限制设置

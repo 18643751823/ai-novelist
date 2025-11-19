@@ -12,7 +12,8 @@ import ModalManager from '../others/ModalManager';
 import CheckpointPanel from './CheckpointPanel';
 import { faHistory } from '@fortawesome/free-solid-svg-icons';
 import FileOperations from './FileOperations';
-import chapterIpcHandler from '../../ipc/chapterIpcHandler';
+import chapterService from '../../services/chapterService.js';
+import configStoreService from '../../services/configStoreService.js';
 import PrefixEditManager from './PrefixEditManager';
 import ChapterTreeRenderer from './ChapterTreeRenderer';
 import SettingsManager from './SettingsManager';
@@ -60,7 +61,7 @@ function ChapterTreePanel() {
   // 获取 API Key
   useEffect(() => {
     const getApiKey = async () => {
-      const result = await chapterIpcHandler.getApiKey();
+      const result = await configStoreService.getApiKey();
       if (result.success) {
         setApiKey(result.apiKey);
       } else {
@@ -72,7 +73,7 @@ function ChapterTreePanel() {
 
   // 获取章节列表
   const fetchChapters = useCallback(async () => {
-    const result = await chapterIpcHandler.getChapters();
+    const result = await chapterService.getChapters();
     if (result.success) {
       dispatch(setChapters(result.chapters));
     } else {
@@ -82,6 +83,7 @@ function ChapterTreePanel() {
 
   // 辅助函数：根据文件名获取显示名称
   const getDisplayName = useCallback((name, isFolder) => {
+    if (!name) return '';
     if (isFolder) {
       return name;
     }
@@ -145,11 +147,11 @@ function ChapterTreePanel() {
     setFileOperations(operations);
   }, [fetchChapters, dispatch, setNotificationMessage, setShowNotificationModal]);
 
-  // 注册 IPC 监听器和初始加载
+  // 注册章节更新监听器和初始加载
   useEffect(() => {
     fetchChapters();
     
-    const cleanup = chapterIpcHandler.onChaptersUpdated((chapters) => {
+    const cleanup = chapterService.onChaptersUpdated((chapters) => {
       dispatch(setChapters(chapters));
     });
     
@@ -284,10 +286,10 @@ function ChapterTreePanel() {
   return (
     <div className="chapter-tree-panel-container">
       <div className="chapter-tree-panel-header">
-        <button className="new-file-button" onClick={() => handleNewFile()}>
+        <button className="new-file-button" onClick={() => handleNewFile()} title="新建文件">
           <CombinedIcon baseIcon="file" overlayIcon="plus" size="sm" />
         </button>
-        <button className="new-folder-button" onClick={() => handleNewFolder()}>
+        <button className="new-folder-button" onClick={() => handleNewFolder()} title="新建文件夹">
           <CombinedIcon baseIcon="folder" overlayIcon="plus" size="sm" />
         </button>
         <button className="refresh-button" onClick={fetchChapters} title="刷新章节列表">
@@ -336,7 +338,7 @@ function ChapterTreePanel() {
 
       {/* 设置按钮区域 */}
       <div className="settings-button-area">
-        <button className="settings-button" onClick={settingsManager.handleToggleSettings}>
+        <button className="settings-button" onClick={settingsManager.handleToggleSettings} title="设置">
           <FontAwesomeIcon icon={faGear} />
         </button>
       </div>

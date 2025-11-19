@@ -1,25 +1,40 @@
-import React, { useRef, useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { deleteMessage, restoreMessages, updateMessageContent } from '../../../store/slices/chatSlice';
-import { restoreChatCheckpoint } from '../../../ipc/checkpointIpcHandler';
+import React, { useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { deleteMessage, restoreMessages } from '../../../store/slices/chatSlice';
+import { toggleToolMessageCollapse } from '../../../store/slices/messageSlice';
+import checkpointService from '../../../services/checkpointService';
 import { ToolCallCard } from '../services/ToolCallManager';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCopy, faTrashCan, faSpinner, faClock, faEdit, faSave } from '@fortawesome/free-solid-svg-icons';
-import MarkdownMessageRenderer from './MarkdownMessageRenderer';
+import { faCopy, faTrashCan, faSpinner, faClock, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
+import ReactMarkdownMessageRenderer from './ReactMarkdownMessageRenderer';
 
 // 消息显示组件
-const MessageDisplay = ({
+const MessageDisplay = React.forwardRef(({
   messages,
   currentMode,
   currentSessionId,
   onSetConfirmation,
   onSetNotification,
   onEnterAdjustmentMode
-}) => {
+}, ref) => {
   const dispatch = useDispatch();
-  const [editingMessageId, setEditingMessageId] = useState(null);
-  const [editedContent, setEditedContent] = useState('');
-  const editorRefs = useRef({});
+  
+  // 获取tool消息折叠状态
+  const collapsedToolMessages = useSelector((state) => state.chat.message.collapsedToolMessages);
+
+  // 简化：直接返回消息内容，因为新的渲染器不需要编辑器实例
+  const getAllMessagesLatestContent = () => {
+    return messages.map(msg => ({
+      ...msg,
+      content: msg.content || msg.text || '',
+      text: msg.content || msg.text || ''
+    }));
+  };
+
+  // 提供获取最新内容的方法给父组件
+  React.useImperativeHandle(ref, () => ({
+    getAllMessagesLatestContent
+  }));
 
   const handleCopyMessage = (content) => {
     navigator.clipboard.writeText(content);
@@ -37,36 +52,22 @@ const MessageDisplay = ({
     });
   };
 
-  const handleEditMessage = (messageId, content) => {
-    setEditingMessageId(messageId);
-    setEditedContent(content);
-  };
-
-  const handleSaveMessage = (messageId) => {
-    if (editedContent.trim()) {
-      dispatch(updateMessageContent({ messageId, content: editedContent }));
-    }
-    setEditingMessageId(null);
-    setEditedContent('');
-  };
-
-  const handleCancelEdit = () => {
-    setEditingMessageId(null);
-    setEditedContent('');
-  };
-
-  const handleContentChange = (content) => {
-    setEditedContent(content);
-  };
 
   // 渲染AI消息
   const renderAIMessage = (msg) => {
-    const isEditing = editingMessageId === msg.id;
-    const content = isEditing ? editedContent : (msg.content || msg.text || '');
-    
+    const content = msg.content || msg.text || '';
     return (
       <>
-        <div className="message-header">AI:</div>
+        <div className="message-header">
+          AI:
+          {/* 流式传输时在消息头部显示加载指示器 */}
+          {msg.isLoading && (
+            <div className="streaming-indicator-header">
+              <FontAwesomeIcon icon={faSpinner} spin className="ai-typing-spinner" />
+              <span className="streaming-text">AI正在思考中...</span>
+            </div>
+          )}
+        </div>
         {msg.reasoning_content && (
           <details className="reasoning-details">
             <summary className="reasoning-summary">思考过程 (点击展开)</summary>
@@ -90,22 +91,11 @@ const MessageDisplay = ({
         )}
 
         <div className="message-content">
-          {/* 如果没有工具调用，则在文本流式传输时显示加载图标 */}
-          {msg.isLoading && (!msg.toolCalls || msg.toolCalls.length === 0) && (
-            <FontAwesomeIcon icon={faSpinner} spin className="ai-typing-spinner" />
-          )}
-          
-          {/* 使用Markdown渲染器显示消息内容 */}
-          {!msg.isLoading && (
-            <MarkdownMessageRenderer
-              ref={(el) => {
-                if (el) editorRefs.current[msg.id] = el;
-              }}
-              value={content}
-              onChange={isEditing ? handleContentChange : undefined}
-              height="auto"
-            />
-          )}
+          {/* 使用ReactMarkdown渲染器显示消息内容 - 流式传输时也显示内容 */}
+          <ReactMarkdownMessageRenderer
+            value={content}
+            isStreaming={msg.isLoading} // 传递流式传输状态
+          />
         </div>
 
         {/* 正文生成后的选项按钮 */}
@@ -116,84 +106,84 @@ const MessageDisplay = ({
         )}
         
         <div className="message-actions">
-          {!isEditing ? (
-            <>
-              <button title="编辑" onClick={() => handleEditMessage(msg.id, msg.content || msg.text)}>
-                <FontAwesomeIcon icon={faEdit} />
-              </button>
-              <button title="复制" onClick={() => handleCopyMessage(msg.content || msg.text)}>
-                <FontAwesomeIcon icon={faCopy} />
-              </button>
-              <button title="删除" onClick={() => handleDeleteMessage(msg.id)}>
-                <FontAwesomeIcon icon={faTrashCan} />
-              </button>
-            </>
-          ) : (
-            <>
-              <button title="保存" onClick={() => handleSaveMessage(msg.id)}>
-                <FontAwesomeIcon icon={faSave} />
-              </button>
-              <button title="取消" onClick={handleCancelEdit}>
-                <FontAwesomeIcon icon={faTrashCan} />
-              </button>
-            </>
-          )}
+          <button title="复制" onClick={() => handleCopyMessage(msg.content || msg.text)}>
+            <FontAwesomeIcon icon={faCopy} />
+          </button>
+          <button title="删除" onClick={() => handleDeleteMessage(msg.id)}>
+            <FontAwesomeIcon icon={faTrashCan} />
+          </button>
+        </div>
+      </>
+    );
+  };
+  // 渲染系统消息
+  const renderSystemMessage = (msg) => {    
+    return (
+      <>
+        <div className="message-header">系统: {msg.name ? `${msg.name}` : ''}</div>
+        <div className="message-content">
+          {msg.text || msg.content}
         </div>
       </>
     );
   };
 
-  // 渲染系统消息
-  const renderSystemMessage = (msg) => (
-    <>
-      <div className="message-header">系统: {msg.name ? `${msg.name}` : ''}</div>
-      <div className="message-content">
-        {msg.text || msg.content}
-      </div>
-    </>
-  );
-
+  // 渲染工具消息
+  const renderToolMessage = (msg) => {
+    const content = msg.content || msg.text || '[工具执行结果]';
+    const isCollapsed = collapsedToolMessages[msg.id];
+    
+    return (
+      <>
+        <div className="message-header">
+          <div className="tool-message-header-content">
+            <span>工具执行结果: {msg.toolName ? `${msg.toolName}` : ''}</span>
+            <button
+              className="collapse-toggle-button"
+              onClick={() => dispatch(toggleToolMessageCollapse({ messageId: msg.id }))}
+              title={isCollapsed ? '展开' : '折叠'}
+            >
+              <FontAwesomeIcon icon={isCollapsed ? faChevronDown : faChevronUp} />
+            </button>
+          </div>
+        </div>
+        {!isCollapsed && (
+          <div className="message-content">
+            <ReactMarkdownMessageRenderer
+              value={content}
+            />
+          </div>
+        )}
+        <div className="message-actions">
+          <button title="复制" onClick={() => handleCopyMessage(msg.content || msg.text)}>
+            <FontAwesomeIcon icon={faCopy} />
+          </button>
+          <button title="删除" onClick={() => handleDeleteMessage(msg.id)}>
+            <FontAwesomeIcon icon={faTrashCan} />
+          </button>
+        </div>
+      </>
+    );
+  };
   // 渲染用户消息
   const renderUserMessage = (msg) => {
-    const isEditing = editingMessageId === msg.id;
-    const content = isEditing ? editedContent : (msg.content || msg.text || '[消息内容缺失]');
+    const content = msg.content || msg.text || '[消息内容缺失]';
     
     return (
       <>
         <div className="message-header">用户:</div>
         <div className="message-content">
-          <MarkdownMessageRenderer
-            ref={(el) => {
-              if (el) editorRefs.current[msg.id] = el;
-            }}
+          <ReactMarkdownMessageRenderer
             value={content}
-            onChange={isEditing ? handleContentChange : undefined}
-            height="auto"
           />
         </div>
         <div className="message-actions">
-          {!isEditing ? (
-            <>
-              <button title="编辑" onClick={() => handleEditMessage(msg.id, msg.content || msg.text)}>
-                <FontAwesomeIcon icon={faEdit} />
-              </button>
-              <button title="复制" onClick={() => handleCopyMessage(msg.content || msg.text)}>
-                <FontAwesomeIcon icon={faCopy} />
-              </button>
-              <button title="删除" onClick={() => handleDeleteMessage(msg.id)}>
-                <FontAwesomeIcon icon={faTrashCan} />
-              </button>
-            </>
-          ) : (
-            <>
-              <button title="保存" onClick={() => handleSaveMessage(msg.id)}>
-                <FontAwesomeIcon icon={faSave} />
-              </button>
-              <button title="取消" onClick={handleCancelEdit}>
-                <FontAwesomeIcon icon={faTrashCan} />
-              </button>
-            </>
-          )}
+          <button title="复制" onClick={() => handleCopyMessage(msg.content || msg.text)}>
+            <FontAwesomeIcon icon={faCopy} />
+          </button>
+          <button title="删除" onClick={() => handleDeleteMessage(msg.id)}>
+            <FontAwesomeIcon icon={faTrashCan} />
+          </button>
         </div>
       </>
     );
@@ -213,7 +203,7 @@ const MessageDisplay = ({
                     onConfirm: async () => {
                       const taskId = msg.sessionId || currentSessionId || 'default-task';
                       console.log(`Restoring checkpoint ${msg.checkpointId} for task ${taskId}...`);
-                      const result = await restoreChatCheckpoint(taskId, msg.checkpointId);
+                      const result = await checkpointService.restoreCheckpoint(msg.checkpointId);
                       if (result.success) {
                         // **关键修复**: 调用新的 restoreMessages action 来重构历史状态
                         if (result.messages) {
@@ -241,6 +231,8 @@ const MessageDisplay = ({
             renderSystemMessage(msg)
           ) : msg.role === 'assistant' ? (
             renderAIMessage(msg)
+          ) : msg.role === 'tool' ? (
+            renderToolMessage(msg)
           ) : (
             renderUserMessage(msg)
           )}
@@ -248,6 +240,6 @@ const MessageDisplay = ({
       ))}
     </div>
   );
-};
+});
 
 export default MessageDisplay;

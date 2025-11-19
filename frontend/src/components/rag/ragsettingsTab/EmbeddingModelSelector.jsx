@@ -4,6 +4,7 @@ import { setEmbeddingModel, setRagEmbeddingModel } from '../../../store/slices/c
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faSync, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import useIpcRenderer from '../../../hooks/useIpcRenderer';
+import configStoreService from '../../../services/configStoreService';
 import './EmbeddingModelSelector.css';
 
 const EmbeddingModelSelector = ({
@@ -29,9 +30,48 @@ const EmbeddingModelSelector = ({
     return uniqueProviders.sort();
   }, [availableModels]);
 
-  // 过滤模型
+  // 检查是否为嵌入模型 - 完全在前端识别
+  const isEmbeddingModel = (model) => {
+    // 首先检查模型是否明确标记为嵌入模型
+    if (model.isEmbedding === true) {
+      return true;
+    }
+    
+    const modelLower = model.id.toLowerCase();
+    const modelNameLower = model.name ? model.name.toLowerCase() : '';
+    
+    // 嵌入模型关键词列表
+    const embeddingKeywords = [
+      'embedding', 'embed', 'bge', 'multilingual-e5', 'text-embedding',
+      'ada-002', 'text-embed', 'instructor', 'sentence', 'vector',
+      'embeddings', 'embed-model', 'embedding-model', 'e5', 'mpnet', 'minilm'
+    ];
+    
+    // 检查模型ID或名称是否包含嵌入关键词
+    const hasEmbeddingKeyword = embeddingKeywords.some(keyword =>
+      modelLower.includes(keyword) || modelNameLower.includes(keyword)
+    );
+    
+    // 检查是否为已知的嵌入模型
+    const knownEmbeddingModels = [
+      'text-embedding-ada-002', 'text-embedding-3-small', 'text-embedding-3-large',
+      'bge-large-en', 'bge-large-zh', 'multilingual-e5-large', 'instructor-xl',
+      'all-mpnet-base-v2', 'all-MiniLM-L6-v2', 'text-embedding-ada-002-v2',
+      'text-embedding-3-small', 'text-embedding-3-large', 'bge-small-en',
+      'bge-base-en', 'bge-large-en-v1.5', 'bge-large-zh-v1.5'
+    ];
+    
+    const isKnownEmbeddingModel = knownEmbeddingModels.some(knownModel =>
+      modelLower.includes(knownModel.toLowerCase())
+    );
+    
+    return hasEmbeddingKeyword || isKnownEmbeddingModel;
+  };
+
+  // 过滤模型 - 只显示嵌入模型
   const filteredModels = useMemo(() => {
-    let filtered = availableModels;
+    // 首先筛选出嵌入模型
+    let filtered = availableModels.filter(model => isEmbeddingModel(model));
     
     // 按搜索文本过滤
     if (searchText) {
@@ -47,7 +87,7 @@ const EmbeddingModelSelector = ({
     }
     
     return filtered;
-  }, [availableModels, searchText, selectedProvider]);
+  }, [availableModels, searchText, selectedProvider, isEmbeddingModel]);
 
   // 处理模型选择
   const handleModelSelect = async (modelId) => {
@@ -57,15 +97,39 @@ const EmbeddingModelSelector = ({
     try {
       dispatch(setEmbeddingModel(modelId));
       dispatch(setRagEmbeddingModel(modelId)); // 同时更新RAG状态
-      await setStoreValue('embeddingModel', modelId);
       
-      // 重新初始化嵌入函数以确保新模型立即生效
+      // 获取模型对应的URL
+      let embeddingUrl = 'http://127.0.0.1:4000'; // 默认URL
+      
+      // 尝试从后端API获取模型URL
       try {
-        await invoke('reinitialize-embedding-function');
-        console.log(`[嵌入模型选择器] 嵌入函数已重新初始化，使用模型: ${modelId}`);
+        const result = await configStoreService.getModelUrl(modelId);
+        if (result.success && result.url) {
+          embeddingUrl = result.url;
+        }
       } catch (error) {
-        console.warn('重新初始化嵌入函数时出错:', error);
+        console.warn('获取模型URL失败，使用默认URL:', error);
       }
+      
+      // 获取模型对应的API密钥
+      let embeddingApiKey = ''; // 默认为空
+      
+      // 尝试从后端API获取模型API密钥
+      try {
+        const result = await configStoreService.getModelApiKey(modelId);
+        if (result.success && result.apiKey) {
+          embeddingApiKey = result.apiKey;
+        }
+      } catch (error) {
+        console.warn('获取模型API密钥失败，使用默认空值:', error);
+      }
+      
+      // 同时保存模型ID、URL和API密钥
+      await setStoreValue('embeddingModel', modelId);
+      await setStoreValue('embeddingUrl', embeddingUrl);
+      await setStoreValue('embeddingApiKey', embeddingApiKey);
+      console.log(`到底存了密钥没有？${embeddingApiKey}`)
+      console.log(`已保存嵌入模型: ${modelId}, URL: ${embeddingUrl}, API Key: ${embeddingApiKey ? '已设置' : '未设置'}`);
     } catch (error) {
       console.error('保存嵌入模型失败:', error);
     }
@@ -104,6 +168,11 @@ const EmbeddingModelSelector = ({
   const handleGetDimensions = async (modelId, e) => {
     e.stopPropagation();
     
+    // 如果已经获取过维度，不再重复获取
+    if (modelDimensions[modelId]) {
+      return;
+    }
+    
     setLoadingDimensions(prev => ({ ...prev, [modelId]: true }));
     setDimensionErrors(prev => ({ ...prev, [modelId]: null }));
     
@@ -120,16 +189,6 @@ const EmbeddingModelSelector = ({
     } finally {
       setLoadingDimensions(prev => ({ ...prev, [modelId]: false }));
     }
-  };
-
-  // 检查是否为嵌入模型
-  const isEmbeddingModel = (model) => {
-    const modelLower = model.id.toLowerCase();
-    return modelLower.includes('embedding') ||
-           modelLower.includes('embed') ||
-           modelLower.includes('bge') ||
-           modelLower.includes('multilingual-e5') ||
-           model.isEmbedding;
   };
 
   // 渲染当前选择模型显示

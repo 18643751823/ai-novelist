@@ -154,8 +154,7 @@ chat/
   - 处理AI响应和流式传输
   - 验证模型可用性
   - 构建消息发送参数
-  - 处理用户对问题的响应
-- **核心方法**: `handleSendMessage`, `handleUserQuestionResponse`
+- **核心方法**: `handleSendMessage`
 
 #### [`SettingsManager.js`](services/SettingsManager.js:1)
 - **功能**: 设置管理服务

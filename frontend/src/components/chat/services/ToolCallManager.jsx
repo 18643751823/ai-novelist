@@ -7,8 +7,8 @@ import { rejectSuggestion } from '../../../store/slices/novelSlice';
 // 工具调用卡片组件
 const ToolCallCard = ({ toolCall }) => {
   // 确保 toolCall 和其属性是存在的，避免运行时错误
-  const toolName = toolCall?.function?.name || '未知工具';
-  const toolArgs = toolCall?.toolArgs || {};
+  const toolName = toolCall?.name || toolCall?.function?.name || '未知工具';
+  const toolArgs = toolCall?.args || toolCall?.toolArgs || {};
   const status = toolCall?.status;
   const isHistorical = status === 'historical';
 
@@ -17,7 +17,6 @@ const ToolCallCard = ({ toolCall }) => {
     const nameMap = {
       'write_file': '写入文件',
       'ask_user_question': '提问',
-      'end_task': '结束任务',
       'apply_diff': '应用差异',
       'insert_content': '插入内容',
     };
@@ -37,14 +36,12 @@ const ToolCallCard = ({ toolCall }) => {
     </div>
   );
 };
-
 /**
  * 工具调用处理服务
  * 负责处理工具调用的批准和拒绝
  */
 class ToolCallService {
-  constructor(ipcRenderer, dispatch) {
-    this.ipcRenderer = ipcRenderer;
+  constructor(dispatch) {
     this.dispatch = dispatch;
   }
 
@@ -71,21 +68,33 @@ class ToolCallService {
       }
     }
 
-    // Send IPC message to the backend
+    // Send HTTP request to the backend
     try {
       // The backend now expects 'approve' or 'reject' for the entire batch
-      await this.ipcRenderer.invoke('process-tool-action', {
-        actionType: action,
-        toolCalls: pendingToolCalls,
+      const response = await fetch('/api/chat/tool-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          actionType: action,
+          toolCalls: pendingToolCalls,
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     } catch (error) {
       console.error('ToolCallService: 处理工具操作失败:', error);
       // Optionally dispatch an error message to the UI
-      this.dispatch(appendMessage({ 
-        sender: 'System', 
-        text: `工具操作失败: ${error.message}`, 
-        role: 'system', 
-        className: 'system-error' 
+      this.dispatch(appendMessage({
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        sender: 'Tool',
+        text: `工具操作失败: ${error.message}`,
+        role: 'tool',
+        content: `工具操作失败: ${error.message}`,
+        className: 'tool-message'
       }));
       throw error;
     }

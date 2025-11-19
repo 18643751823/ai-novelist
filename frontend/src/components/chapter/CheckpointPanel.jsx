@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { saveArchive, restoreNovelArchive, getHistory, deleteNovelArchive } from '../../ipc/checkpointIpcHandler';
+import checkpointService from '../../services/checkpointService';
 import './CheckpointPanel.css';
 import ConfirmationModal from '../others/ConfirmationModal';
 import { triggerChapterRefresh } from '../../store/slices/novelSlice';
@@ -21,8 +21,12 @@ const CheckpointPanel = ({ onClose }) => {
         setIsLoading(true);
         setError(null);
         try {
-            const historyResult = await getHistory(currentTaskId);
-            setHistory(historyResult || []);
+            const result = await checkpointService.listNovelArchives(currentTaskId);
+            if (result.success) {
+                setHistory(result.data || []);
+            } else {
+                setError('加载历史记录失败：' + result.error);
+            }
         } catch (err) {
             setError('加载历史记录失败。');
             console.error(err);
@@ -40,8 +44,14 @@ const CheckpointPanel = ({ onClose }) => {
         const message = `存档于 ${new Date().toLocaleString()}`;
         setIsLoading(true);
         try {
-            await saveArchive(currentTaskId, message);
-            await loadHistory();
+            // 使用相对于后端根目录的工作目录路径
+            const workspaceDir = 'novel';
+            const result = await checkpointService.createNovelArchive(currentTaskId, workspaceDir, message);
+            if (result.success) {
+                await loadHistory();
+            } else {
+                setError('保存存档失败：' + result.error);
+            }
         } catch (err) {
             setError('保存存档失败。');
             console.error(err);
@@ -56,11 +66,17 @@ const CheckpointPanel = ({ onClose }) => {
             setShowConfirmation(false);
             setIsLoading(true);
             try {
-                await restoreNovelArchive(currentTaskId, archiveId);
-                dispatch(triggerChapterRefresh());
-                setSuccess('存档恢复成功！');
-                // 3秒后自动隐藏成功提示
-                setTimeout(() => setSuccess(null), 3000);
+                // 使用相对于后端根目录的工作目录路径
+                const workspaceDir = 'novel';
+                const result = await checkpointService.restoreNovelArchive(currentTaskId, archiveId, workspaceDir);
+                if (result.success) {
+                    dispatch(triggerChapterRefresh());
+                    setSuccess('存档恢复成功！');
+                    // 3秒后自动隐藏成功提示
+                    setTimeout(() => setSuccess(null), 3000);
+                } else {
+                    setError('恢复存档失败：' + result.error);
+                }
             } catch (err) {
                 setError('恢复存档失败。');
                 console.error(err);
@@ -77,8 +93,12 @@ const CheckpointPanel = ({ onClose }) => {
             setShowConfirmation(false);
             setIsLoading(true);
             try {
-                await deleteNovelArchive(currentTaskId, archiveId);
-                await loadHistory();
+                const result = await checkpointService.deleteNovelArchive(currentTaskId, archiveId);
+                if (result.success) {
+                    await loadHistory();
+                } else {
+                    setError('删除存档失败：' + result.error);
+                }
             } catch (err) {
                 setError('删除存档失败。');
                 console.error(err);

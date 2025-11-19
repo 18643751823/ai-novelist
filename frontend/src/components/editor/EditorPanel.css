@@ -64,8 +64,8 @@
   min-height: 200px; /* 最小高度确保可见 */
   overflow: hidden; /* 确保子元素滚动 */
 }
-/* Vditor 编辑器样式适配 */
-.vditor-editor {
+/* Tiptap 编辑器样式适配 */
+.tiptap-editor {
   flex-grow: 1;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-small);
@@ -75,54 +75,66 @@
   flex-direction: column;
 }
 
-/* 确保 Vditor 内部容器正确填充空间 */
-.vditor-editor > div {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 确保 Vditor 工具栏固定高度 */
-.vditor-toolbar {
-  flex-shrink: 0; /* 防止工具栏被压缩 */
-}
-
-/* 确保 Vditor 内容区域可滚动 */
-.vditor-content {
+/* 确保 Tiptap 内容区域可滚动 */
+.tiptap-editor .editor-content {
   flex-grow: 1;
   overflow: auto;
+  color: var(--text-color-primary);
 }
 
-/* 调整 Vditor 工具栏和内容区域的间距 */
-.vditor-toolbar {
+/* 调整 Tiptap 工具栏和内容区域的间距 */
+.tiptap-editor .editor-toolbar {
   background-color: var(--panel-bg-color-alt);
   border-bottom: 1px solid var(--border-color);
   padding: 0 8px; /* 减少工具栏内边距 */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-.vditor-toolbar__item {
+.tiptap-editor .toolbar-group {
+  display: flex;
+  gap: 2px;
+  margin-right: 8px;
+}
+
+.tiptap-editor .toolbar-button {
+  background: transparent;
+  border: none;
   color: var(--text-color-primary);
-  margin: 0 2px; /* 减少工具栏项间距 */
+  padding: 6px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.vditor-toolbar__item:hover {
+.tiptap-editor .toolbar-button:hover {
   background-color: var(--hover-bg-color);
 }
 
-/* 调整 Vditor 内容区域样式 */
-.vditor-content {
-  color: var(--text-color-primary);
+.tiptap-editor .toolbar-button.is-active {
+  background-color: var(--primary-color);
+  color: white;
 }
 
-/* Vditor 预览区域样式适配 */
-.vditor-preview {
-  color: var(--text-color-primary);
+.tiptap-editor .toolbar-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
+/* Tiptap 编辑器主体样式 */
+.tiptap-editor .ProseMirror {
+  outline: none;
+  min-height: 780px;
+}
 
-
-/* 覆盖 Vditor 编辑器主体的内边距 */
-.vditor {
+/* 覆盖 Tiptap 编辑器主体的内边距 */
+.tiptap-editor {
   padding: 0 !important; /* 移除编辑器主体内边距 */
 }
 

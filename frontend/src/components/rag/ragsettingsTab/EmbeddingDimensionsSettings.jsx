@@ -23,24 +23,23 @@ const EmbeddingDimensionsSettings = ({
       setIsLoadingDimensions(true);
       
       // 从存储加载嵌入维度
-      const embeddingDimensions = await invoke('get-embedding-dimensions');
-      if (embeddingDimensions.success) {
-        const storedDimensions = embeddingDimensions.dimensions || 1024;
-        setLocalEmbeddingDimensions(storedDimensions);
-        
-        // 获取模型默认维度
-        if (embeddingModel) {
-          try {
-            const modelDimensions = await invoke('get-embedding-dimensions', embeddingModel);
-            if (modelDimensions.success) {
-              const defaultDimensions = modelDimensions.dimensions;
-              setModelDefaultDimensions(defaultDimensions);
-            }
-          } catch (error) {
-            console.warn('获取模型默认维度失败:', error);
-            setModelDefaultDimensions(1024);
+      if (embeddingModel) {
+        try {
+          const modelDimensions = await invoke('get-embedding-dimensions', embeddingModel);
+          if (modelDimensions.success) {
+            const storedDimensions = modelDimensions.dimensions || 1024;
+            setLocalEmbeddingDimensions(storedDimensions);
+            setModelDefaultDimensions(storedDimensions);
           }
+        } catch (error) {
+          console.warn('获取模型默认维度失败:', error);
+          setLocalEmbeddingDimensions(1024);
+          setModelDefaultDimensions(1024);
         }
+      } else {
+        // 如果没有选择模型，使用默认维度
+        setLocalEmbeddingDimensions(1024);
+        setModelDefaultDimensions(1024);
       }
     } catch (error) {
       console.error('加载嵌入维度设置失败:', error);
@@ -80,7 +79,9 @@ const EmbeddingDimensionsSettings = ({
       }
     };
 
-    updateModelDefaultDimensions();
+    // 添加防抖，避免频繁调用
+    const timeoutId = setTimeout(updateModelDefaultDimensions, 500);
+    return () => clearTimeout(timeoutId);
   }, [embeddingModel, invoke, onDimensionsChange]);
 
   // 初始化加载设置

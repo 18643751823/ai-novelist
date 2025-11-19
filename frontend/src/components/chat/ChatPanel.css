@@ -52,6 +52,9 @@
     margin-bottom: 8px;
     border-radius: 15px;
     max-width: 70%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
 }
 
 #chatDisplay .message.user {
@@ -69,17 +72,102 @@
     margin-right: auto;
     text-align: left;
     border-bottom-left-radius: 3px;
+    position: relative; /* 为流式指示器定位做准备 */
+}
+
+/* 消息头部样式 */
+.message-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #cccccc;
+}
+
+/* 流式传输指示器 - 位于消息头部 */
+.streaming-indicator-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background-color: #444444;
+    border-radius: 6px;
+    font-size: 0.8em;
+    color: #cccccc;
+    font-weight: normal;
+}
+
+.streaming-indicator-header .ai-typing-spinner {
+    color: #4CAF50; /* 绿色加载图标 */
+    font-size: 0.8em;
+}
+
+.streaming-indicator-header .streaming-text {
+    font-style: italic;
 }
 
 #chatDisplay .message.system-message {
-    background-color: #444444; /* 深灰色背景 */
-    border-color: #666666;
-    color: #cccccc; /* 浅灰色文字 */
-    text-align: center;
-    width: 100%;
-    max-width: none;
-    font-weight: bold;
-    border-radius: 5px;
+  background-color: #444444; /* 深灰色背景 */
+  border-color: #666666;
+  color: #cccccc; /* 浅灰色文字 */
+  text-align: center;
+  width: 100%;
+  max-width: none;
+  font-weight: bold;
+  border-radius: 5px;
+}
+
+#chatDisplay .message.tool-message {
+  background-color: #2a4e7a; /* 深蓝色背景，表示工具执行结果 */
+  border-color: #357abd;
+  color: #ffffff; /* 白色文字 */
+  align-self: flex-start;
+  margin-right: auto;
+  text-align: left;
+  border-bottom-left-radius: 3px;
+  max-width: 80%; /* 比AI消息稍宽一些 */
+}
+
+/* 工具消息头部样式 */
+.tool-message-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* 折叠按钮样式 */
+.collapse-toggle-button {
+  background: transparent;
+  border: none;
+  color: #cccccc;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
+}
+
+.collapse-toggle-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.collapse-toggle-button:active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 折叠状态下的工具消息样式 */
+.message.tool-message.collapsed .message-content {
+  display: none;
+}
+
+/* 折叠状态下的工具消息头部样式 */
+.message.tool-message.collapsed .tool-message-header-content {
+  opacity: 0.8;
 }
 
 .chat-input-group {
@@ -927,6 +1015,8 @@ input:checked + .slider:before {
     overflow-wrap: break-word; /* 现代浏览器的换行支持 */
     white-space: pre-wrap; /* 保留空格和换行，但允许自动换行 */
     max-width: 100%; /* 确保内容不会超出容器 */
+    overflow: hidden; /* 防止内容溢出 */
+    box-sizing: border-box;
 }
 
 /* 确保消息气泡内的文本正确换行 */
@@ -1499,53 +1589,9 @@ input:checked + .slider:before {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
-/* Markdown消息渲染器样式 */
-.markdown-message-renderer {
-  width: 100%;
-}
-
-.markdown-message-renderer .vditor {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-.markdown-message-renderer .vditor-ir {
-  background: transparent !important;
-  padding: 0 !important;
-  min-height: auto !important;
-}
-
-.markdown-message-renderer .vditor-ir__node {
-  color: inherit !important;
-  font-family: inherit !important;
-  font-size: inherit !important;
-  line-height: inherit !important;
-}
-
-.markdown-message-renderer .vditor-ir pre.vditor-reset {
-  background: transparent !important;
-  color: inherit !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.markdown-message-renderer .vditor-ir pre.vditor-reset code {
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: inherit !important;
-}
-
 /* 确保消息内容区域正确显示Markdown内容 */
 .message-content .markdown-message-renderer {
   width: 100%;
-}
-
-/* 编辑状态下的样式 */
-.message.editing .markdown-message-renderer .vditor-ir {
-  border: 1px solid #4a90e2 !important;
-  border-radius: 4px;
-  padding: 4px !important;
-  background: rgba(74, 144, 226, 0.1) !important;
 }
 
 /* 加载和空状态样式 */

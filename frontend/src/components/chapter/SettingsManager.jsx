@@ -1,5 +1,6 @@
 import React from 'react';
-import chapterIpcHandler from '../../ipc/chapterIpcHandler';
+import chapterService from '../../services/chapterService';
+import configStoreService from '../../services/configStoreService';
 
 /**
  * 设置管理模块
@@ -18,11 +19,11 @@ const SettingsManager = ({
    */
   const handleSaveApiKey = async () => {
     // 保存 API Key
-    const saveResult = await chapterIpcHandler.setStoreValue('deepseekApiKey', apiKey);
+    const saveResult = await configStoreService.setStoreValue('deepseekApiKey', apiKey);
     
     if (saveResult.success) {
       // 重新初始化模型提供者
-      const initResult = await chapterIpcHandler.reinitializeModelProvider();
+      const initResult = await chapterService.reinitializeModelProvider();
       
       if (initResult.success) {
         setNotificationMessage('API Key 已保存！模型提供者已重新初始化。');
@@ -43,7 +44,7 @@ const SettingsManager = ({
   const handleCancelSettings = async () => {
     setShowSettings(false);
     // 重新从 store 加载，以防用户取消后恢复旧值
-    const result = await chapterIpcHandler.getStoreValue('deepseekApiKey');
+    const result = await configStoreService.getStoreValue('deepseekApiKey');
     if (result.success && result.value) {
       setApiKey(result.value);
     } else {

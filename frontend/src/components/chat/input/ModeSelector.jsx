@@ -17,7 +17,6 @@ const ModeSelector = ({
 
   // 内置模式定义
   const builtInModes = [
-    { id: 'general', name: '通用', type: 'builtin' },
     { id: 'outline', name: '细纲', type: 'builtin' },
     { id: 'writing', name: '写作', type: 'builtin' },
     { id: 'adjustment', name: '调整', type: 'builtin' }
@@ -26,11 +25,11 @@ const ModeSelector = ({
   // 获取所有模式（内置 + 自定义）
   const allModes = [
     ...builtInModes,
-    ...customModes.map(mode => ({
+    ...(Array.isArray(customModes) ? customModes.map(mode => ({
       id: mode.id,
       name: mode.name,
       type: 'custom'
-    }))
+    })) : [])
   ];
 
   // 过滤模式

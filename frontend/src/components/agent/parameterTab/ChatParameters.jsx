@@ -5,6 +5,7 @@ import {
   setAiParametersForMode
 } from '../../../store/slices/chatSlice';
 import SliderComponent from '../common/SliderComponent';
+import InputComponent from '../common/InputComponent';
 import SettingGroup from '../common/SettingGroup';
 import './ChatParameters.css';
 
@@ -15,10 +16,10 @@ import './ChatParameters.css';
 const AdvancedSettings = ({
   aiParameters = {},
   onParametersChange,
-  mode = 'general'
+  mode = 'outline'
 }) => {
   const dispatch = useDispatch();
-  const contextLimitSettings = useSelector(state => state.chat.contextLimitSettings);
+  const contextLimitSettings = useSelector(state => state.chat.mode.contextLimitSettings);
   
   // 本地状态管理
   const [localParameters, setLocalParameters] = useState({});
@@ -31,6 +32,7 @@ const AdvancedSettings = ({
     let modeParameters;
     if (aiParameters && aiParameters[mode]) {
       modeParameters = aiParameters[mode];
+      console.log(`[AdvancedSettings] 模式 ${mode} 的详细参数:`, modeParameters);
     } else {
       modeParameters = {
         temperature: 0.7,
@@ -40,6 +42,20 @@ const AdvancedSettings = ({
     }
     
     setLocalParameters(modeParameters);
+    
+    // 同时初始化上下文限制设置
+    if (modeParameters.max_tokens) {
+      console.log(`[AdvancedSettings] 设置max_tokens为: ${modeParameters.max_tokens}`);
+      setLocalContextSettings({
+        max_tokens: modeParameters.max_tokens
+      });
+    } else {
+      // 如果没有max_tokens，设置默认值4000
+      console.log(`[AdvancedSettings] 没有找到max_tokens，使用默认值4000`);
+      setLocalContextSettings({
+        max_tokens: 4000
+      });
+    }
   }, [aiParameters, mode]);
 
   // 初始化上下文限制设置
@@ -47,16 +63,13 @@ const AdvancedSettings = ({
     if (contextLimitSettings?.modes?.[mode]) {
       setLocalContextSettings(contextLimitSettings.modes[mode]);
     } else {
-      // 默认设置
       const defaultSettings = {
-        general: { chatContext: { type: 'turns', value: 10 }, ragContext: { type: 'turns', value: 5 } },
-        outline: { chatContext: { type: 'turns', value: 15 }, ragContext: { type: 'turns', value: 5 } },
-        writing: { chatContext: { type: 'turns', value: 10 }, ragContext: { type: 'turns', value: 5 } },
-        adjustment: { chatContext: { type: 'turns', value: 5 }, ragContext: { type: 'turns', value: 5 } }
+        outline: { max_tokens: 4000 },
+        writing: { max_tokens: 8000 },
+        adjustment: { max_tokens: 2000 }
       };
-      setLocalContextSettings(defaultSettings[mode] || { 
-        chatContext: { type: 'turns', value: 10 }, 
-        ragContext: { type: 'turns', value: 5 } 
+      setLocalContextSettings(defaultSettings[mode] || {
+        max_tokens: 4000
       });
     }
   }, [contextLimitSettings, mode]);
@@ -76,47 +89,25 @@ const AdvancedSettings = ({
   };
 
   // 处理上下文限制设置变化
-  const handleContextSettingChange = async (contextType, value) => {
-    const newSettings = { ...localContextSettings };
-    
-    if (value === 51) {
-      // 满tokens选项
-      newSettings[contextType] = { type: 'tokens', value: 'full' };
-    } else {
-      // 轮数选项
-      newSettings[contextType] = { type: 'turns', value };
-    }
+  const handleMaxTokensChange = (value) => {
+    const newSettings = {
+      ...localContextSettings,
+      max_tokens: value
+    };
     
     setLocalContextSettings(newSettings);
     
-    // 自动保存设置
-    try {
-      const invoke = window.api?.invoke || window.ipcRenderer?.invoke;
-      if (invoke) {
-        const currentSettings = contextLimitSettings || {
-          modes: {
-            general: { chatContext: { type: 'turns', value: 10 }, ragContext: { type: 'turns', value: 5 } },
-            outline: { chatContext: { type: 'turns', value: 15 }, ragContext: { type: 'turns', value: 5 } },
-            writing: { chatContext: { type: 'turns', value: 10 }, ragContext: { type: 'turns', value: 5 } },
-            adjustment: { chatContext: { type: 'turns', value: 5 }, ragContext: { type: 'turns', value: 5 } }
-          }
-        };
-        
-        const updatedSettings = {
-          modes: {
-            ...currentSettings.modes,
-            [mode]: newSettings
-          }
-        };
-
-        const result = await invoke('set-context-limit-settings', updatedSettings);
-        
-        if (result.success) {
-          dispatch(setContextLimitSettings(updatedSettings));
-        }
-      }
-    } catch (error) {
-      console.error('[AdvancedSettings] 自动保存时出错:', error);
+    // 更新AI参数中的max_tokens
+    const newParameters = {
+      ...localParameters,
+      max_tokens: value
+    };
+    
+    setLocalParameters(newParameters);
+    
+    // 通知父组件参数已变化
+    if (onParametersChange) {
+      onParametersChange(mode, newParameters);
     }
   };
 
@@ -136,19 +127,10 @@ const AdvancedSettings = ({
     }
   };
 
-  // 获取显示文本
-  const getDisplayText = (config) => {
-    if (!config) return '10轮';
-    if (config.type === 'tokens' && config.value === 'full') {
-      return '满tokens';
-    }
-    return `${config.value}轮`;
-  };
-
-  // 更新滑动条进度样式
+  // 更新滑动条进度样式（仅用于AI参数滑动条）
   useEffect(() => {
     const updateSliderProgress = () => {
-      const sliders = document.querySelectorAll('.parameter-slider, .context-slider');
+      const sliders = document.querySelectorAll('.parameter-slider');
       sliders.forEach(slider => {
         const value = parseFloat(slider.value);
         const min = parseFloat(slider.min);
@@ -162,7 +144,7 @@ const AdvancedSettings = ({
     updateSliderProgress();
 
     // 监听滑动条变化
-    const sliders = document.querySelectorAll('.parameter-slider, .context-slider');
+    const sliders = document.querySelectorAll('.parameter-slider');
     sliders.forEach(slider => {
       slider.addEventListener('input', updateSliderProgress);
     });
@@ -172,7 +154,7 @@ const AdvancedSettings = ({
         slider.removeEventListener('input', updateSliderProgress);
       });
     };
-  }, [localParameters, localContextSettings]);
+  }, [localParameters]);
 
   return (
     <div className="advanced-settings">
@@ -229,28 +211,14 @@ const AdvancedSettings = ({
         title="上下文限制设置"
         description="控制AI可以访问的对话历史长度，影响模型的理解能力"
       >
-        <SliderComponent
-          label="对话上下文"
-          value={localContextSettings.chatContext?.type === 'tokens' ? 51 : localContextSettings.chatContext?.value || 10}
-          min={0}
-          max={51}
-          step={1}
-          onChange={(value) => handleContextSettingChange('chatContext', value)}
-          description="附加给AI的对话上下文轮数 (1-50轮) 或 满tokens"
-          valueFormatter={(value) => value === 51 ? '满tokens' : `${value}轮`}
-          type="context"
-        />
-
-        <SliderComponent
-          label="RAG上下文"
-          value={localContextSettings.ragContext?.type === 'tokens' ? 51 : localContextSettings.ragContext?.value || 5}
-          min={0}
-          max={51}
-          step={1}
-          onChange={(value) => handleContextSettingChange('ragContext', value)}
-          description="附加给RAG检索的上下文轮数 (1-50轮) 或 满tokens"
-          valueFormatter={(value) => value === 51 ? '满tokens' : `${value}轮`}
-          type="context"
+        <InputComponent
+          label="最大上下文长度"
+          value={localParameters.max_tokens || 4000}
+          onChange={handleMaxTokensChange}
+          description="控制对话历史的最大token数，默认4000 tokens。若要自行配置，请不要超过模型本身最大上下文！"
+          type="number"
+          placeholder="4000"
+          min={1000}
         />
       </SettingGroup>
     </div>

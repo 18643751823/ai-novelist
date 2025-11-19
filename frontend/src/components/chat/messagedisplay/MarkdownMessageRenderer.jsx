@@ -1,165 +1,126 @@
 import React, { useRef, useEffect, useState, forwardRef } from 'react';
-import Vditor from 'vditor';
-import 'vditor/dist/index.css';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import './MarkdownMessageRenderer.css';
 
 const MarkdownMessageRenderer = forwardRef(({
   value = '',
   onChange,
   height = 'auto',
-  placeholder = ''
+  placeholder = '',
+  isStreaming = false // 新增：流式传输状态
 }, ref) => {
-  const vditorRef = useRef(null);
-  const [vditorInstance, setVditorInstance] = useState(null);
+  const lastValueRef = useRef(''); // 用于跟踪上一次的值
 
-  useEffect(() => {
-    if (!vditorRef.current) return;
-
-    const vditor = new Vditor(vditorRef.current, {
-      height: height,
-      mode: 'ir', // 即时渲染模式
-      placeholder,
-      value,
-      theme: 'dark',
-      icon: 'ant',
-      typewriterMode: false,
-      cache: {
-        enable: false,
-      },
-      input: (content) => {
-        if (onChange) {
-          onChange(content);
-        }
-      },
-      focus: () => {
-        console.log('消息编辑器获得焦点');
-      },
-      blur: () => {
-        console.log('消息编辑器失去焦点');
-      },
-      select: () => {
-        console.log('消息内容被选中');
-      },
-      // 禁用工具栏
-      toolbar: [],
-      preview: {
-        markdown: {
-          toc: true,
-          mark: true,
-          footnotes: true,
-          autoSpace: false,
+  // 初始化编辑器
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3, 4, 5, 6],
         },
-        math: {
-          engine: 'KaTeX',
-        },
-        hljs: {
-          enable: true,
-          style: 'github',
-          lineNumber: true,
-        },
-        theme: {
-          current: 'dark',
-        },
-        actions: [],
-      },
-      upload: {
-        accept: 'image/*',
-        handler: async (files) => {
-          console.log('消息编辑器上传文件:', files);
-          // 消息编辑器不支持上传功能
-          return false;
-        },
-        drop: false,
-        multiple: false,
-      },
-      paste: {
-        enable: true,
-        isUpload: false, // 禁用粘贴上传
-      },
-      clipboard: {
-        enable: true,
-      },
-      hint: {
-        emoji: {
-          '+1': '👍',
-          '-1': '👎',
-          'heart': '❤️',
-          'smile': '😄',
-          'tada': '🎉',
-          'rocket': '🚀',
-        },
-      },
-      after: () => {
-        console.log('消息编辑器初始化完成');
-      },
-      sanitize: (html) => html,
-    });
-
-    setVditorInstance(vditor);
-
-    return () => {
-      if (vditor && vditor.destroy) {
-        try {
-          vditor.destroy();
-        } catch (error) {
-          console.warn('消息编辑器销毁错误:', error);
-        }
+      }),
+      Placeholder.configure({
+        placeholder,
+      }),
+    ],
+    content: typeof value === 'string' ? value : (value?.content || ''),
+    editable: !!onChange, // 只有当onChange存在时才可编辑
+    onUpdate: ({ editor }) => {
+      if (onChange) {
+        const html = editor.getHTML();
+        onChange(html);
       }
-    };
-  }, []);
+    },
+    onCreate: ({ editor }) => {
+      console.log('消息编辑器初始化完成');
+    },
+  });
 
   // 当外部 value 变化时更新编辑器内容
   useEffect(() => {
-    if (vditorInstance && vditorInstance.getValue && vditorInstance.setValue) {
-      try {
-        const currentValue = vditorInstance.getValue();
-        if (value !== currentValue) {
-          vditorInstance.setValue(value);
-        }
-      } catch (error) {
-        console.warn('消息编辑器内容更新错误:', error);
+    if (editor && value !== lastValueRef.current) {
+      // 优化流式更新：只在内容确实变化时更新，避免不必要的渲染
+      if (isStreaming) {
+        // 流式传输时使用增量更新，避免闪烁
+        editor.commands.setContent(value, false);
+      } else {
+        // 非流式传输时正常更新
+        editor.commands.setContent(value);
       }
+      lastValueRef.current = value;
     }
-  }, [value, vditorInstance]);
+  }, [value, editor, isStreaming]);
 
   // 提供编辑器实例的方法给父组件
   React.useImperativeHandle(ref, () => ({
     getValue: () => {
-      if (vditorInstance && vditorInstance.getValue) {
-        return vditorInstance.getValue();
+      if (editor) {
+        return editor.getHTML();
       }
       return '';
     },
     setValue: (content) => {
-      if (vditorInstance && vditorInstance.setValue) {
-        vditorInstance.setValue(content);
+      if (editor) {
+        editor.commands.setContent(content);
       }
     },
     insertValue: (content) => {
-      if (vditorInstance && vditorInstance.insertValue) {
-        vditorInstance.insertValue(content);
+      if (editor) {
+        editor.chain().focus().insertContent(content).run();
+        // 更新内部状态
+        lastValueRef.current = editor.getHTML();
+      }
+    },
+    // 新增：流式传输时追加内容的方法
+    appendValue: (content) => {
+      if (editor) {
+        editor.chain().focus().insertContent(content).run();
+        // 更新内部状态
+        lastValueRef.current = editor.getHTML();
       }
     },
     focus: () => {
-      if (vditorInstance && vditorInstance.focus) {
-        vditorInstance.focus();
+      if (editor) {
+        editor.commands.focus();
       }
     },
     getHTML: () => {
-      if (vditorInstance && vditorInstance.getHTML) {
-        return vditorInstance.getHTML();
+      if (editor) {
+        return editor.getHTML();
+      }
+      return '';
+    },
+    getText: () => {
+      if (editor) {
+        return editor.getText();
       }
       return '';
     },
     destroy: () => {
-      if (vditorInstance && vditorInstance.destroy) {
-        vditorInstance.destroy();
+      if (editor) {
+        editor.destroy();
       }
     },
+    // 返回实际的编辑器实例
+    getEditorInstance: () => editor,
   }));
+
+  // 清理编辑器实例
+  useEffect(() => {
+    return () => {
+      if (editor) {
+        editor.destroy();
+      }
+    };
+  }, [editor]);
 
   return (
     <div className="markdown-message-renderer">
-      <div ref={vditorRef} />
+      <div className="editor-content" style={{ height }}>
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 });

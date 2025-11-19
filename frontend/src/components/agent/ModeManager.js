@@ -1,16 +1,10 @@
 import { useState, useEffect } from 'react';
-import useIpcRenderer from '../../hooks/useIpcRenderer';
+import useHttpService from '../../hooks/useHttpService';
 
 /**
  * 内置模式配置
  */
 export const BUILTIN_MODES = {
-  general: {
-    id: 'general',
-    name: '通用',
-    type: 'builtin',
-    description: '工具使用型AI，可以自动使用各种工具'
-  },
   outline: {
     id: 'outline',
     name: '细纲',
@@ -37,7 +31,7 @@ export const BUILTIN_MODES = {
  * 职责：管理所有模式（内置 + 自定义）的状态和操作
  */
 export const useModeManager = () => {
-  const { getStoreValue, setStoreValue } = useIpcRenderer();
+  const { getStoreValue, setStoreValue } = useHttpService();
   
   // 模式状态管理 - 单一数据源
   const [customModes, setCustomModes] = useState([]);

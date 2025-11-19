@@ -8,10 +8,12 @@ yarn-error.log*
 # Dependency directories
 node_modules/
 frontend/node_modules/
+litellm_env/
+backend_env/
+python安装包/
 
 # Build artifacts
 dist/
-dist-backend/
 frontend/build/
 
 # IDE and Editor files
@@ -29,6 +31,9 @@ frontend/build/
 novel/
 backend/data/
 uploads/
+study/
+develop_note/
+启动说明.txt
 
 # Lock files
 mcp-filesystem-server.lock
@@ -68,6 +73,7 @@ Thumbs.db
 *~
 
 # Configuration files (user-specific)
+backend/config/store.json
 
 # Node-gyp cache directory
 .node-gyp-cache/
@@ -79,7 +85,7 @@ get-pip.py
 test-additional-info.js
 
 # Batch files (if not needed for deployment)
-start.bat
+*.bat
 *~
 
 # Portable Git (for distribution, not version control)
@@ -100,6 +106,7 @@ pip-delete-this-directory.txt
 chroma.sqlite3
 chroma.sqlite3-journal
 *.chroma
+*.db
 
 # Electron specific
 app/build/

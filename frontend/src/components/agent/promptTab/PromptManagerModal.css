@@ -29,7 +29,6 @@
 }
 
 .prompt-sections {
-  display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 25px;
   margin-bottom: 30px;
@@ -571,7 +570,6 @@
 }
 
 .tab-content {
-  height: 100%;
   display: flex;
   flex-direction: column;
   padding: 0; /* 移除内边距，让内容完全撑满容器 */

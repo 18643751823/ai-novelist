@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { useSelector, useDispatch } from 'react-redux';
-import { setShowApiSettingsModal } from '../../store/slices/chatSlice';
-import useProviderData from '../../hooks/useProviderData';
-import useIpcRenderer from '../../hooks/useIpcRenderer';
+import providerConfigService from '../../services/providerConfigService';
+import modelSelectionService from '../../services/modelSelectionService';
 import ProviderList from './ProviderList';
 import BuiltInProviderSettings from './providersettings/BuiltInProviderSettings';
 import CustomProviderSettings from './providersettings/CustomProviderSettings';
@@ -13,32 +11,14 @@ import NotificationModal from '../others/NotificationModal';
 import './ProviderSettingsPanel.css';
 
 const ProviderSettingsPanel = ({ isOpen, onClose }) => {
-  const dispatch = useDispatch();
-  const { setStoreValue, reinitializeModelProvider, reinitializeAliyunEmbedding } = useIpcRenderer();
+  // 本地状态管理 - 不再使用Redux
+  const [configs, setConfigs] = useState(providerConfigService.getDefaultProviderConfigs());
+  const [providers, setProviders] = useState([]);
+  const [availableModels, setAvailableModels] = useState([]);
+  const [selectedProvider, setSelectedProvider] = useState('');
+  const [loading, setLoading] = useState(false);
   
-  const {
-    selectedModel,
-    selectedProvider,
-    deepseekApiKey,
-    openrouterApiKey,
-    siliconflowApiKey,
-    aliyunApiKey,
-    aliyunEmbeddingApiKey,
-    intentAnalysisModel,
-    ollamaBaseUrl
-  } = useSelector((state) => state.chat);
-
-  // 使用数据管理钩子
-  const {
-    providers,
-    customProviders,
-    loading,
-    loadProviders,
-    handleRedetectOllama,
-    handleDeleteCustomProvider
-  } = useProviderData();
-
-  // 本地状态管理
+  // UI状态
   const [searchText, setSearchText] = useState('');
   const [showCustomProviderForm, setShowCustomProviderForm] = useState(false);
   const [editingProvider, setEditingProvider] = useState(null);
@@ -52,20 +32,111 @@ const ProviderSettingsPanel = ({ isOpen, onClose }) => {
   const selectedProviderDetail = providers.find(p => p.id === selectedProvider) || {};
   const isCustomProvider = selectedProviderDetail.type === 'custom';
 
-  // 处理关闭
-  const handleClose = () => {
-    dispatch(setShowApiSettingsModal(false));
-    if (onClose) onClose();
-  };
+  // 加载提供商配置和列表
+  const loadProviderConfigs = async () => {
+    try {
+      setLoading(true);
+      
+      // 并行加载提供商和模型列表
+      const [providersResult, customProvidersResult, modelsResult] = await Promise.all([
+        providerConfigService.getProviders(),
+        providerConfigService.getCustomProviders(),
+        modelSelectionService.getAvailableModels()
+      ]);
 
-  // 处理通知关闭
-  const handleNotificationClose = () => {
-    setNotification({ isOpen: false, message: '', success: false });
-    if (notification.success) {
-      handleClose();
+      if (providersResult.success && customProvidersResult.success) {
+        // 生成配置对象
+        const configs = providerConfigService.getDefaultProviderConfigs();
+        
+        // 处理预设提供商的API密钥
+        for (const [providerId, providerInfo] of Object.entries(providersResult.data)) {
+          if (providerId === 'deepseek') {
+            configs.deepseekApiKey = providerInfo.saved_api_key || '';
+          } else if (providerId === 'openrouter') {
+            configs.openrouterApiKey = providerInfo.saved_api_key || '';
+          } else if (providerId === 'siliconflow') {
+            configs.siliconflowApiKey = providerInfo.saved_api_key || '';
+          } else if (providerId === 'aliyun') {
+            configs.aliyunApiKey = providerInfo.saved_api_key || '';
+          } else if (providerId === 'ollama') {
+            configs.ollamaBaseUrl = providerInfo.base_url || 'http://127.0.0.1:11434';
+          } else if (providerId === 'kimi') {
+            configs.kimiApiKey = providerInfo.saved_api_key || '';
+          } else if (providerId === 'zhipuai') {
+            configs.zhipuaiApiKey = providerInfo.saved_api_key || '';
+          } else if (providerId === 'gemini') {
+            configs.geminiApiKey = providerInfo.saved_api_key || '';
+          }
+        }
+
+        // 处理自定义提供商
+        configs.customProviders = Object.values(customProvidersResult.data).map(provider => ({
+          providerName: provider.name,
+          baseUrl: provider.base_url,
+          apiKey: provider.saved_api_key || '',
+          enabled: true
+        }));
+
+        setConfigs(configs);
+        
+        // 生成提供商列表
+        const providerList = providerConfigService.generateProviderList(configs);
+        setProviders(providerList);
+      }
+
+      if (modelsResult.success) {
+        setAvailableModels(modelsResult.models);
+      }
+
+    } catch (error) {
+      console.error('加载提供商配置失败:', error);
+      showNotification('加载提供商配置失败，请重试。', false);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // 加载可用模型列表
+  const loadAvailableModels = async () => {
+    try {
+      const modelsResult = await modelSelectionService.getAvailableModels();
+      if (modelsResult.success) {
+        setAvailableModels(modelsResult.models);
+      }
+    } catch (error) {
+      console.error('加载模型列表失败:', error);
+    }
+  };
+
+  // 保存提供商配置
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      
+      const result = await providerConfigService.saveProviderConfigs(configs);
+      
+      if (result.success) {
+        // 重新初始化模型提供者
+        await modelSelectionService.refreshModels();
+        
+        // 重新加载配置和模型列表以确保状态一致
+        await Promise.all([
+          loadProviderConfigs(),
+          loadAvailableModels()
+        ]);
+        
+        showNotification('提供商配置保存成功！', true);
+      } else {
+        showNotification('提供商配置保存失败，请重试。', false);
+      }
+      
+    } catch (error) {
+      console.error('保存提供商配置失败:', error);
+      showNotification('提供商配置保存失败，请重试。', false);
+    } finally {
+      setLoading(false);
+    }
+  };
   // 显示通知
   const showNotification = (message, success = true) => {
     setNotification({
@@ -75,61 +146,42 @@ const ProviderSettingsPanel = ({ isOpen, onClose }) => {
     });
   };
 
-  // 保存处理函数
-  const handleSave = async () => {
+  // 处理通知关闭
+  const handleNotificationClose = () => {
+    const shouldClose = notification.success;
+    setNotification({ isOpen: false, message: '', success: false });
+    if (shouldClose) {
+      handleClose();
+    }
+  };
+
+  // 处理关闭
+  const handleClose = () => {
+    if (onClose) onClose();
+  };
+
+  // 处理删除自定义提供商
+  const handleDeleteCustomProvider = async (providerName) => {
     try {
-      console.log('[API设置保存] 开始保存，当前Redux状态:', {
-        selectedModel,
-        selectedProvider,
-        deepseekApiKey: deepseekApiKey ? '已设置(隐藏)' : '未设置',
-        openrouterApiKey: openrouterApiKey ? '已设置(隐藏)' : '未设置',
-        siliconflowApiKey: siliconflowApiKey ? '已设置(隐藏)' : '未设置',
-        aliyunApiKey: aliyunApiKey ? '已设置(隐藏)' : '未设置',
-        aliyunEmbeddingApiKey: aliyunEmbeddingApiKey ? '已设置(隐藏)' : '未设置',
-        ollamaBaseUrl,
-        intentAnalysisModel
-      });
-
-      // 保存到持久化存储 - 使用并行Promise.all减少等待时间
-      await Promise.all([
-        setStoreValue('deepseekApiKey', deepseekApiKey),
-        setStoreValue('openrouterApiKey', openrouterApiKey),
-        setStoreValue('siliconflowApiKey', siliconflowApiKey),
-        setStoreValue('aliyunApiKey', aliyunApiKey),
-        setStoreValue('aliyunEmbeddingApiKey', aliyunEmbeddingApiKey),
-        setStoreValue('ollamaBaseUrl', ollamaBaseUrl),
-        setStoreValue('intentAnalysisModel', intentAnalysisModel),
-        setStoreValue('selectedModel', selectedModel),
-        setStoreValue('selectedProvider', selectedProvider)
-      ]);
-
-      console.log('[API设置保存] 存储保存完成，保存的值:', {
-        selectedModel,
-        selectedProvider,
-        intentAnalysisModel,
-        ollamaBaseUrl
-      });
-
-      // 重新初始化API提供者以确保新设置立即生效
-      try {
-        // 重新初始化模型提供者
-        await reinitializeModelProvider();
-        
-        // 重新初始化阿里云嵌入函数
-        await reinitializeAliyunEmbedding();
-        console.log('[API设置保存] API重新初始化完成');
-      } catch (error) {
-        console.warn('重新初始化API时出错:', error);
-      }
-
-      // 通知保存成功
-      showNotification('API设置保存成功！', true);
-      console.log('[API设置保存] 保存流程完成，通知已发送');
+      // 使用新的API删除自定义提供商
+      const result = await providerConfigService.deleteCustomProvider(providerName);
       
+      if (result.success) {
+        // 重新加载提供商配置
+        await loadProviderConfigs();
+        
+        // 如果删除的是当前选中的提供商，清空选择
+        if (selectedProvider === providerName) {
+          setSelectedProvider('');
+        }
+        
+        showNotification(`自定义提供商 "${providerName}" 已删除`, true);
+      } else {
+        showNotification('删除提供商失败，请重试。', false);
+      }
     } catch (error) {
-      console.error('保存API设置失败:', error);
-      // 通知保存失败
-      showNotification('API设置保存失败，请重试。', false);
+      console.error('删除自定义提供商失败:', error);
+      showNotification('删除提供商失败，请重试。', false);
     }
   };
 
@@ -143,7 +195,7 @@ const ProviderSettingsPanel = ({ isOpen, onClose }) => {
   const handleCustomProviderSaveComplete = () => {
     setShowCustomProviderForm(false);
     setEditingProvider(null);
-    loadProviders(); // 刷新提供商列表
+    loadProviderConfigs(); // 刷新提供商列表
   };
 
   // 处理关闭自定义提供商表单
@@ -152,6 +204,21 @@ const ProviderSettingsPanel = ({ isOpen, onClose }) => {
     setEditingProvider(null);
   };
 
+  // 更新配置值
+  const updateConfigValue = (key, value) => {
+    setConfigs(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  // 组件挂载时加载配置
+  useEffect(() => {
+    if (isOpen) {
+      loadProviderConfigs();
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -159,8 +226,8 @@ const ProviderSettingsPanel = ({ isOpen, onClose }) => {
       {/* 内容区域 */}
       <div className="tab-content-container">
         <div className="tab-content-actions">
-          <button className="save-button" onClick={handleSave}>
-            保存
+          <button className="save-button" onClick={handleSave} disabled={loading}>
+            {loading ? '保存中...' : '保存'}
           </button>
           <button className="cancel-button" onClick={handleClose}>
             关闭
@@ -176,6 +243,7 @@ const ProviderSettingsPanel = ({ isOpen, onClose }) => {
                 searchText={searchText}
                 onSearchChange={setSearchText}
                 selectedProvider={selectedProvider}
+                onProviderSelect={setSelectedProvider}
                 onAddProvider={() => setShowCustomProviderForm(true)}
               />
             </Panel>
@@ -202,6 +270,8 @@ const ProviderSettingsPanel = ({ isOpen, onClose }) => {
                     <CustomProviderSettings
                       onSaveComplete={handleCustomProviderSaveComplete}
                       editingProvider={editingProvider}
+                      configs={configs}
+                      onConfigsUpdate={setConfigs}
                     />
                   </div>
                 ) : selectedProvider ? (
@@ -215,14 +285,16 @@ const ProviderSettingsPanel = ({ isOpen, onClose }) => {
                       {!isCustomProvider && (
                         <BuiltInProviderSettings
                           providerId={selectedProvider}
-                          onRedetectOllama={handleRedetectOllama}
+                          configs={configs}
+                          onConfigsUpdate={updateConfigValue}
+                          availableModels={availableModels}
                         />
                       )}
 
                       {/* 自定义提供商设置 */}
                       {isCustomProvider && (
                         <CustomProviderSettingsDetail
-                          provider={customProviders.find(p => p.providerName === selectedProvider)}
+                          provider={configs.customProviders.find(p => p.providerName === selectedProvider)}
                           onEdit={handleEditCustomProvider}
                           onDelete={handleDeleteCustomProvider}
                         />
