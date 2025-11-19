@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setActiveTab, closeTab, reorderTabs, enableSplitView, updateTabContent } from '../../store/slices/novelSlice';
-import { tiptapLifecycleManager } from './services/TiptapLifecycleManager';
+import { vditorLifecycleManager } from './services/VditorLifecycleManager';
 import SaveConfirmationModal from './SaveConfirmationModal';
 import useHttpService from '../../hooks/useHttpService';
 import './TabBar.css';
@@ -45,7 +45,7 @@ function TabBar() {
 
   const closeTabInternal = (tabId) => {
     // 在关闭标签页前注销编辑器实例
-    tiptapLifecycleManager.unregisterEditor(tabId);
+    vditorLifecycleManager.unregisterEditor(tabId);
     dispatch(closeTab(tabId));
   };
 

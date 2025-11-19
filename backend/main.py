@@ -59,8 +59,9 @@ if os.path.exists("static"):
 
 # 挂载上传文件目录
 uploads_dir = os.path.join(os.path.dirname(__file__), "data", "uploads")
-if os.path.exists(uploads_dir):
-    app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+# 确保上传目录存在
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 # 包含API路由
 app.include_router(chat_router)

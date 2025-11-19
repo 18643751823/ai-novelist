@@ -3,4 +3,4 @@ model_list:
     litellm_params:
       model: azure/gpt-turbo-small-eu
       api_base: https://my-endpoint-europe-berri-992.openai.azure.com/
-      api_key: "YOUR_API_KEY"
+      api_key: YOUR_API_KEY

@@ -20,7 +20,12 @@ class ImageUploadService:
 
     def ensure_upload_dir(self):
         """确保上传目录存在"""
-        self.upload_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self.upload_dir.mkdir(parents=True, exist_ok=True)
+            print(f"上传目录已准备就绪: {self.upload_dir}")
+        except Exception as e:
+            print(f"创建上传目录失败: {e}")
+            raise
 
     def generate_filename(self, original_filename: str) -> str:
         """生成唯一的文件名"""

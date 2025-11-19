@@ -93,7 +93,7 @@ def build_graph(tool, memory, system_prompt=None, mode=None):
         response = llm_with_tools.invoke(current_messages)
         # 手动将新消息添加到现有消息列表中
         updated_messages = current_messages + [response]
-        
+        print(f"总消息{updated_messages}")
         return {"messages": updated_messages}
     # 创建工具字典
     tools_by_name = {tool.name: tool for tool in tool.values()}

@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateNovelTitle, updateTabContent } from '../../store/slices/novelSlice.js';
-import TiptapEditor from './TiptapEditor.jsx';
+import VditorEditor from './VditorEditor.jsx';
 import DiffViewer from './DiffViewer.jsx';
 import ContextMenu from '../others/ContextMenu.jsx';
-import { tiptapLifecycleManager } from './services/TiptapLifecycleManager.js';
+import { vditorLifecycleManager } from './services/VditorLifecycleManager.js';
 
 import './EditorPanel.css';
 import NotificationModal from '../others/NotificationModal.jsx';
@@ -51,7 +51,7 @@ function EditorPanel({ splitViewTabId = null }) {
   // 获取当前标签页的编辑器实例
   const getCurrentEditorInstance = useCallback(() => {
     if (!activeTab) return null;
-    return tiptapLifecycleManager.getEditorInstance(activeTab.id);
+    return vditorLifecycleManager.getEditorInstance(activeTab.id);
   }, [activeTab]);
 
   // 定义函数
@@ -81,7 +81,7 @@ function EditorPanel({ splitViewTabId = null }) {
   // 注册编辑器实例
   const registerEditorInstance = useCallback((tabId, editorInstance) => {
     if (tabId && editorInstance) {
-      tiptapLifecycleManager.registerEditor(tabId, editorInstance);
+      vditorLifecycleManager.registerEditor(tabId, editorInstance);
       
       // 在编辑器实例注册后，立即更新字符统计
       setTimeout(() => {
@@ -96,7 +96,7 @@ function EditorPanel({ splitViewTabId = null }) {
   // 注销编辑器实例
   const unregisterEditorInstance = useCallback((tabId) => {
     if (tabId) {
-      tiptapLifecycleManager.unregisterEditor(tabId);
+      vditorLifecycleManager.unregisterEditor(tabId);
     }
   }, []);
 
@@ -226,7 +226,7 @@ function EditorPanel({ splitViewTabId = null }) {
           ) : (
             <>
               <div className="editor-container">
-                <TiptapEditor
+                <VditorEditor
                   key={activeTab.id} // 使用 key 强制重新创建编辑器实例
                   value={typeof activeTab.content === 'string' ? activeTab.content : (activeTab.content?.content || '')}
                   onChange={handleEditorChange}

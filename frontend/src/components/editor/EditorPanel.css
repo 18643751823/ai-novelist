@@ -64,8 +64,8 @@
   min-height: 200px; /* 最小高度确保可见 */
   overflow: hidden; /* 确保子元素滚动 */
 }
-/* Tiptap 编辑器样式适配 */
-.tiptap-editor {
+/* Vditor 编辑器样式适配 */
+.vditor-editor {
   flex-grow: 1;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-small);
@@ -75,15 +75,15 @@
   flex-direction: column;
 }
 
-/* 确保 Tiptap 内容区域可滚动 */
-.tiptap-editor .editor-content {
+/* 确保 Vditor 内容区域可滚动 */
+.vditor-editor .vditor-content {
   flex-grow: 1;
   overflow: auto;
   color: var(--text-color-primary);
 }
 
-/* 调整 Tiptap 工具栏和内容区域的间距 */
-.tiptap-editor .editor-toolbar {
+/* 调整 Vditor 工具栏和内容区域的间距 */
+.vditor-editor .vditor-toolbar {
   background-color: var(--panel-bg-color-alt);
   border-bottom: 1px solid var(--border-color);
   padding: 0 8px; /* 减少工具栏内边距 */
@@ -92,13 +92,7 @@
   gap: 4px;
 }
 
-.tiptap-editor .toolbar-group {
-  display: flex;
-  gap: 2px;
-  margin-right: 8px;
-}
-
-.tiptap-editor .toolbar-button {
+.vditor-editor .vditor-toolbar__item {
   background: transparent;
   border: none;
   color: var(--text-color-primary);
@@ -113,28 +107,28 @@
   justify-content: center;
 }
 
-.tiptap-editor .toolbar-button:hover {
+.vditor-editor .vditor-toolbar__item:hover {
   background-color: var(--hover-bg-color);
 }
 
-.tiptap-editor .toolbar-button.is-active {
+.vditor-editor .vditor-toolbar__item--current {
   background-color: var(--primary-color);
   color: white;
 }
 
-.tiptap-editor .toolbar-button:disabled {
+.vditor-editor .vditor-toolbar__item:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Tiptap 编辑器主体样式 */
-.tiptap-editor .ProseMirror {
+/* Vditor 编辑器主体样式 */
+.vditor-editor .vditor-ir {
   outline: none;
   min-height: 780px;
 }
 
-/* 覆盖 Tiptap 编辑器主体的内边距 */
-.tiptap-editor {
+/* 覆盖 Vditor 编辑器主体的内边距 */
+.vditor-editor {
   padding: 0 !important; /* 移除编辑器主体内边距 */
 }
 
