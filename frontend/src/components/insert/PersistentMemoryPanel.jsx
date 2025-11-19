@@ -18,13 +18,13 @@ const PersistentMemoryPanel = forwardRef(({ onSaveComplete }, ref) => {
   const { additionalInfo } = useSelector((state) => state.chat.mode);
   
   const [localAdditionalInfo, setLocalAdditionalInfo] = useState({});
-  const [selectedMode, setSelectedMode] = useState('general');
+  const [selectedMode, setSelectedMode] = useState('outline');
   const [isLoadingFile, setIsLoadingFile] = useState(false);
 
   useEffect(() => {
     // 处理附加信息的旧格式迁移
     const migratedAdditionalInfo = {};
-    for (const mode of ['general', 'outline', 'writing', 'adjustment']) {
+    for (const mode of ['outline', 'writing', 'adjustment']) {
       const modeInfo = additionalInfo[mode];
       if (typeof modeInfo === 'string') {
         migratedAdditionalInfo[mode] = {
@@ -84,7 +84,7 @@ const PersistentMemoryPanel = forwardRef(({ onSaveComplete }, ref) => {
   // 应用到全部模式
   const handleApplyToAllModes = () => {
     const currentInfo = localAdditionalInfo[selectedMode];
-    for (const mode of ['general', 'outline', 'writing', 'adjustment']) {
+    for (const mode of ['outline', 'writing', 'adjustment']) {
       setLocalAdditionalInfo(prev => ({
         ...prev,
         [mode]: { ...currentInfo }
@@ -125,7 +125,6 @@ const PersistentMemoryPanel = forwardRef(({ onSaveComplete }, ref) => {
 
   const getModeDisplayName = (mode) => {
     const names = {
-      general: '通用',
       outline: '细纲',
       writing: '写作',
       adjustment: '调整'
@@ -159,7 +158,6 @@ const PersistentMemoryPanel = forwardRef(({ onSaveComplete }, ref) => {
             onChange={(e) => setSelectedMode(e.target.value)}
             className="mode-dropdown"
           >
-            <option value="general">通用模式</option>
             <option value="outline">细纲模式</option>
             <option value="writing">写作模式</option>
             <option value="adjustment">调整模式</option>

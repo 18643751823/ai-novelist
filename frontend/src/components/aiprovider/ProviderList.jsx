@@ -1,16 +1,13 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
-import { setSelectedProvider } from '../../store/slices/chatSlice';
 
 const ProviderList = ({ 
   providers, 
   searchText, 
   onSearchChange, 
   selectedProvider,
+  onProviderSelect,
   onAddProvider 
 }) => {
-  const dispatch = useDispatch();
-
   // 过滤提供商列表
   const filteredProviders = providers.filter(provider =>
     provider.name.toLowerCase().includes(searchText.toLowerCase())
@@ -36,10 +33,13 @@ const ProviderList = ({
           <div
             key={provider.id}
             className={`provider-item ${selectedProvider === provider.id ? 'active' : ''}`}
-            onClick={() => dispatch(setSelectedProvider(provider.id))}
+            onClick={() => onProviderSelect(provider.id)}
           >
             <div className="provider-info">
               <div className="provider-name">{provider.name}</div>
+              <div className="provider-type">
+                {provider.type === 'builtin' ? '内置' : '自定义'}
+              </div>
             </div>
             <div className={`provider-status ${provider.enabled ? 'enabled' : 'disabled'}`}>
               {provider.enabled ? '启用' : '禁用'}

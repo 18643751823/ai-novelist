@@ -10,6 +10,12 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* 确保文本大小调整在所有浏览器中正常工作 */
+html {
+  -webkit-text-size-adjust: 100%; /* 兼容旧版WebKit浏览器 */
+  text-size-adjust: 100%; /* 标准属性，支持现代浏览器 */
+}
+
 body {
   font-family: sans-serif; /* 使用最安全的默认字体 */
   -webkit-font-smoothing: antialiased;

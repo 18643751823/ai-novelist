@@ -8,22 +8,22 @@ import {
 } from '../../store/slices/chatSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSave } from '@fortawesome/free-solid-svg-icons';
-import useIpcRenderer from '../../hooks/useIpcRenderer';
+import useHttpService from '../../hooks/useHttpService';
 import FileSearch from './FileSearch';
 
 const MemorySettingsTab = forwardRef(({ onSaveComplete }, ref) => {
   const dispatch = useDispatch();
-  const { invoke } = useIpcRenderer();
+  const { invoke } = useHttpService();
   const { additionalInfo } = useSelector((state) => state.chat);
   
   const [localAdditionalInfo, setLocalAdditionalInfo] = useState({});
-  const [selectedMode, setSelectedMode] = useState('general');
+  const [selectedMode, setSelectedMode] = useState('outline');
   const [isLoadingFile, setIsLoadingFile] = useState(false);
 
   useEffect(() => {
     // 处理附加信息的旧格式迁移
     const migratedAdditionalInfo = {};
-    for (const mode of ['general', 'outline', 'writing', 'adjustment']) {
+    for (const mode of ['outline', 'writing', 'adjustment']) {
       const modeInfo = additionalInfo[mode];
       if (typeof modeInfo === 'string') {
         migratedAdditionalInfo[mode] = {
@@ -83,7 +83,7 @@ const MemorySettingsTab = forwardRef(({ onSaveComplete }, ref) => {
   // 应用到全部模式
   const handleApplyToAllModes = () => {
     const currentInfo = localAdditionalInfo[selectedMode];
-    for (const mode of ['general', 'outline', 'writing', 'adjustment']) {
+    for (const mode of ['outline', 'writing', 'adjustment']) {
       setLocalAdditionalInfo(prev => ({
         ...prev,
         [mode]: { ...currentInfo }
@@ -121,7 +121,6 @@ const MemorySettingsTab = forwardRef(({ onSaveComplete }, ref) => {
 
   const getModeDisplayName = (mode) => {
     const names = {
-      general: '通用',
       outline: '细纲',
       writing: '写作',
       adjustment: '调整'
@@ -145,7 +144,6 @@ const MemorySettingsTab = forwardRef(({ onSaveComplete }, ref) => {
           className="mode-dropdown"
           style={{ backgroundColor: '#1e1e1e', color: '#abb2bf', border: '2px solid #555', borderRadius: '6px', padding: '8px 12px', fontSize: '14px', width: '200px' }}
         >
-          <option value="general">通用模式</option>
           <option value="outline">细纲模式</option>
           <option value="writing">写作模式</option>
           <option value="adjustment">调整模式</option>

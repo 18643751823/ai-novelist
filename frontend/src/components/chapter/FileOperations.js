@@ -1,5 +1,5 @@
 import React from 'react';
-import fileOperationsIpcHandler from '../../ipc/fileOperationsIpcHandler';
+import chapterService from '../../services/chapterService.js';
 
 /**
  * 文件操作模块
@@ -52,30 +52,30 @@ export class FileOperations {
     return findFolderByPath(items, pathParts, 0);
   }
   /**
-   * IPC 相关操作的统一处理函数
+   * HTTP 相关操作的统一处理函数
    */
-  async handleIPCAction(action, ...args) {
+  async handleHttpAction(action, ...args) {
     let result;
     
-    // 使用对应的 IPCHandler 方法
+    // 使用对应的 HTTP 服务方法
     switch (action) {
       case 'delete-item':
-        result = await fileOperationsIpcHandler.deleteItem(...args);
+        result = await chapterService.deleteItem(...args);
         break;
       case 'rename-item':
-        result = await fileOperationsIpcHandler.renameItem(...args);
+        result = await chapterService.renameItem(...args);
         break;
       case 'create-novel-file':
-        result = await fileOperationsIpcHandler.createNovelFile(...args);
+        result = await chapterService.createFile(...args);
         break;
       case 'create-folder':
-        result = await fileOperationsIpcHandler.createFolder(...args);
+        result = await chapterService.createFolder(...args);
         break;
       case 'move-item':
-        result = await fileOperationsIpcHandler.moveItem(...args);
+        result = await chapterService.moveItem(...args);
         break;
       case 'copy-item':
-        result = await fileOperationsIpcHandler.copyItem(...args);
+        result = await chapterService.copyItem(...args);
         break;
       default:
         // 对于未知操作，回退到原始 invoke
@@ -99,6 +99,8 @@ export class FileOperations {
         this.setNotificationMessage(result.message);
         this.setShowNotificationModal(true);
       }
+      // 手动触发章节更新，确保列表及时刷新
+      await chapterService.triggerChaptersUpdate();
       this.fetchChapters(); // 刷新章节列表
     } else {
       this.setNotificationMessage(`操作失败: ${result.error}`);
@@ -115,7 +117,7 @@ export class FileOperations {
     setConfirmationMessage(`确定要删除 "${itemId}" 吗？`);
     setOnConfirmCallback(() => async () => {
       setShowConfirmationModal(false); // 关闭确认弹窗
-      await this.handleIPCAction('delete-item', itemId);
+      await this.handleHttpAction('delete-item', itemId);
     });
     setOnCancelCallback(() => () => {
       setShowConfirmationModal(false); // 关闭确认弹窗
@@ -159,22 +161,34 @@ export class FileOperations {
 
     // 如果是文件，补回拓展名
     if (!originalItem.isFolder) {
-      const originalFileName = originalItem.title; // 原始文件名，包含拓展名
-      const lastDotIndex = originalFileName.lastIndexOf('.');
-      if (lastDotIndex !== -1) {
-        const originalExtension = originalFileName.substring(lastDotIndex); // 包括点号
-        // 如果用户输入的新名称不包含拓展名，且原始文件名有拓展名，则自动补回原始拓展名
-        if (!finalNewTitle.includes('.') && originalExtension) {
-          finalNewTitle += originalExtension;
+      const originalFileName = originalItem.name || originalItem.title; // 原始文件名，包含拓展名
+      if (originalFileName) {
+        const lastDotIndex = originalFileName.lastIndexOf('.');
+        if (lastDotIndex !== -1) {
+          const originalExtension = originalFileName.substring(lastDotIndex); // 包括点号
+          // 如果用户输入的新名称不包含拓展名，且原始文件名有拓展名，则自动补回原始拓展名
+          if (!finalNewTitle.includes('.') && originalExtension) {
+            finalNewTitle += originalExtension;
+          }
+        } else {
+          // 如果原始文件名没有扩展名，默认添加.md扩展名
+          if (!finalNewTitle.includes('.')) {
+            finalNewTitle += '.md';
+          }
+        }
+      } else {
+        // 如果无法获取原始文件名，默认添加.md扩展名
+        if (!finalNewTitle.includes('.')) {
+          finalNewTitle += '.md';
         }
       }
     }
     
-    const result = await this.handleIPCAction('rename-item', oldItemId, finalNewTitle);
+    const result = await this.handleHttpAction('rename-item', oldItemId, finalNewTitle);
 
     if (result.success) {
-      // 在重命名操作完成后，触发主进程的焦点修复
-      await fileOperationsIpcHandler.triggerFocusFix();
+      // 在重命名操作完成后，手动触发章节更新
+      await chapterService.triggerChaptersUpdate();
     }
   }
 
@@ -184,10 +198,10 @@ export class FileOperations {
   async handleNewFile(parentPath = '', handleCloseContextMenu) {
     const defaultTitle = '新建文件';
     
-    // 不再使用前缀文件名，直接使用原始文件名
-    const fileName = `${defaultTitle}.txt`;
+    // 使用 .md 扩展名
+    const fileName = `${defaultTitle}.md`;
     const newFilePath = parentPath ? `${parentPath}/${fileName}` : fileName;
-    await this.handleIPCAction('create-novel-file', { filePath: newFilePath, content: '' });
+    await this.handleHttpAction('create-novel-file', fileName, '', parentPath);
     if (handleCloseContextMenu) {
       handleCloseContextMenu();
     }
@@ -201,7 +215,7 @@ export class FileOperations {
     
     // 不再使用前缀文件夹名，直接使用原始文件夹名
     const newFilePath = parentPath ? `${parentPath}/${defaultFolderName}` : defaultFolderName;
-    await this.handleIPCAction('create-folder', newFilePath);
+    await this.handleHttpAction('create-folder', defaultFolderName, parentPath);
     if (handleCloseContextMenu) {
       handleCloseContextMenu();
     }
@@ -228,10 +242,10 @@ export class FileOperations {
    */
   async handlePaste(targetFolderId, handleCloseContextMenu) {
     if (this.cutItem) {
-      await this.handleIPCAction('move-item', this.cutItem.id, targetFolderId);
+      await this.handleHttpAction('move-item', this.cutItem.id, targetFolderId);
       this.cutItem = null;
     } else if (this.copiedItem) {
-      await this.handleIPCAction('copy-item', this.copiedItem.id, targetFolderId);
+      await this.handleHttpAction('copy-item', this.copiedItem.id, targetFolderId);
       this.copiedItem = null;
     }
     if (handleCloseContextMenu) {

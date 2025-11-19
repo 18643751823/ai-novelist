@@ -5,14 +5,19 @@ import {
   setMessages,
   stopStreaming,
 } from '../../store/slices/chatSlice';
-import { setSelectedModel } from '../../store/slices/apiSlice';
 import {
-  setDeepSeekHistory
+  setSessionHistory,
+  clearInterruptCard
 } from '../../store/slices/messageSlice';
-import useIpcRenderer from '../../hooks/useIpcRenderer';
+import {
+  selectChatPanelState
+} from '../../store/selectors';
+import useHttpService from '../../hooks/useHttpService.js';
+import ChatService from '../../services/chatService.js';
 import SettingsManager from './services/SettingsManager';
-import MessageService from './services/MessageService';
+import MessageServiceNew from './services/MessageServiceNew';
 import EventListenerManager from './services/EventListenerManager';
+import sessionService from '../../services/sessionService.js';
 import NotificationModal from '../others/NotificationModal';
 import ConfirmationModal from '../others/ConfirmationModal';
 import StreamingSupport from './messagedisplay/StreamingSupport';
@@ -28,36 +33,21 @@ import './ChatPanel.css';
 
 const ChatPanel = memo(() => {
   const dispatch = useDispatch();
-  // 从 chat slice 获取状态
+  // 使用记忆化的选择器获取状态
   const {
     messages,
     questionCard,
+    interruptCard,
     isHistoryPanelVisible,
-    aliyunEmbeddingApiKey, // 新增：阿里云嵌入API Key
-    selectedModel,
+    aliyunEmbeddingApiKey,
     enableStream,
-    modeFeatureSettings, // 新增：模式特定的功能设置
-    isStreaming, // 新增：流式传输状态
-    aiParameters, // 新增：AI参数
-    deepSeekHistory,
+    modeFeatureSettings,
+    isStreaming,
+    aiParameters,
     toolCallState,
     pendingToolCalls,
-    availableModels
-  } = useSelector((state) => ({
-    messages: state.chat.message.messages,
-    questionCard: state.chat.message.questionCard,
-    isHistoryPanelVisible: state.chat.message.isHistoryPanelVisible,
-    aliyunEmbeddingApiKey: state.chat.api.aliyunEmbeddingApiKey,
-    selectedModel: state.chat.api.selectedModel,
-    enableStream: state.chat.tool.enableStream,
-    modeFeatureSettings: state.chat.mode.modeFeatureSettings,
-    isStreaming: state.chat.message.isStreaming,
-    aiParameters: state.chat.mode.aiParameters,
-    deepSeekHistory: state.chat.message.deepSeekHistory,
-    toolCallState: state.chat.tool.toolCallState,
-    pendingToolCalls: state.chat.tool.pendingToolCalls,
-    availableModels: state.chat.api.availableModels
-  }));
+    sessionHistory
+  } = useSelector(selectChatPanelState);
   
   // 使用 ref 来获取最新的状态值，避免闭包问题
   const latestAliyunEmbeddingApiKey = useRef(aliyunEmbeddingApiKey);
@@ -75,37 +65,33 @@ const ChatPanel = memo(() => {
   const [onConfirmCallback, setOnConfirmCallback] = useState(null);
   const [onCancelCallback, setOnCancelCallback] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: '' });
-  const [currentMode, setCurrentMode] = useState('general'); // 新增：当前创作模式
+  const [currentMode, setCurrentMode] = useState('outline'); // 新增：当前创作模式
   const [customModes, setCustomModes] = useState([]); // 新增：自定义模式列表
   const [showModelSelectorPanel, setShowModelSelectorPanel] = useState(false);
 
-  const { invoke, getDeepSeekChatHistory, clearDeepSeekConversation, getStoreValue, setStoreValue, listAllModels, send, on, removeListener, stopStreaming: stopStreamingIpc } = useIpcRenderer();
+  const { invoke, getStoreValue, setStoreValue, listAvailableModels, send, on, removeListener, stopStreaming: stopStreamingIpc } = useHttpService();
   
   // 创建设置管理器实例
   const settingsManagerRef = useRef(null);
   if (!settingsManagerRef.current) {
-    settingsManagerRef.current = new SettingsManager(
-      { getStoreValue, listAllModels, invoke, send },
-      dispatch
-    );
+    settingsManagerRef.current = new SettingsManager(dispatch);
+    // 设置当前模式变化的回调函数，给settingsManager使用
+    settingsManagerRef.current.onCurrentModeChange = (mode) => {
+      console.log(`[ChatPanel] SettingsManager 请求设置当前模式为: ${mode}`);
+      setCurrentMode(mode);
+    };
   }
   // 创建消息服务实例
   const messageServiceRef = useRef(null);
   if (!messageServiceRef.current) {
-    messageServiceRef.current = new MessageService(
-      { invoke },
-      dispatch
-    );
+    messageServiceRef.current = new MessageServiceNew(dispatch);
   }
 
 
   // 创建事件监听管理器实例
   const eventListenerManagerRef = useRef(null);
   if (!eventListenerManagerRef.current) {
-    eventListenerManagerRef.current = new EventListenerManager(
-      { on, removeListener },
-      dispatch
-    );
+    eventListenerManagerRef.current = new EventListenerManager(dispatch);
   }
 
 
@@ -121,18 +107,36 @@ const ChatPanel = memo(() => {
       console.error('ChatPanel: 使用SettingsManager加载设置失败:', error);
     }
   }, []);
-  const handleUserQuestionResponse = useCallback(async (response, toolCallId, isButtonClick) => {
+
+  // 新增：处理中断响应
+  const handleInterruptResponse = useCallback(async (interruptData) => {
     try {
-      await messageServiceRef.current.handleUserQuestionResponse(
-        response,
-        toolCallId,
-        isButtonClick,
-        enableStream
-      );
+      console.log('ChatPanel: 处理中断响应:', interruptData);
+      
+      // 立即清除中断卡片，让用户知道响应已发送
+      dispatch(clearInterruptCard());
+      
+      // 使用后端连接器发送中断响应
+      const stream = await ChatService.sendInterruptResponse(interruptData);
+      
+      console.log('中断响应发送成功，开始处理流式响应');
+      
+      // 流式传输开始
+      dispatch({
+        type: 'message/handleStreamingMessage',
+        payload: {
+          type: 'streaming_started'
+        }
+      });
+      
+      // 处理中断响应的流式响应
+      // 如果后端返回新的中断，MessageServiceNew.handleStreamResponse 会自动再次设置中断卡片
+      await messageServiceRef.current.handleStreamResponse(stream, interruptData.threadId);
+      
     } catch (error) {
-      console.error('ChatPanel: 处理用户问题响应失败:', error);
+      console.error('ChatPanel: 处理中断响应失败:', error);
     }
-  }, [enableStream]);
+  }, [dispatch]);
 
   const handleSendMessage = useCallback(async (messageText) => {
     try {
@@ -145,13 +149,12 @@ const ChatPanel = memo(() => {
         aiParameters,
         messages,
         getStoreValue,
-        selectedModel,
         messageDisplayRef // 新增：传递消息显示组件的引用
       });
     } catch (error) {
       console.error('ChatPanel: 发送消息失败:', error);
     }
-  }, [questionCard, enableStream, currentMode, modeFeatureSettings, aiParameters, messages, selectedModel]);
+  }, [questionCard, enableStream, currentMode, modeFeatureSettings, aiParameters, messages]);
 
 
 
@@ -168,29 +171,54 @@ const ChatPanel = memo(() => {
     setStoreValue('currentMode', 'adjustment');
   }, [setStoreValue]);
 
-
+  // 从后端加载会话历史
+  const loadSessionHistory = useCallback(async () => {
+    try {
+      const sessionsResult = await sessionService.listSessions();
+      if (sessionsResult.success) {
+        dispatch(setSessionHistory(sessionsResult.sessions));
+      } else {
+        console.error('加载会话历史失败:', sessionsResult.error);
+      }
+    } catch (error) {
+      console.error('加载会话历史失败:', error);
+    }
+  }, [dispatch]);
 
   const handleResetChat = useCallback(async () => { // 将 handleResetChat 封装为 useCallback
-    dispatch(setMessages([])); // 清除聊天消息
-    // dispatch(clearToolSuggestions()); // This is now handled by the new tool call flow
-    dispatch(setQuestionCard(null)); // 清除提问卡片
-    currentSessionIdRef.current = null; // 重置 sessionId
-
-      try {
-        await clearDeepSeekConversation(); // 清除后端 DeepSeek 历史
-      } catch (error) {
-        console.error('Error clearing DeepSeek conversation:', error);
-      }
-   }, [dispatch, clearDeepSeekConversation]);
-
-  const loadDeepSeekChatHistory = useCallback(async () => { // 将 loadDeepSeekChatHistory 封装为 useCallback
     try {
-      const history = await getDeepSeekChatHistory();
-      dispatch(setDeepSeekHistory(history));
+      // 调用后端清除消息API，后端会重新分配会话ID
+      const clearResult = await sessionService.clearMessages();
+      if (clearResult.success) {
+        console.log('[ChatPanel] 消息已清除，新会话ID:', clearResult.new_session_id);
+        
+        // 清除前端消息
+        dispatch(setMessages([])); // 清除聊天消息
+        dispatch(setQuestionCard(null)); // 清除提问卡片
+        dispatch(clearInterruptCard()); // 清除中断卡片
+        currentSessionIdRef.current = clearResult.new_session_id; // 更新当前会话ID
+        
+        // 显示成功消息
+        setNotification({
+          show: true,
+          message: '消息已清除，已开始新的会话'
+        });
+      } else {
+        console.error('[ChatPanel] 清除消息失败:', clearResult.error);
+        setNotification({
+          show: true,
+          message: '清除消息失败: ' + clearResult.error
+        });
+      }
     } catch (error) {
-      console.error('Error loading DeepSeek chat history:', error);
+      console.error('[ChatPanel] 调用清除消息API失败:', error);
+      setNotification({
+        show: true,
+        message: '清除消息失败: ' + error.message
+      });
     }
-  }, [dispatch, getDeepSeekChatHistory]); // 依赖中添加 dispatch, getDeepSeekChatHistory
+  }, [dispatch]);
+
 
 
   // 设置事件监听器
@@ -201,6 +229,8 @@ const ChatPanel = memo(() => {
       eventListenerManagerRef.current.cleanupAllListeners();
     };
   }, [openTabs]);
+
+  // WebSocket 连接现在在 App 级别管理，这里不再需要
 
   // 应用启动时加载一次设置
   useEffect(() => {
@@ -214,12 +244,14 @@ const ChatPanel = memo(() => {
     
     const pollCustomModes = async () => {
       try {
-        const storedCustomModes = await getStoreValue('customModes') || [];
+        const storedCustomModes = await getStoreValue('customModes');
+        // 现在getStoreValue直接返回值，而不是嵌套结构
+        const customModesArray = Array.isArray(storedCustomModes) ? storedCustomModes : [];
         setCustomModes(prevCustomModes => {
           // 只有当customModes实际发生变化时才更新状态
-          if (JSON.stringify(prevCustomModes) !== JSON.stringify(storedCustomModes)) {
-            console.log('[ChatPanel] 检测到customModes存储变化，更新状态:', storedCustomModes);
-            return storedCustomModes;
+          if (JSON.stringify(prevCustomModes) !== JSON.stringify(customModesArray)) {
+            console.log('[ChatPanel] 检测到customModes存储变化，更新状态:', customModesArray);
+            return customModesArray;
           }
           return prevCustomModes;
         });
@@ -243,13 +275,15 @@ const ChatPanel = memo(() => {
 
 
 
+
+
+
+  // 当历史面板显示时，从后端加载会话历史
   useEffect(() => {
     if (isHistoryPanelVisible) {
-      loadDeepSeekChatHistory();
+      loadSessionHistory();
     }
-  }, [isHistoryPanelVisible, loadDeepSeekChatHistory]);
-
-
+  }, [isHistoryPanelVisible, loadSessionHistory]);
 
   // 自动滚动聊天区到底部 (此 useEffect 保留)
   useEffect(() => {
@@ -299,24 +333,15 @@ const ChatPanel = memo(() => {
         {/* 历史对话面板 */}
         {isHistoryPanelVisible && (
           <ChatHistoryPanel
-            history={deepSeekHistory}
+            history={sessionHistory}
           />
         )}
 
         {/* 模型选择面板 */}
         {showModelSelectorPanel && (
           <ModelSelectorPanel
-            selectedModel={selectedModel}
-            availableModels={availableModels}
-            onModelChange={async (modelId) => {
-              dispatch(setSelectedModel(modelId));
-              // 保存到持久化存储
-              try {
-                await setStoreValue('selectedModel', modelId);
-                console.log(`[模型选择面板] 已保存模型选择: ${modelId}`);
-              } catch (error) {
-                console.error('[模型选择面板] 保存模型选择失败:', error);
-              }
+            onModelChange={() => {
+              // 新的模型选择服务会自动保存到后端
               setShowModelSelectorPanel(false);
             }}
             onClose={() => setShowModelSelectorPanel(false)}
@@ -325,15 +350,11 @@ const ChatPanel = memo(() => {
 
         {/* 工具调用操作栏 */}
         <ToolActionBar
-          toolCallState={toolCallState}
-          pendingToolCalls={pendingToolCalls}
+          interruptInfo={interruptCard}
+          onInterruptResponse={handleInterruptResponse}
         />
 
-        {/* 提问卡片 */}
-        <QuestionCard
-          questionCard={questionCard}
-          onUserQuestionResponse={handleUserQuestionResponse}
-        />
+
 
         {/* 信息输入栏 */}
         <ChatInputArea

@@ -1,18 +1,16 @@
-import { 
+import {
   setDeepseekApiKey,
   setOpenrouterApiKey,
   setSiliconflowApiKey,
+  setAliyunApiKey,
   setAliyunEmbeddingApiKey,
-  setIntentAnalysisModel,
-  setSelectedModel,
-  setAvailableModels,
+  setOllamaBaseUrl,
   setEnableStream,
   setCustomPromptForMode,
   setModeFeatureSetting,
   setContextLimitSettings,
   setAdditionalInfoForMode,
   setAiParametersForMode,
-  setRetrievalTopK
 } from '../../../store/slices/chatSlice';
 
 /**
@@ -20,8 +18,7 @@ import {
  * 负责加载和管理所有聊天相关的设置
  */
 class SettingsManager {
-  constructor(ipcRenderer, dispatch) {
-    this.ipcRenderer = ipcRenderer;
+  constructor(dispatch) {
     this.dispatch = dispatch;
   }
 
@@ -30,40 +27,30 @@ class SettingsManager {
    */
   async loadSettings() {
     try {
-      const {
-        getStoreValue,
-        listAllModels,
-        invoke,
-        send
-      } = this.ipcRenderer;
-
       // 加载API密钥设置
-      await this.loadApiKeys(getStoreValue);
+      await this.loadApiKeys();
       
       // 加载模型设置
-      await this.loadModelSettings(getStoreValue, listAllModels);
+      await this.loadModelSettings();
       
       // 加载模式设置
-      await this.loadModeSettings(getStoreValue);
+      await this.loadModeSettings();
       
       // 加载AI参数设置
-      await this.loadAiParameters(getStoreValue);
+      await this.loadAiParameters();
       
       // 加载流式传输设置
-      await this.loadStreamSettings(getStoreValue, send);
+      await this.loadStreamSettings();
       
       // 加载功能设置
-      await this.loadFeatureSettings(getStoreValue);
+      await this.loadFeatureSettings();
       
       // 加载上下文限制设置
-      await this.loadContextLimitSettings(invoke);
+      await this.loadContextLimitSettings();
       
       // 加载附加信息设置
-      await this.loadAdditionalInfo(getStoreValue);
+      await this.loadAdditionalInfo();
       
-      // 加载检索设置
-      await this.loadRetrievalSettings(invoke);
-
       console.log('SettingsManager: 所有设置加载完成');
     } catch (error) {
       console.error('SettingsManager: 加载设置失败:', error);
@@ -74,55 +61,63 @@ class SettingsManager {
   /**
    * 加载API密钥设置
    */
-  async loadApiKeys(getStoreValue) {
-    const apiKeys = [
-      { key: 'deepseekApiKey', action: setDeepseekApiKey, name: 'DeepSeek' },
-      { key: 'openrouterApiKey', action: setOpenrouterApiKey, name: 'OpenRouter' },
-      { key: 'siliconflowApiKey', action: setSiliconflowApiKey, name: '硅基流动' },
-      { key: 'aliyunEmbeddingApiKey', action: setAliyunEmbeddingApiKey, name: '阿里云嵌入' }
-    ];
-
-    for (const { key, action, name } of apiKeys) {
-      const storedValue = await getStoreValue(key);
-      if (storedValue) {
-        this.dispatch(action(storedValue));
-        console.log(`SettingsManager: 加载到${name} API Key`);
-      }
+  async loadApiKeys() {
+    console.log('SettingsManager: 开始加载API密钥设置...');
+    
+    // 加载DeepSeek API密钥
+    const storedDeepseekApiKey = await this.getStoreValue('deepseekApiKey');
+    console.log('[SettingsManager] 从后端获取的DeepSeek API密钥原始数据:', storedDeepseekApiKey);
+    if (storedDeepseekApiKey) {
+      this.dispatch(setDeepseekApiKey(storedDeepseekApiKey));
+      console.log('SettingsManager: 加载到DeepSeek API密钥');
     }
 
-    // 加载意图分析模型
-    const storedIntentAnalysisModel = await getStoreValue('intentAnalysisModel');
-    if (storedIntentAnalysisModel) {
-      this.dispatch(setIntentAnalysisModel(storedIntentAnalysisModel));
-      console.log(`SettingsManager: 加载到意图分析模型: ${storedIntentAnalysisModel}`);
+    // 加载OpenRouter API密钥
+    const storedOpenrouterApiKey = await this.getStoreValue('openrouterApiKey');
+    console.log('[SettingsManager] 从后端获取的OpenRouter API密钥原始数据:', storedOpenrouterApiKey);
+    if (storedOpenrouterApiKey) {
+      this.dispatch(setOpenrouterApiKey(storedOpenrouterApiKey));
+      console.log('SettingsManager: 加载到OpenRouter API密钥');
+    }
+
+    // 加载SiliconFlow API密钥
+    const storedSiliconflowApiKey = await this.getStoreValue('siliconflowApiKey');
+    console.log('[SettingsManager] 从后端获取的SiliconFlow API密钥原始数据:', storedSiliconflowApiKey);
+    if (storedSiliconflowApiKey) {
+      this.dispatch(setSiliconflowApiKey(storedSiliconflowApiKey));
+      console.log('SettingsManager: 加载到SiliconFlow API密钥');
+    }
+
+    // 加载阿里云嵌入API密钥
+    const storedAliyunEmbeddingApiKey = await this.getStoreValue('aliyunEmbeddingApiKey');
+    console.log('[SettingsManager] 从后端获取的阿里云嵌入API密钥原始数据:', storedAliyunEmbeddingApiKey);
+    if (storedAliyunEmbeddingApiKey) {
+      this.dispatch(setAliyunEmbeddingApiKey(storedAliyunEmbeddingApiKey));
+      console.log('SettingsManager: 加载到阿里云嵌入API密钥');
+    }
+
+    // 加载阿里云API密钥
+    const storedAliyunApiKey = await this.getStoreValue('aliyunApiKey');
+    console.log('[SettingsManager] 从后端获取的阿里云API密钥原始数据:', storedAliyunApiKey);
+    if (storedAliyunApiKey) {
+      this.dispatch(setAliyunApiKey(storedAliyunApiKey));
+      console.log('SettingsManager: 加载到阿里云API密钥');
+    }
+
+    // 加载Ollama服务地址
+    const storedOllamaBaseUrl = await this.getStoreValue('ollamaBaseUrl');
+    console.log('[SettingsManager] 从后端获取的Ollama服务地址原始数据:', storedOllamaBaseUrl);
+    if (storedOllamaBaseUrl) {
+      this.dispatch(setOllamaBaseUrl(storedOllamaBaseUrl));
+      console.log(`SettingsManager: 加载到Ollama服务地址: ${storedOllamaBaseUrl}`);
     }
   }
 
   /**
    * 加载模型设置
    */
-  async loadModelSettings(getStoreValue, listAllModels) {
-    console.log('SettingsManager: 开始加载模型设置...');
-    const modelsResult = await listAllModels();
-    
-    if (modelsResult.success) {
-      this.dispatch(setAvailableModels(modelsResult.models));
-      console.log(`SettingsManager: 加载到可用模型: ${modelsResult.models.length}个`);
-
-      // 同步选中模型
-      const currentStoredModel = await getStoreValue('selectedModel');
-      if (currentStoredModel && this.isModelAvailable(modelsResult.models, currentStoredModel)) {
-        this.dispatch(setSelectedModel(currentStoredModel));
-        console.log(`SettingsManager: 同步选中模型: ${currentStoredModel}`);
-      } else if (modelsResult.models.length > 0) {
-        // 设置默认模型
-        const defaultModel = modelsResult.models[0].id;
-        this.dispatch(setSelectedModel(defaultModel));
-        console.log(`SettingsManager: 设置默认模型: ${defaultModel}`);
-      }
-    } else {
-      console.error('SettingsManager: 获取可用模型列表失败:', modelsResult.error);
-    }
+  async loadModelSettings() {
+    console.log('SettingsManager:现在模型从litellm网关加载');
   }
 
   /**
@@ -135,20 +130,23 @@ class SettingsManager {
   /**
    * 加载模式设置
    */
-  async loadModeSettings(getStoreValue) {
+  async loadModeSettings() {
     // 加载当前模式
-    const storedCurrentMode = await getStoreValue('currentMode');
+    const storedCurrentMode = await this.getStoreValue('currentMode');
     if (storedCurrentMode) {
       console.log(`SettingsManager: 加载到当前模式: ${storedCurrentMode}`);
+      // 设置当前模式到组件状态
+      this.setCurrentMode(storedCurrentMode);
     }
 
     // 加载自定义模式
-    const storedCustomModes = await getStoreValue('customModes') || [];
+    const storedCustomModesResult = await this.getStoreValue('customModes');
+    const storedCustomModes = Array.isArray(storedCustomModesResult) ? storedCustomModesResult : [];
     console.log(`SettingsManager: 加载到自定义模式: ${storedCustomModes.length}个`);
 
     // 加载自定义提示词
-    const storedCustomPrompts = await getStoreValue('customPrompts');
-    if (storedCustomPrompts) {
+    const storedCustomPrompts = await this.getStoreValue('customPrompts');
+    if (storedCustomPrompts && typeof storedCustomPrompts === 'object') {
       Object.entries(storedCustomPrompts).forEach(([mode, prompt]) => {
         this.dispatch(setCustomPromptForMode({ mode, prompt }));
       });
@@ -157,21 +155,35 @@ class SettingsManager {
   }
 
   /**
+   * 设置当前模式
+   * 这个方法需要在组件中实现，用于更新组件的currentMode状态
+   */
+  setCurrentMode(mode) {
+    console.log(`SettingsManager: 设置当前模式为: ${mode}`);
+    // 这个方法需要在组件中重写，用于更新组件的currentMode状态
+    if (this.onCurrentModeChange) {  //那我感觉这个if可以去掉，直接调用不就行了
+      this.onCurrentModeChange(mode);  //调用回调函数，将mode传递出去
+    }
+  }
+
+  /**
    * 加载AI参数设置
    */
-  async loadAiParameters(getStoreValue) {
-    const storedAiParameters = await getStoreValue('aiParameters');
-    const storedCustomModes = await getStoreValue('customModes') || [];
+  async loadAiParameters() {
+    const storedAiParametersResult = await this.getStoreValue('aiParameters');
+    const storedCustomModesResult = await this.getStoreValue('customModes');
+    const storedAiParameters = storedAiParametersResult && typeof storedAiParametersResult === 'object' ? storedAiParametersResult : {};
+    const storedCustomModes = Array.isArray(storedCustomModesResult) ? storedCustomModesResult : [];
 
-    if (storedAiParameters) {
+    if (Object.keys(storedAiParameters).length > 0) {
       // 设置各个模式的AI参数
       const allModes = new Set([
-        'general', 'outline', 'writing', 'adjustment', // 内置模式
+        'outline', 'writing', 'adjustment', // 内置模式
         ...storedCustomModes.map(mode => mode.id) // 自定义模式
       ]);
 
       for (const mode of allModes) {
-        if (storedAiParameters[mode]) {
+        if (storedAiParameters[mode] && typeof storedAiParameters[mode] === 'object') {
           this.dispatch(setAiParametersForMode({ mode, parameters: storedAiParameters[mode] }));
         } else {
           // 使用默认参数
@@ -183,7 +195,7 @@ class SettingsManager {
     } else {
       // 初始化所有模式的默认参数
       const allModes = new Set([
-        'general', 'outline', 'writing', 'adjustment',
+        'outline', 'writing', 'adjustment',
         ...storedCustomModes.map(mode => mode.id)
       ]);
       
@@ -198,26 +210,25 @@ class SettingsManager {
   /**
    * 加载流式传输设置
    */
-  async loadStreamSettings(getStoreValue, send) {
-    const storedEnableStream = await getStoreValue('enableStream');
+  async loadStreamSettings() {
+    const storedEnableStream = await this.getStoreValue('enableStream');
     const streamEnabled = storedEnableStream !== false; // 默认为 true
     this.dispatch(setEnableStream(streamEnabled));
-    send('set-streaming-mode', { stream: streamEnabled });
-    console.log(`SettingsManager: 加载到流式传输设置: ${streamEnabled}，并已同步到后端`);
+    console.log(`SettingsManager: 加载到流式传输设置: ${streamEnabled}`);
   }
 
   /**
    * 加载功能设置
    */
-  async loadFeatureSettings(getStoreValue) {
-    const storedModeFeatureSettings = await getStoreValue('modeFeatureSettings');
-    if (storedModeFeatureSettings) {
+  async loadFeatureSettings() {
+    const storedModeFeatureSettings = await this.getStoreValue('modeFeatureSettings');
+    if (storedModeFeatureSettings && typeof storedModeFeatureSettings === 'object') {
       Object.entries(storedModeFeatureSettings).forEach(([mode, settings]) => {
-        if (settings.ragRetrievalEnabled !== undefined) {
-          this.dispatch(setModeFeatureSetting({ 
-            mode, 
-            feature: 'ragRetrievalEnabled', 
-            enabled: settings.ragRetrievalEnabled 
+        if (settings && typeof settings === 'object' && settings.ragRetrievalEnabled !== undefined) {
+          this.dispatch(setModeFeatureSetting({
+            mode,
+            feature: 'ragRetrievalEnabled',
+            enabled: settings.ragRetrievalEnabled
           }));
         }
       });
@@ -228,26 +239,27 @@ class SettingsManager {
   /**
    * 加载上下文限制设置
    */
-  async loadContextLimitSettings(invoke) {
+  async loadContextLimitSettings() {
     try {
-      const contextSettingsResult = await invoke('get-context-limit-settings');
-      if (contextSettingsResult.success) {
-        this.dispatch(setContextLimitSettings(contextSettingsResult.settings));
-        console.log('SettingsManager: 加载到上下文限制设置');
-      } else {
-        console.error('SettingsManager: 加载上下文限制设置失败:', contextSettingsResult.error);
-      }
+      // HTTP 服务暂不支持上下文限制设置，使用默认值
+      const defaultSettings = {
+        maxTokens: 4000,
+        maxMessages: 50,
+        maxHistoryLength: 10000
+      };
+      this.dispatch(setContextLimitSettings(defaultSettings));
+      console.log('SettingsManager: 使用默认上下文限制设置');
     } catch (error) {
-      console.error('SettingsManager: 调用上下文限制设置API失败:', error);
+      console.error('SettingsManager: 加载上下文限制设置失败:', error);
     }
   }
 
   /**
    * 加载附加信息设置
    */
-  async loadAdditionalInfo(getStoreValue) {
-    const storedAdditionalInfo = await getStoreValue('additionalInfo');
-    if (storedAdditionalInfo) {
+  async loadAdditionalInfo() {
+    const storedAdditionalInfo = await this.getStoreValue('additionalInfo');
+    if (storedAdditionalInfo && typeof storedAdditionalInfo === 'object') {
       Object.entries(storedAdditionalInfo).forEach(([mode, info]) => {
         this.dispatch(setAdditionalInfoForMode({ mode, info }));
       });
@@ -256,21 +268,47 @@ class SettingsManager {
   }
 
   /**
-   * 加载检索设置
+   * 获取存储值 - 使用 HTTP 服务
    */
-  async loadRetrievalSettings(invoke) {
+  async getStoreValue(key) {
     try {
-      const retrievalSettingsResult = await invoke('get-retrieval-top-k');
-      if (retrievalSettingsResult.success) {
-        this.dispatch(setRetrievalTopK(retrievalSettingsResult.topK));
-        console.log(`SettingsManager: 加载到检索设置: topK=${retrievalSettingsResult.topK}`);
-      } else {
-        console.warn('SettingsManager: 加载检索设置失败，使用默认值');
-        this.dispatch(setRetrievalTopK(3));
+      const response = await fetch(`/api/config/store?key=${encodeURIComponent(key)}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.data;
       }
+      return null;
     } catch (error) {
-      console.error('SettingsManager: 调用检索设置API失败，使用默认值:', error);
-      this.dispatch(setRetrievalTopK(3));
+      console.error('获取存储值失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 获取模型列表 - 使用 HTTP 服务
+   */
+  async listAllModels() {
+    try {
+      const response = await fetch('/api/models/');
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          success: true,
+          models: data.data || []
+        };
+      }
+      return {
+        success: false,
+        error: '获取模型列表失败',
+        models: []
+      };
+    } catch (error) {
+      console.error('获取模型列表失败:', error);
+      return {
+        success: false,
+        error: error.message,
+        models: []
+      };
     }
   }
 }

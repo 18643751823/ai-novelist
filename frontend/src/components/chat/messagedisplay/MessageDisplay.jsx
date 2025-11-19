@@ -1,12 +1,12 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteMessage, restoreMessages } from '../../../store/slices/chatSlice';
 import { toggleToolMessageCollapse } from '../../../store/slices/messageSlice';
-import { restoreChatCheckpoint } from '../../../ipc/checkpointIpcHandler';
+import checkpointService from '../../../services/checkpointService';
 import { ToolCallCard } from '../services/ToolCallManager';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCopy, faTrashCan, faSpinner, faClock, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
-import MarkdownMessageRenderer from './MarkdownMessageRenderer';
+import ReactMarkdownMessageRenderer from './ReactMarkdownMessageRenderer';
 
 // 消息显示组件
 const MessageDisplay = React.forwardRef(({
@@ -18,37 +18,17 @@ const MessageDisplay = React.forwardRef(({
   onEnterAdjustmentMode
 }, ref) => {
   const dispatch = useDispatch();
-  const editorRefs = useRef({});
   
   // 获取tool消息折叠状态
   const collapsedToolMessages = useSelector((state) => state.chat.message.collapsedToolMessages);
 
-  // 新增：获取所有消息的最新内容
+  // 简化：直接返回消息内容，因为新的渲染器不需要编辑器实例
   const getAllMessagesLatestContent = () => {
-    const updatedMessages = messages.map(msg => {
-      const editor = editorRefs.current[msg.id];
-      let latestContent = msg.content || msg.text || '';
-      
-      // 如果消息有对应的编辑器实例，获取编辑器中的最新内容
-      if (editor && typeof editor.getValue === 'function') {
-        try {
-          const editorContent = editor.getValue();
-          if (editorContent !== undefined && editorContent !== null) {
-            latestContent = editorContent;
-          }
-        } catch (error) {
-          console.warn(`获取消息 ${msg.id} 编辑器内容失败:`, error);
-        }
-      }
-      
-      return {
-        ...msg,
-        content: latestContent,
-        text: latestContent // 确保 text 和 content 同步
-      };
-    });
-    
-    return updatedMessages;
+    return messages.map(msg => ({
+      ...msg,
+      content: msg.content || msg.text || '',
+      text: msg.content || msg.text || ''
+    }));
   };
 
   // 提供获取最新内容的方法给父组件
@@ -72,27 +52,6 @@ const MessageDisplay = React.forwardRef(({
     });
   };
 
-  const handleEditMessage = (messageId, content) => {
-    setEditingMessageId(messageId);
-    setEditedContent(content);
-  };
-
-  const handleSaveMessage = (messageId) => {
-    if (editedContent.trim()) {
-      dispatch(updateMessageContent({ messageId, content: editedContent }));
-    }
-    setEditingMessageId(null);
-    setEditedContent('');
-  };
-
-  const handleCancelEdit = () => {
-    setEditingMessageId(null);
-    setEditedContent('');
-  };
-
-  const handleContentChange = (content) => {
-    setEditedContent(content);
-  };
 
   // 渲染AI消息
   const renderAIMessage = (msg) => {
@@ -132,13 +91,9 @@ const MessageDisplay = React.forwardRef(({
         )}
 
         <div className="message-content">
-          {/* 使用Markdown渲染器显示消息内容 - 流式传输时也显示内容 */}
-          <MarkdownMessageRenderer
-            ref={(el) => {
-              if (el) editorRefs.current[msg.id] = el;
-            }}
+          {/* 使用ReactMarkdown渲染器显示消息内容 - 流式传输时也显示内容 */}
+          <ReactMarkdownMessageRenderer
             value={content}
-            height="auto"
             isStreaming={msg.isLoading} // 传递流式传输状态
           />
         </div>
@@ -162,14 +117,16 @@ const MessageDisplay = React.forwardRef(({
     );
   };
   // 渲染系统消息
-  const renderSystemMessage = (msg) => (
-    <>
-      <div className="message-header">系统: {msg.name ? `${msg.name}` : ''}</div>
-      <div className="message-content">
-        {msg.text || msg.content}
-      </div>
-    </>
-  );
+  const renderSystemMessage = (msg) => {    
+    return (
+      <>
+        <div className="message-header">系统: {msg.name ? `${msg.name}` : ''}</div>
+        <div className="message-content">
+          {msg.text || msg.content}
+        </div>
+      </>
+    );
+  };
 
   // 渲染工具消息
   const renderToolMessage = (msg) => {
@@ -192,12 +149,8 @@ const MessageDisplay = React.forwardRef(({
         </div>
         {!isCollapsed && (
           <div className="message-content">
-            <MarkdownMessageRenderer
-              ref={(el) => {
-                if (el) editorRefs.current[msg.id] = el;
-              }}
+            <ReactMarkdownMessageRenderer
               value={content}
-              height="auto"
             />
           </div>
         )}
@@ -220,12 +173,8 @@ const MessageDisplay = React.forwardRef(({
       <>
         <div className="message-header">用户:</div>
         <div className="message-content">
-          <MarkdownMessageRenderer
-            ref={(el) => {
-              if (el) editorRefs.current[msg.id] = el;
-            }}
+          <ReactMarkdownMessageRenderer
             value={content}
-            height="auto"
           />
         </div>
         <div className="message-actions">
@@ -254,7 +203,7 @@ const MessageDisplay = React.forwardRef(({
                     onConfirm: async () => {
                       const taskId = msg.sessionId || currentSessionId || 'default-task';
                       console.log(`Restoring checkpoint ${msg.checkpointId} for task ${taskId}...`);
-                      const result = await restoreChatCheckpoint(taskId, msg.checkpointId);
+                      const result = await checkpointService.restoreCheckpoint(msg.checkpointId);
                       if (result.success) {
                         // **关键修复**: 调用新的 restoreMessages action 来重构历史状态
                         if (result.messages) {

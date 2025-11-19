@@ -40,16 +40,20 @@ const toolSlice = createSlice({
       state.toolCallState = 'streaming';
 
       toolCallDeltas.forEach(delta => {
-        const { index, id } = delta;
-        const func = delta.function;
+        const { index, id, name, args } = delta;
         if (!state.pendingToolCalls[index]) {
-          state.pendingToolCalls[index] = { toolCallId: '', function: { name: '', arguments: '' } };
+          state.pendingToolCalls[index] = {
+            toolCallId: '',
+            name: '',
+            args: {}
+          };
         }
         const pendingTool = state.pendingToolCalls[index];
         if (id) pendingTool.toolCallId = id;
-        if (func) {
-          if (func.name) pendingTool.function.name = func.name;
-          if (func.arguments) pendingTool.function.arguments += func.arguments;
+        if (name) pendingTool.name = name;
+        if (args) {
+          // 合并参数
+          pendingTool.args = { ...pendingTool.args, ...args };
         }
       });
     },
@@ -59,7 +63,9 @@ const toolSlice = createSlice({
       const suggestions = action.payload;
       
       // 处理 ask_user_question 特殊工具
-      const askUserQuestionTool = suggestions.find(tool => tool.function && tool.function.name === 'ask_user_question');
+      const askUserQuestionTool = suggestions.find(tool =>
+        (tool.name === 'ask_user_question') || (tool.function && tool.function.name === 'ask_user_question')
+      );
 
       if (askUserQuestionTool) {
         // 如果是提问工具，清空待处理工具调用
@@ -67,23 +73,29 @@ const toolSlice = createSlice({
         state.toolCallState = 'idle';
       } else {
         // 正常处理其他工具建议
-        state.pendingToolCalls = suggestions;
+        state.pendingToolCalls = suggestions.map(tool => ({
+          toolCallId: tool.toolCallId || tool.id,
+          name: tool.name || tool.function?.name,
+          args: tool.args || tool.toolArgs || {},
+          type: tool.type || 'tool_call'
+        }));
         state.toolCallState = 'pending_user_action';
       }
     },
     
     // 工具流结束处理
     handleToolStreamEnd: (state) => {
-      // 最终解析所有累积的工具调用参数
+      // 新格式中 args 已经是对象，不需要额外解析
       const processAndParseTools = (toolList) => {
         if (!Array.isArray(toolList)) return;
         toolList.forEach(tool => {
-          if (tool.function && typeof tool.function.arguments === 'string' && !tool.toolArgs) {
+          // 确保 args 是对象格式
+          if (tool.args && typeof tool.args === 'string') {
             try {
-              tool.toolArgs = JSON.parse(tool.function.arguments);
+              tool.args = JSON.parse(tool.args);
             } catch (e) {
-              console.error(`解析工具参数失败: ${tool.function.arguments}`, e);
-              tool.toolArgs = { "error": "failed to parse arguments" };
+              console.error(`解析工具参数失败: ${tool.args}`, e);
+              tool.args = { "error": "failed to parse arguments" };
             }
           }
         });

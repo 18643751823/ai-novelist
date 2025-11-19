@@ -6,11 +6,12 @@ const messageSlice = createSlice({
   initialState: {
     messages: [],
     questionCard: null,
+    interruptCard: null, // 新增：中断操作卡片
     isHistoryPanelVisible: false,
-    deepSeekHistory: [],
     isStreaming: false,
     abortController: null,
-    collapsedToolMessages: {} // 新增：存储tool消息的折叠状态
+    collapsedToolMessages: {}, // 新增：存储tool消息的折叠状态
+    sessionHistory: [] // 修改：由后端管理的会话历史
   },
   reducers: {
     // 消息操作
@@ -72,30 +73,16 @@ const messageSlice = createSlice({
         } else if (msg.role === 'assistant') {
           // 解析工具调用，并为历史记录添加 'historical' 状态
           const toolCalls = (msg.tool_calls || []).map(tc => {
-            let toolArgs;
-            // 安全检查：确保 tc.function 存在
-            if (!tc.function) {
-              console.warn('工具调用缺少 function 属性:', tc);
-              return {
-                id: tc.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                function: { name: 'unknown', arguments: '{}' },
-                type: 'function',
-                toolArgs: { error: 'missing function property' },
-                status: 'historical',
-              };
-            }
+            // 新的工具调用格式：{ name, args, id, type }
+            const toolName = tc.name || tc.function?.name || 'unknown';
+            const toolArgs = tc.args || tc.arguments || {};
+            const toolId = tc.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             
-            try {
-              toolArgs = JSON.parse(tc.function.arguments || '{}');
-            } catch (e) {
-              toolArgs = { error: 'failed to parse arguments', raw: tc.function.arguments };
-            }
             return {
-              id: tc.id,
-              function: tc.function,
-              type: 'function',
-              toolArgs,
-              // **关键**: 添加状态以告知UI这是历史记录，不应有交互按钮
+              id: toolId,
+              name: toolName,
+              args: toolArgs,
+              type: tc.type || 'tool_call',
               status: 'historical',
             };
           });
@@ -166,15 +153,24 @@ const messageSlice = createSlice({
     setQuestionCard: (state, action) => {
       state.questionCard = action.payload;
     },
+    
+    // 中断卡片管理
+    setInterruptCard: (state, action) => {
+      state.interruptCard = action.payload;
+    },
+    
+    clearInterruptCard: (state) => {
+      state.interruptCard = null;
+    },
     // 历史面板管理
     setIsHistoryPanelVisible: (state, action) => {
       state.isHistoryPanelVisible = action.payload;
     },
     
-    setDeepSeekHistory: (state, action) => {
-      state.deepSeekHistory = action.payload;
+    // 会话历史管理（由后端控制）
+    setSessionHistory: (state, action) => {
+      state.sessionHistory = action.payload;
     },
-
     // 新增：tool消息折叠状态管理
     toggleToolMessageCollapse: (state, action) => {
       const { messageId } = action.payload;
@@ -200,13 +196,29 @@ const messageSlice = createSlice({
       const currentMessages = state.messages;
 
       switch (type) {
+        case 'interrupt':
+          // 处理中断信息，设置中断操作卡片而不是显示消息
+          state.interruptCard = {
+            id: payload.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            reason: payload.reason,
+            value: payload.value,
+            sessionId: payload.sessionId
+          };
+          break;
+          
         case 'text_stream':
         case 'tool_stream':
-          // 处理流式响应，智能创建占位符
-          let lastAssistantMessage = currentMessages[currentMessages.length - 1];
-
-          // 检查最后一条消息是否不是AI消息，如果是，则说明需要一个新的AI消息占位符
-          if (!lastAssistantMessage || lastAssistantMessage.role !== 'assistant') {
+        case 'reasoning_stream':
+          // 处理流式响应，简单方案：如果最后一条AI消息已完成，就创建新气泡
+          let targetMessage = null;
+          const lastMsg = currentMessages[currentMessages.length - 1];
+          
+          // 检查最后一条消息是否是AI消息且仍在加载中
+          if (lastMsg && lastMsg.role === 'assistant' && lastMsg.isLoading) {
+            // 继续使用最后一条AI消息
+            targetMessage = lastMsg;
+          } else {
+            // 创建新的AI消息占位符
             const newPlaceholder = {
               sender: 'AI',
               text: '',
@@ -215,51 +227,68 @@ const messageSlice = createSlice({
               className: 'ai',
               sessionId: payload.sessionId,
               isLoading: true,
-              id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}` // 确保有唯一ID
+              id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
             };
             currentMessages.push(newPlaceholder);
-            lastAssistantMessage = newPlaceholder;
-          }
-
-          // 确保消息有唯一ID
-          if (!lastAssistantMessage.id) {
-            lastAssistantMessage.id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          }
-
-          // 只有在第一次收到数据时才清空占位内容，但保持 isLoading 状态
-          if (lastAssistantMessage.isLoading && !lastAssistantMessage.content && !lastAssistantMessage.text) {
-            lastAssistantMessage.content = '';
-            lastAssistantMessage.text = '';
+            targetMessage = newPlaceholder;
           }
 
           // 根据类型处理数据
           if (type === 'text_stream') {
-            // 流式文本内容追加
-            lastAssistantMessage.content += payload.content;
-            lastAssistantMessage.text += payload.content;
-          } else if (type === 'tool_stream') {
-            const toolCallDeltas = payload;
-
-            if (!lastAssistantMessage.toolCalls) {
-              lastAssistantMessage.toolCalls = [];
+            // 检查是否是重复内容，如果是则不追加
+            const existingContent = targetMessage.content || '';
+            const newContent = payload.content;
+            
+            // 如果新内容已经包含在现有内容中，则不追加
+            if (existingContent && existingContent.includes(newContent)) {
+              console.log('[messageSlice] 检测到重复内容，跳过追加:', newContent.substring(0, 50) + '...');
+            } else if (existingContent && newContent.includes(existingContent)) {
+              // 如果新内容包含了现有内容，则替换整个内容
+              console.log('[messageSlice] 检测到内容包含关系，替换整个内容');
+              targetMessage.content = newContent;
+              targetMessage.text = newContent;
+            } else {
+              // 正常追加新内容
+              targetMessage.content += newContent;
+              targetMessage.text += newContent;
             }
+          } else if (type === 'tool_stream') {
+            const toolCallDeltas = payload.payload || payload; // 支持两种格式：payload.payload 或直接 payload
+  
+            if (!targetMessage.toolCalls) {
+              targetMessage.toolCalls = [];
+            }
+            // 修复Immer错误：使用不可变的方式更新数组
+            const updatedToolCalls = [...(targetMessage.toolCalls || [])];
+            
             toolCallDeltas.forEach(delta => {
-              const { index, id } = delta;
-              const func = delta.function;
-              if (func && func.arguments) {
-                lastAssistantMessage.content += func.arguments;
-                lastAssistantMessage.text += func.arguments;
+              const { name, args, id } = delta;
+              
+              if (args) {
+                const argsString = typeof args === 'string' ? args : JSON.stringify(args);
+                targetMessage.content += argsString;
+                targetMessage.text += argsString;
               }
-              if (!lastAssistantMessage.toolCalls[index]) {
-                lastAssistantMessage.toolCalls[index] = { id: '', function: { name: '', arguments: '' }, type: 'function' };
-              }
-              const toolCall = lastAssistantMessage.toolCalls[index];
-              if (id) toolCall.id = id;
-              if (func) {
-                if (func.name) toolCall.function.name = func.name;
-                if (func.arguments) toolCall.function.arguments += func.arguments;
-              }
+              
+              // 创建新的工具调用对象
+              const newToolCall = {
+                id: id || '',
+                name: name || '',
+                args: args || {},
+                type: 'tool_call'
+              };
+              
+              // 添加到工具调用列表
+              updatedToolCalls.push(newToolCall);
             });
+            
+            targetMessage.toolCalls = updatedToolCalls;
+          } else if (type === 'reasoning_stream') {
+            // 流式思考内容追加
+            if (!targetMessage.reasoning_content) {
+              targetMessage.reasoning_content = '';
+            }
+            targetMessage.reasoning_content += payload.content;
           }
           break;
           
@@ -281,12 +310,13 @@ const messageSlice = createSlice({
           const processAndParseTools = (toolList) => {
             if (!Array.isArray(toolList)) return;
             toolList.forEach(tool => {
-              if (tool.function && typeof tool.function.arguments === 'string' && !tool.toolArgs) {
+              // 新格式中 args 已经是对象，不需要额外解析
+              if (tool.args && typeof tool.args === 'string') {
                 try {
-                  tool.toolArgs = JSON.parse(tool.function.arguments);
+                  tool.args = JSON.parse(tool.args);
                 } catch (e) {
-                  console.error(`解析工具参数失败: ${tool.function.arguments}`, e);
-                  tool.toolArgs = { "error": "failed to parse arguments" };
+                  console.error(`解析工具参数失败: ${tool.args}`, e);
+                  tool.args = { "error": "failed to parse arguments" };
                 }
               }
             });
@@ -413,12 +443,12 @@ const messageSlice = createSlice({
           const lastMessageForSuggestions = currentMessages[currentMessages.length - 1];
           
           if (lastMessageForSuggestions && lastMessageForSuggestions.role === 'assistant') {
-            // 更新消息中的工具调用信息用于显示
+            // 更新消息中的工具调用信息用于显示（新格式）
             lastMessageForSuggestions.toolCalls = suggestions.map(tool => ({
-              id: tool.toolCallId,
-              function: tool.function,
-              type: 'function',
-              toolArgs: tool.toolArgs,
+              id: tool.toolCallId || tool.id,
+              name: tool.name || tool.function?.name,
+              args: tool.args || tool.toolArgs || {},
+              type: tool.type || 'tool_call',
             }));
           }
           break;
@@ -434,13 +464,25 @@ const messageSlice = createSlice({
           break;
           
         case 'streaming_ended':
-          // 流式传输结束，清除流式状态
+          // 流式传输结束，清除流式状态并更新所有AI消息的加载状态
           state.isStreaming = false;
+          
+          // 将所有AI消息的isLoading状态设为false
+          currentMessages.forEach(msg => {
+            if (msg.role === 'assistant' && msg.isLoading) {
+              msg.isLoading = false;
+            }
+          });
           break;
           
         case 'batch_processing_complete':
           // 批量工具处理完成，不需要显示消息，静默处理
           console.log('[messageSlice] 批量工具处理完成');
+          break;
+          
+        case 'tool_call_request':
+          // 工具调用请求，由toolSlice处理，这里只记录日志
+          console.log(`[messageSlice] 收到工具调用请求，由toolSlice处理`);
           break;
           
         default:
@@ -467,8 +509,10 @@ export const {
   setStreamingState,
   stopStreaming,
   setQuestionCard,
+  setInterruptCard,
+  clearInterruptCard,
   setIsHistoryPanelVisible,
-  setDeepSeekHistory,
+  setSessionHistory,
   handleStreamingMessage,
   toggleToolMessageCollapse,
   setToolMessageCollapse

@@ -510,26 +510,6 @@
   line-height: 1.4;
 }
 
-/* Ollama重连按钮 */
-.redetect-button {
-  padding: 8px 16px;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius-small);
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s ease;
-}
-
-.redetect-button:hover {
-  background-color: var(--primary-color-dark);
-}
-
-.redetect-button:disabled {
-  background-color: var(--divider-color);
-  cursor: not-allowed;
-}
 
 /* 滚动条样式 */
 .provider-list::-webkit-scrollbar {

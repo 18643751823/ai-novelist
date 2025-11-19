@@ -2,7 +2,7 @@
 
 本目录包含小说编辑器的主要组件，负责文本编辑、差异对比、分屏显示等功能。
 
-**重要变更**: 项目已从 Tiptap 编辑器重构为 Vditor 编辑器，提供更好的 Markdown 编辑体验。
+**重要变更**: 项目已从 Vditor 编辑器重构为 Tiptap 编辑器，提供更好的富文本编辑体验。
 
 ## 文件结构概览
 
@@ -18,7 +18,7 @@ editor/
 ├── SplitViewPanel.css     # 分屏对比样式
 ├── TabBar.js              # 标签栏组件
 ├── TabBar.css             # 标签栏样式
-├── VditorEditor.jsx       # Vditor 编辑器封装组件
+├── TiptapEditor.jsx       # Tiptap 编辑器封装组件
 ├── README.md              # 本说明文档
 ├── hooks/                 # 自定义 React Hooks
 │   └── useContextMenu.js  # 上下文菜单 Hook
@@ -26,7 +26,7 @@ editor/
 │   ├── AutoSaveService.js # 自动保存服务
 │   ├── CharacterCountService.js # 字符计数服务
 │   ├── TitleManager.js    # 标题管理服务
-│   └── VditorLifecycleManager.js # Vditor 生命周期管理
+│   └── TiptapLifecycleManager.js # Tiptap 生命周期管理
 └── utils/                 # 工具函数
     └── editorHelpers.js   # 编辑器辅助函数
 ```
@@ -52,29 +52,34 @@ editor/
 - `雷云.png`: 雷云背景图片  
 - `烛火.png`: 烛火背景图片
 
-### 2. VditorEditor.jsx
+### 2. TiptapEditor.jsx
 
-**功能**: Vditor Markdown 编辑器封装组件，提供完整的 Markdown 编辑体验
+**功能**: Tiptap 富文本编辑器封装组件，提供完整的富文本编辑体验
 
 **主要特性**:
-- 基于 Vditor 的 Markdown 编辑器
-- 支持即时渲染 (IR) 模式
+- 基于 Tiptap 的富文本编辑器
 - 丰富的工具栏功能（标题、粗体、斜体、列表、表格等）
 - 图片上传和拖拽上传支持
-- 复制为纯文本功能
 - 语法高亮和代码块支持
-- 数学公式渲染 (KaTeX)
+- 任务列表、高亮文本等高级功能
 - 深色主题支持
 
 **核心方法**:
-- `useEffect`: 处理 Vditor 实例的初始化和销毁
+- `useEditor`: 处理 Tiptap 实例的初始化和销毁
 - `useImperativeHandle`: 提供编辑器 API 给父组件
-- 图片上传处理器：集成 IPC 进行文件上传
+- 图片上传处理器：集成图片上传服务
 
 **技术依赖**:
-- `vditor`: Markdown 编辑器核心
-- `vditor/dist/index.css`: 编辑器样式
-- IPC 通信：图片上传功能
+- `@tiptap/react`: 富文本编辑器核心
+- `@tiptap/starter-kit`: 基础扩展包
+- `@tiptap/extension-placeholder`: 占位符扩展
+- `@tiptap/extension-character-count`: 字符计数扩展
+- `@tiptap/extension-image`: 图片扩展
+- `@tiptap/extension-table`: 表格扩展
+- `@tiptap/extension-link`: 链接扩展
+- `@tiptap/extension-task-list`: 任务列表扩展
+- `@tiptap/extension-code-block-lowlight`: 代码块高亮扩展
+- `@tiptap/extension-highlight`: 高亮文本扩展
 
 ### 3. DiffViewer.js
 
@@ -85,7 +90,7 @@ editor/
 - 左侧显示原始版本（删除内容高亮）
 - 右侧显示修改后版本（新增内容高亮）
 - 双编辑器滚动同步
-- 基于 Vditor 的 Markdown 编辑器
+- 基于 Tiptap 的富文本编辑器
 
 **核心方法**:
 - `useEffect`: 处理差异计算和编辑器初始化
@@ -93,14 +98,14 @@ editor/
 
 **技术依赖**:
 - `diff`: 差异计算库
-- `vditor`: Markdown 编辑器
+- `@tiptap/react`: 富文本编辑器
 
 ### 4. EditorPanel.js
 
 **功能**: 主编辑器面板，提供完整的文本编辑功能
 
 **主要特性**:
-- 基于 Vditor 的 Markdown 编辑器
+- 基于 Tiptap 的富文本编辑器
 - 自动保存机制（3秒延迟）
 - 字符计数统计
 - 右键上下文菜单
@@ -109,7 +114,7 @@ editor/
 - 标题编辑功能
 
 **核心状态管理**:
-- `editorRef`: Vditor 编辑器实例引用
+- `editorRef`: Tiptap 编辑器实例引用
 - `autoSaveTimerRef`: 自动保存定时器
 - `initialContentRef`: 初始内容引用，用于判断是否修改
 
@@ -120,13 +125,13 @@ editor/
 
 **服务模块集成**:
 - `useAutoSave`: 自动保存服务
-- `useVditorLifecycle`: Vditor 生命周期管理
+- `useTiptapLifecycle`: Tiptap 生命周期管理
 - `useCharacterCount`: 字符计数服务
 - `useTitleManager`: 标题管理服务
 - `useContextMenu`: 上下文菜单管理
 
 **生命周期管理**:
-- 组件挂载时初始化 Vditor 编辑器
+- 组件挂载时初始化 Tiptap 编辑器
 - 标签页切换时管理编辑器实例
 - 内容同步确保编辑器与 Redux 状态一致
 
@@ -183,7 +188,7 @@ Tiptap Editor Instance
 
 ## 关键技术点
 
-1. **编辑器管理**: 使用 Tiptap 作为富文本编辑器，支持 Markdown 风格编辑
+1. **编辑器管理**: 使用 Tiptap 作为富文本编辑器，支持所见即所得编辑
 2. **状态同步**: 通过 Redux 管理编辑器状态，确保多组件间数据一致性
 3. **性能优化**: 合理使用 `useCallback` 和 `useRef` 避免不必要的重渲染
 4. **错误处理**: 完善的错误捕获和用户提示机制

@@ -110,8 +110,6 @@ export * from './ragSlice';
 export * from './apiSlice';
 export * from './modeSlice';
 
-// 导出默认系统提示词
-export { DEFAULT_SYSTEM_PROMPT } from './modeSlice';
 
 // 导出组合后的reducer作为默认导出
 export default combinedChatReducer;

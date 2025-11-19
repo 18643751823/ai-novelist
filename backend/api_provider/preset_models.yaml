@@ -1,0 +1,70 @@
+default_config:
+  detailed_debug: true
+  host: 127.0.0.1
+  port: 4000
+providers:
+  aliyun:
+    api_key_env: ALIYUN_API_KEY
+    api_key_placeholder: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    description: 阿里云通义千问模型服务
+    model_id_prefix: aliyun/
+    models_endpoint: /models
+    name: 阿里云
+  deepseek:
+    api_key_env: DEEPSEEK_API_KEY
+    api_key_placeholder: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    base_url: https://api.deepseek.com/v1
+    description: DeepSeek AI 提供的高性能模型
+    model_id_prefix: deepseek/
+    models_endpoint: /models
+    name: DeepSeek
+  gemini:
+    api_key_env: GEMINI_API_KEY
+    api_key_placeholder: AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    base_url: https://generativelanguage.googleapis.com/v1beta
+    description: Google Gemini系列模型
+    model_id_prefix: gemini/
+    models_endpoint: /models
+    name: Google Gemini
+  kimi:
+    api_key_env: KIMI_API_KEY
+    api_key_placeholder: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    base_url: https://api.moonshot.cn/v1
+    description: Moonshot AI 提供的Kimi模型
+    model_id_prefix: kimi/
+    models_endpoint: /models
+    name: Kimi
+  ollama:
+    api_key_env: ''
+    api_key_placeholder: 无需API密钥
+    base_url: http://127.0.0.1:11434
+    description: 本地Ollama模型服务
+    is_local: true
+    model_id_prefix: ollama/
+    models_endpoint: /api/tags
+    name: Ollama
+  openrouter:
+    api_key_env: OPENROUTER_API_KEY
+    api_key_placeholder: sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    base_url: https://openrouter.ai/api/v1
+    description: OpenRouter 提供多种模型访问
+    model_id_prefix: openrouter/
+    models_endpoint: /models
+    name: OpenRouter
+  siliconflow:
+    api_key_env: SILICONFLOW_API_KEY
+    api_key_placeholder: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    base_url: https://api.siliconflow.cn/v1
+    description: 硅基流动提供的AI模型服务
+    model_id_prefix: siliconflow/
+    models_endpoint: /models
+    name: 硅基流动
+  zhipuai:
+    api_key_env: ZHIPUAI_API_KEY
+    api_key_placeholder: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.0xxxxxxxxxxxxxxxx
+    base_url: https://open.bigmodel.cn/api/paas/v4
+    description: 智谱AI GLM系列模型
+    model_id_prefix: zhipuai/
+    models_endpoint: /models
+    name: 智谱AI

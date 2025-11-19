@@ -69,9 +69,6 @@
   border-bottom: 1px solid var(--divider-color);
 }
 
-.mode-item:last-child {
-  border-bottom: none;
-}
 
 .mode-item:hover {
   background-color: var(--hover-bg-color);

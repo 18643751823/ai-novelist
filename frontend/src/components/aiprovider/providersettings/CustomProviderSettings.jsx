@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { setCustomProviders } from '../../../store/slices/apiSlice';
-import useIpcRenderer from '../../../hooks/useIpcRenderer';
+import providerConfigService from '../../../services/providerConfigService';
 import NotificationModal from '../../others/NotificationModal';
 import './CustomProviderSettings.css';
 
-const CustomProviderSettings = ({ onSaveComplete, editingProvider: initialEditingProvider }) => {
-    const dispatch = useDispatch();
-    const { setStoreValue, reinitializeModelProvider } = useIpcRenderer();
-    const customProviders = useSelector((state) => state.chat.api.customProviders || []);
-    
+const CustomProviderSettings = ({ onSaveComplete, editingProvider: initialEditingProvider, configs, onConfigsUpdate }) => {
     const [editingProvider, setEditingProvider] = useState(initialEditingProvider || null);
     const [isEditing, setIsEditing] = useState(!!initialEditingProvider);
     const [showNotification, setShowNotification] = useState(false);
@@ -25,45 +19,28 @@ const CustomProviderSettings = ({ onSaveComplete, editingProvider: initialEditin
 
     const handleSave = async (providerData) => {
         try {
-            // 更新 Redux Store 中的自定义提供商列表
-            const existingIndex = customProviders.findIndex(p => p.providerName === providerData.providerName);
-            let updatedProviders;
+            // 使用新的API保存自定义提供商
+            const saveResult = await providerConfigService.saveCustomProvider(
+                providerData.providerName,
+                providerData.baseURL,
+                providerData.apiKey
+            );
             
-            if (existingIndex > -1) {
-                updatedProviders = [...customProviders];
-                updatedProviders[existingIndex] = providerData;
-            } else {
-                updatedProviders = [...customProviders, providerData];
-            }
-            
-            // 更新 Redux Store
-            dispatch(setCustomProviders(updatedProviders));
-            
-            // 保存到持久化存储
-            await setStoreValue('customProviders', updatedProviders);
-            
-            // 重新初始化模型提供者
-            try {
-                const result = await reinitializeModelProvider();
-                if (result.success) {
-                    setNotificationMessage('自定义提供商设置已保存！模型提供者已重新初始化，现在可以使用新的API密钥。');
-                } else {
-                    setNotificationMessage('自定义提供商设置已保存，但重新初始化模型提供者失败。可能需要重启应用。');
+            if (saveResult.success) {
+                setNotificationMessage('自定义提供商保存成功！');
+                
+                // 通知父组件保存完成
+                if (onSaveComplete) {
+                    onSaveComplete();
                 }
-            } catch (error) {
-                console.error('重新初始化模型提供者失败:', error);
-                setNotificationMessage('自定义提供商设置已保存，但重新初始化模型提供者失败。可能需要重启应用。');
+                
+                setEditingProvider(null);
+                setIsEditing(false);
+            } else {
+                setNotificationMessage('保存自定义提供商失败，请重试。');
             }
             
             setShowNotification(true);
-            
-            // 通知父组件保存完成
-            if (onSaveComplete) {
-                onSaveComplete();
-            }
-            
-            setEditingProvider(null);
-            setIsEditing(false);
         } catch (error) {
             console.error('保存自定义提供商失败:', error);
             setNotificationMessage('保存失败，请重试。');
@@ -108,9 +85,8 @@ const CustomProviderSettings = ({ onSaveComplete, editingProvider: initialEditin
                 <h3>{editingProvider.providerName ? '编辑' : '新增'}提供商</h3>
                 <form onSubmit={handleFormSubmit}>
                     <input name="providerName" value={editingProvider.providerName} onChange={handleFormChange} placeholder="提供商名称 (唯一标识)" required />
-                    <input name="apiKey" type="password" value={editingProvider.apiKey} onChange={handleFormChange} placeholder="API Key" required />
+                    <input name="apiKey" type="password" value={editingProvider.apiKey} onChange={handleFormChange} placeholder="API Key" />
                     <input name="baseURL" value={editingProvider.baseURL} onChange={handleFormChange} placeholder="Base URL (e.g., https://.../v1)" required />
-                    <input name="modelId" value={editingProvider.modelId} onChange={handleFormChange} placeholder="模型 ID" required />
                     <label>
                         <input name="enabled" type="checkbox" checked={editingProvider.enabled} onChange={handleFormChange} />
                         启用

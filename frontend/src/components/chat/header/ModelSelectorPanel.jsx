@@ -1,50 +1,79 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
-import { setAvailableModels, setSelectedModel } from '../../../store/slices/apiSlice';
-import useIpcRenderer from '../../../hooks/useIpcRenderer';
+import { faSearch, faSyncAlt } from '@fortawesome/free-solid-svg-icons';
+import modelSelectionService from '../../../services/modelSelectionService';
 import './ModelSelectorPanel.css';
 
-const ModelSelectorPanel = ({ selectedModel, availableModels, onModelChange, onClose }) => {
-  const dispatch = useDispatch();
-  const { listAllModels } = useIpcRenderer();
+const ModelSelectorPanel = ({ onModelChange, onClose }) => {
+  // 本地状态管理 - 不再使用Redux
+  const [availableModels, setAvailableModels] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [selectedProvider, setSelectedProvider] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // 新增：专门处理模型列表加载，确保模型选择器能正确显示
-  useEffect(() => {
-    const loadModelsOnStartup = async () => {
-      try {
-        console.log('ModelSelectorPanel: 启动时加载模型列表...');
-        const modelsResult = await listAllModels();
-        console.log('ModelSelectorPanel: 模型列表加载结果:', modelsResult.success, modelsResult.models ? modelsResult.models.length : 'N/A');
-        
-        if (modelsResult.success) {
-          dispatch(setAvailableModels(modelsResult.models));
-          console.log('ModelSelectorPanel: 模型列表已更新，数量:', modelsResult.models.length);
-          
-          // 如果没有选中模型，尝试设置一个默认模型
-          if (!selectedModel && modelsResult.models.length > 0) {
-            const defaultModel = modelsResult.models[0];
-            dispatch(setSelectedModel(defaultModel.id));
-            console.log('ModelSelectorPanel: 设置默认模型:', defaultModel.id);
-          }
-        } else {
-          console.error('ModelSelectorPanel: 模型列表加载失败:', modelsResult.error);
-        }
-      } catch (error) {
-        console.error('ModelSelectorPanel: 加载模型列表异常:', error);
+  // 加载模型列表
+  const loadAvailableModels = async () => {
+    try {
+      setLoading(true);
+      const result = await modelSelectionService.getAvailableModels();
+      
+      if (result.success) {
+        setAvailableModels(result.models);
+        console.log('ModelSelectorPanel: 从后端获取到模型数据:', {
+          availableModelsCount: result.models.length,
+          availableModels: result.models
+        });
+      } else {
+        console.error('获取模型列表失败:', result.error);
       }
-    };
+    } catch (error) {
+      console.error('加载模型列表失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // 延迟加载模型列表，确保其他初始化完成
-    const timer = setTimeout(() => {
-      loadModelsOnStartup();
-    }, 1000);
+  // 刷新模型列表
+  const handleRefreshModels = async () => {
+    try {
+      setRefreshing(true);
+      const result = await modelSelectionService.refreshModels();
+      
+      if (result.success) {
+        // 刷新成功后重新加载模型列表
+        await loadAvailableModels();
+      } else {
+        console.error('刷新模型列表失败:', result.error);
+      }
+    } catch (error) {
+      console.error('刷新模型列表失败:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
-    return () => clearTimeout(timer);
-  }, [listAllModels, dispatch, selectedModel]);
+  // 处理模型选择
+  const handleModelSelect = async (modelId) => {
+    try {
+      // 找到选中的模型信息
+      const selectedModelInfo = availableModels.find(model => model.id === modelId);
+      const provider = selectedModelInfo?.provider || '';
+      
+      // 保存选中的模型到后端
+      const result = await modelSelectionService.setSelectedModel(modelId, provider);
+      
+      if (result.success) {
+        console.log(`模型选择已保存: ${modelId}`);
+        // 通知父组件模型已更改
+        onModelChange(modelId);
+      } else {
+        console.error('保存模型选择失败:', result.error);
+      }
+    } catch (error) {
+      console.error('处理模型选择失败:', error);
+    }
+  };
 
   // 获取所有提供商列表
   const providers = useMemo(() => {
@@ -72,11 +101,6 @@ const ModelSelectorPanel = ({ selectedModel, availableModels, onModelChange, onC
     return filtered;
   }, [availableModels, searchText, selectedProvider]);
 
-  // 处理模型选择
-  const handleModelSelect = (modelId) => {
-    onModelChange(modelId);
-  };
-
   // 处理搜索输入变化
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);
@@ -87,6 +111,10 @@ const ModelSelectorPanel = ({ selectedModel, availableModels, onModelChange, onC
     setSelectedProvider(provider === selectedProvider ? '' : provider);
   };
 
+  // 组件挂载时加载模型列表
+  useEffect(() => {
+    loadAvailableModels();
+  }, []);
 
   return (
     <div className="model-selector-panel">
@@ -101,6 +129,14 @@ const ModelSelectorPanel = ({ selectedModel, availableModels, onModelChange, onC
             onChange={handleSearchChange}
             className="search-input"
           />
+          <button
+            className={`refresh-button ${refreshing ? 'refreshing' : ''}`}
+            onClick={handleRefreshModels}
+            title="刷新模型列表"
+            disabled={refreshing}
+          >
+            <FontAwesomeIcon icon={faSyncAlt} spin={refreshing} />
+          </button>
         </div>
         
         {/* 提供商筛选 */}
@@ -122,7 +158,11 @@ const ModelSelectorPanel = ({ selectedModel, availableModels, onModelChange, onC
 
       {/* 模型列表 */}
       <div className="model-list-container">
-        {filteredModels.length === 0 ? (
+        {loading ? (
+          <div className="loading-state">
+            正在加载模型列表...
+          </div>
+        ) : filteredModels.length === 0 ? (
           <div className="empty-state">
             {searchText || selectedProvider ? '没有找到匹配的模型' : '暂无可用模型'}
           </div>
@@ -131,16 +171,13 @@ const ModelSelectorPanel = ({ selectedModel, availableModels, onModelChange, onC
             {filteredModels.map((model) => (
               <div
                 key={model.id}
-                className={`model-card ${selectedModel === model.id ? 'selected' : ''}`}
+                className="model-card"
                 onClick={() => handleModelSelect(model.id)}
               >
                 <div className="model-info">
                   <div className="model-name">{model.id}</div>
                   <div className="model-provider">{model.provider}</div>
                 </div>
-                {selectedModel === model.id && (
-                  <div className="selected-indicator">✓</div>
-                )}
               </div>
             ))}
           </div>

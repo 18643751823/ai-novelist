@@ -52,6 +52,9 @@
     margin-bottom: 8px;
     border-radius: 15px;
     max-width: 70%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
 }
 
 #chatDisplay .message.user {
@@ -1012,6 +1015,8 @@ input:checked + .slider:before {
     overflow-wrap: break-word; /* 现代浏览器的换行支持 */
     white-space: pre-wrap; /* 保留空格和换行，但允许自动换行 */
     max-width: 100%; /* 确保内容不会超出容器 */
+    overflow: hidden; /* 防止内容溢出 */
+    box-sizing: border-box;
 }
 
 /* 确保消息气泡内的文本正确换行 */
@@ -1584,53 +1589,9 @@ input:checked + .slider:before {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
-/* Markdown消息渲染器样式 */
-.markdown-message-renderer {
-  width: 100%;
-}
-
-.markdown-message-renderer .vditor {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-.markdown-message-renderer .vditor-ir {
-  background: transparent !important;
-  padding: 0 !important;
-  min-height: auto !important;
-}
-
-.markdown-message-renderer .vditor-ir__node {
-  color: inherit !important;
-  font-family: inherit !important;
-  font-size: inherit !important;
-  line-height: inherit !important;
-}
-
-.markdown-message-renderer .vditor-ir pre.vditor-reset {
-  background: transparent !important;
-  color: inherit !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.markdown-message-renderer .vditor-ir pre.vditor-reset code {
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: inherit !important;
-}
-
 /* 确保消息内容区域正确显示Markdown内容 */
 .message-content .markdown-message-renderer {
   width: 100%;
-}
-
-/* 编辑状态下的样式 */
-.message.editing .markdown-message-renderer .vditor-ir {
-  border: 1px solid #4a90e2 !important;
-  border-radius: 4px;
-  padding: 4px !important;
-  background: rgba(74, 144, 226, 0.1) !important;
 }
 
 /* 加载和空状态样式 */

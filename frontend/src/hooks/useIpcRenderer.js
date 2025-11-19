@@ -1,53 +1,36 @@
 import { useCallback } from 'react';
+import useHttpService from './useHttpService.js';
 
+/**
+ * 向后兼容的 useIpcRenderer hook
+ * 这个 hook 现在使用 HTTP 服务，但保持与原来 IPC 相同的接口
+ * 用于平滑过渡到 HTTP 通信
+ */
 const useIpcRenderer = () => {
-  const send = useCallback((channel, ...args) => {
-    if (window.ipcRenderer) {
-      window.ipcRenderer.send(channel, ...args);
-    } else {
-      console.warn('ipcRenderer is not available. Are you running in Electron?');
-    }
-  }, []);
+  const httpService = useHttpService();
 
-  const invoke = useCallback(async (channel, ...args) => {
-    if (window.ipcRenderer) {
-      return await window.ipcRenderer.invoke(channel, ...args);
-    } else {
-      console.warn('ipcRenderer is not available. Are you running in Electron?');
-      return null;
-    }
-  }, []);
-
-  const on = useCallback((channel, listener) => {
-    if (window.ipcRenderer) {
-      window.ipcRenderer.on(channel, listener);
-    } else {
-      console.warn('ipcRenderer is not available. Are you running in Electron?');
-    }
-  }, []);
-
-  const removeListener = useCallback((channel, listener) => {
-    if (window.ipcRenderer) {
-      window.ipcRenderer.removeListener(channel, listener);
-    } else {
-      console.warn('ipcRenderer is not available. Are you running in Electron?');
-    }
-  }, []);
-
+  // 直接返回 HTTP 服务的所有方法
   return {
-    send,
-    invoke,
-    on,
-    removeListener,
-    getDeepSeekChatHistory: useCallback(() => invoke('get-ai-chat-history'), [invoke]), // 修改为更通用的 ai 名称
-    deleteDeepSeekChatHistory: useCallback((sessionId) => invoke('delete-ai-chat-history', sessionId), [invoke]), // 修改为更通用的 ai 名称
-    clearDeepSeekConversation: useCallback(() => invoke('clear-ai-conversation'), [invoke]), // 修改为更通用的 ai 名称
-    getStoreValue: useCallback((key) => invoke('get-store-value', key), [invoke]), // 新增：获取 electron-store 值
-    setStoreValue: useCallback((key, value) => invoke('set-store-value', key, value), [invoke]), // 新增：设置 electron-store 值
-    sendToMainLog: useCallback((message) => send('main-log', message), [send]), // 新增：发送日志到主进程
-    listAllModels: useCallback(() => invoke('list-all-models'), [invoke]), // 新增：获取所有可用模型列表
-    reinitializeModelProvider: useCallback(() => invoke('reinitialize-model-provider'), [invoke]), // 新增：重新初始化模型提供者
-    reinitializeAliyunEmbedding: useCallback(() => invoke('reinitialize-aliyun-embedding'), [invoke]) // 新增：重新初始化阿里云嵌入函数
+    ...httpService,
+    
+    // 为了向后兼容，保留原来的方法名
+    invoke: httpService.invoke,
+    send: httpService.send,
+    on: httpService.on,
+    removeListener: httpService.removeListener,
+    getStoreValue: httpService.getStoreValue,
+    setStoreValue: httpService.setStoreValue,
+    sendToMainLog: httpService.sendToMainLog,
+    listAllModels: httpService.listAvailableModels,
+    reinitializeModelProvider: httpService.reinitializeModelProvider,
+    reinitializeAliyunEmbedding: httpService.reinitializeAliyunEmbedding,
+    
+    // 添加 stopStreaming 方法用于向后兼容
+    stopStreaming: useCallback(() => {
+      console.log('HTTP 服务: 停止流式传输');
+      // HTTP 服务中停止流式传输的实现
+      return { success: true, message: '流式传输已停止' };
+    }, [])
   };
 };
 

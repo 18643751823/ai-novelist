@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { stopStreaming } from '../../../store/slices/chatSlice';
+import { selectIsStreaming } from '../../../store/selectors';
 import ModeSelector from './ModeSelector';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane, faStop } from '@fortawesome/free-solid-svg-icons';
@@ -15,7 +16,7 @@ const ChatInputArea = ({
 }) => {
   const dispatch = useDispatch();
   
-  const { isStreaming } = useSelector((state) => state.chat);
+  const isStreaming = useSelector(selectIsStreaming);
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -35,8 +36,8 @@ const ChatInputArea = ({
     try {
       console.log('[ChatInputArea] 用户点击停止按钮');
       dispatch(stopStreaming());
-      await stopStreamingIpc();
-      console.log('[ChatInputArea] 停止请求已发送到后端');
+      // 我们只需要dispatch停止流式状态，不需要调用IPC
+      console.log('[ChatInputArea] 停止流式传输已处理');
     } catch (error) {
       console.error('[ChatInputArea] 停止流式传输失败:', error);
     }
@@ -72,6 +73,7 @@ const ChatInputArea = ({
           id="sendMessage" 
           className="send-icon" 
           onClick={handleSendClick}
+          title="发送消息"
         >
           <FontAwesomeIcon icon={faPaperPlane} />
         </button>

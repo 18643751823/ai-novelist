@@ -5,7 +5,7 @@ import {
   setShowRagSettingsModal,
   setShowGeneralSettingsModal,
   setShowHomePage,
-  setShowWorkspacePanel,
+  // setShowWorkspacePanel, // 暂时注释掉
   setShowPersistentMemoryPanel
 } from '../store/slices/chatSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -28,7 +28,7 @@ const SidebarComponent = () => {
   const showRagSettingsModal = useSelector(state => state.chat.ui.showRagSettingsModal);
   const showGeneralSettingsModal = useSelector(state => state.chat.ui.showGeneralSettingsModal);
   const showHomePage = useSelector(state => state.chat.ui.showHomePage);
-  const showWorkspacePanel = useSelector(state => state.chat.ui.showWorkspacePanel);
+  // const showWorkspacePanel = useSelector(state => state.chat.ui.showWorkspacePanel); // 暂时注释掉
   const showPersistentMemoryPanel = useSelector(state => state.chat.ui.showPersistentMemoryPanel);
 
   // 关闭所有模态框并显示主页面的函数
@@ -36,7 +36,7 @@ const SidebarComponent = () => {
     dispatch(setShowApiSettingsModal(false));
     dispatch(setShowRagSettingsModal(false));
     dispatch(setShowGeneralSettingsModal(false));
-    dispatch(setShowWorkspacePanel(false));
+    // dispatch(setShowWorkspacePanel(false)); // 暂时注释掉
     dispatch(setShowPersistentMemoryPanel(false));
     dispatch(setShowHomePage(true));
   };
@@ -53,28 +53,29 @@ const SidebarComponent = () => {
         setActiveItem('home');
       }
     },
-    {
-      id: 'workspace',
-      icon: faBriefcase,
-      label: '工作区',
-      action: () => {
-        if (showWorkspacePanel) {
-          // 如果当前已经打开，则关闭
-          dispatch(setShowWorkspacePanel(false));
-          dispatch(setShowHomePage(true));
-          setActiveItem(null);
-        } else {
-          // 如果当前未打开，则关闭其他模态框并打开当前模态框
-          dispatch(setShowHomePage(false));
-          dispatch(setShowApiSettingsModal(false));
-          dispatch(setShowRagSettingsModal(false));
-          dispatch(setShowGeneralSettingsModal(false));
-          dispatch(setShowPersistentMemoryPanel(false));
-          dispatch(setShowWorkspacePanel(true));
-          setActiveItem('workspace');
-        }
-      }
-    },
+    // 暂时注释掉工作流面板项目
+    // {
+    //   id: 'workspace',
+    //   icon: faBriefcase,
+    //   label: '工作区',
+    //   action: () => {
+    //     if (showWorkspacePanel) {
+    //       // 如果当前已经打开，则关闭
+    //       dispatch(setShowWorkspacePanel(false));
+    //       dispatch(setShowHomePage(true));
+    //       setActiveItem(null);
+    //     } else {
+    //       // 如果当前未打开，则关闭其他模态框并打开当前模态框
+    //       dispatch(setShowHomePage(false));
+    //       dispatch(setShowApiSettingsModal(false));
+    //       dispatch(setShowRagSettingsModal(false));
+    //       dispatch(setShowGeneralSettingsModal(false));
+    //       dispatch(setShowPersistentMemoryPanel(false));
+    //       dispatch(setShowWorkspacePanel(true));
+    //       setActiveItem('workspace');
+    //     }
+    //   }
+    // },
     {
       id: 'api-settings',
       icon: faGear,
@@ -88,7 +89,7 @@ const SidebarComponent = () => {
         } else {
           // 如果当前未打开，则关闭其他模态框并打开当前模态框
           dispatch(setShowHomePage(false));
-          dispatch(setShowWorkspacePanel(false));
+          // dispatch(setShowWorkspacePanel(false)); // 暂时注释掉
           dispatch(setShowRagSettingsModal(false));
           dispatch(setShowGeneralSettingsModal(false));
           dispatch(setShowPersistentMemoryPanel(false));
@@ -110,7 +111,7 @@ const SidebarComponent = () => {
         } else {
           // 如果当前未打开，则关闭其他模态框并打开当前模态框
           dispatch(setShowHomePage(false));
-          dispatch(setShowWorkspacePanel(false));
+          // dispatch(setShowWorkspacePanel(false)); // 暂时注释掉
           dispatch(setShowApiSettingsModal(false));
           dispatch(setShowGeneralSettingsModal(false));
           dispatch(setShowPersistentMemoryPanel(false));
@@ -132,7 +133,7 @@ const SidebarComponent = () => {
         } else {
           // 如果当前未打开，则关闭其他模态框并打开当前模态框
           dispatch(setShowHomePage(false));
-          dispatch(setShowWorkspacePanel(false));
+          // dispatch(setShowWorkspacePanel(false)); // 暂时注释掉
           dispatch(setShowApiSettingsModal(false));
           dispatch(setShowRagSettingsModal(false));
           dispatch(setShowPersistentMemoryPanel(false));
@@ -154,7 +155,7 @@ const SidebarComponent = () => {
         } else {
           // 如果当前未打开，则关闭其他模态框并打开当前模态框
           dispatch(setShowHomePage(false));
-          dispatch(setShowWorkspacePanel(false));
+          // dispatch(setShowWorkspacePanel(false)); // 暂时注释掉
           dispatch(setShowApiSettingsModal(false));
           dispatch(setShowRagSettingsModal(false));
           dispatch(setShowGeneralSettingsModal(false));
@@ -177,16 +178,18 @@ const SidebarComponent = () => {
       setActiveItem('rag-settings');
     } else if (showGeneralSettingsModal) {
       setActiveItem('general-settings');
-    } else if (showWorkspacePanel) {
-      setActiveItem('workspace');
-    } else if (showPersistentMemoryPanel) {
+    }
+    // else if (showWorkspacePanel) { // 暂时注释掉
+    //   setActiveItem('workspace');
+    // }
+    else if (showPersistentMemoryPanel) {
       setActiveItem('insert-info');
     } else if (showHomePage) {
       setActiveItem('home');
     } else {
       setActiveItem(null);
     }
-  }, [showApiSettingsModal, showRagSettingsModal, showGeneralSettingsModal, showWorkspacePanel, showPersistentMemoryPanel, showHomePage]);
+  }, [showApiSettingsModal, showRagSettingsModal, showGeneralSettingsModal, /* showWorkspacePanel, */ showPersistentMemoryPanel, showHomePage]);
 
   return (
     <div className="sidebar">

@@ -22,33 +22,36 @@ const ChapterTreeRenderer = ({
    * 渲染单个章节项
    */
   const renderChapterItem = (item) => {
-    const isCollapsed = collapsedChapters[item.id];
+    const itemId = item.id || item.path || '';
+    const itemTitle = item.title || item.name || '';
+    const isFolder = item.isFolder || item.type === 'folder';
     const hasChildren = item.children && item.children.length > 0;
-    const displayName = getDisplayName(item.title, item.isFolder);
+    const displayName = getDisplayName(itemTitle, isFolder);
     const displayPrefix = getDisplayPrefix(item);
 
     return (
       <li
-        key={item.id}
-        className={`chapter-list-item ${item.isFolder ? 'folder-item' : 'file-item'} level-${level}`}
+        key={itemId}
+        className={`chapter-list-item ${isFolder ? 'folder-item' : 'file-item'} level-${level}`}
       >
         <div
-          className={`chapter-item-content ${item.isFolder && level > 0 ? 'nested-folder-content' : ''}`}
+          className={`chapter-item-content ${isFolder && level > 0 ? 'nested-folder-content' : ''}`}
           style={{ paddingLeft: `${0 + level * 20}px` }}
           onContextMenu={(e) => {
             e.stopPropagation();
-            handleContextMenu(e, item.id, item.isFolder, item.title, 
-              item.isFolder ? item.id : (item.id.includes('/') ? item.id.substring(0, item.id.lastIndexOf('/')) : ''));
+            const parentPath = isFolder ? itemId : (itemId.includes('/') ? itemId.substring(0, itemId.lastIndexOf('/')) : '');
+            
+            handleContextMenu(e, itemId, isFolder, itemTitle, parentPath);
           }}
         >
-          {item.isFolder && (
+          {isFolder && (
             <span onClick={() => handleChapterClick(item)} className="collapse-icon">
-              <FontAwesomeIcon icon={isCollapsed ? faCaretRight : faCaretDown} />
+              <FontAwesomeIcon icon={collapsedChapters[itemId] ? faCaretRight : faCaretDown} />
             </span>
           )}
           
           {/* 文件/文件夹图标 */}
-          <FontAwesomeIcon icon={item.isFolder ? faFolder : faFile} className="item-icon" />
+          <FontAwesomeIcon icon={isFolder ? faFolder : faFile} className="item-icon" />
 
           {/* 前缀显示/编辑区域 */}
           <div className="prefix-section">
@@ -63,7 +66,7 @@ const ChapterTreeRenderer = ({
           </button>
         </div>
         
-        {item.isFolder && hasChildren && !isCollapsed && (
+        {isFolder && hasChildren && !collapsedChapters[itemId] && (
           <ChapterTreeRenderer
             items={item.children}
             collapsedChapters={collapsedChapters}
@@ -73,7 +76,7 @@ const ChapterTreeRenderer = ({
             handleContextMenu={handleContextMenu}
             renderPrefixEdit={renderPrefixEdit}
             level={level + 1}
-            currentPath={item.id}
+            currentPath={itemId}
           />
         )}
       </li>

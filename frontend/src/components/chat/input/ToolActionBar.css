@@ -1,0 +1,287 @@
+/* 工具调用操作栏样式 */
+.tool-action-bar {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tool-call-header {
+  margin-bottom: 12px;
+}
+
+.tool-call-header h4 {
+  margin: 0;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tool-call-list {
+  margin-bottom: 16px;
+}
+
+.tool-call-item {
+  background-color: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.tool-call-item:hover {
+  border-color: #007bff;
+  box-shadow: 0 1px 3px rgba(0, 123, 255, 0.1);
+}
+
+.tool-call-item:last-child {
+  margin-bottom: 0;
+}
+
+.tool-name {
+  font-weight: 600;
+  color: #007bff;
+  font-size: 13px;
+  margin-bottom: 4px;
+  text-transform: capitalize;
+}
+
+.tool-description {
+  color: #6c757d;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.tool-action-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.approve-all-button,
+.reject-all-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.approve-all-button {
+  background-color: #28a745;
+  color: white;
+}
+
+.approve-all-button:hover:not(:disabled) {
+  background-color: #218838;
+  transform: translateY(-1px);
+}
+
+.approve-all-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.reject-all-button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.reject-all-button:hover:not(:disabled) {
+  background-color: #c82333;
+  transform: translateY(-1px);
+}
+
+.reject-all-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .tool-action-bar {
+    padding: 12px;
+    margin: 8px 0;
+  }
+  
+  .tool-action-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .approve-all-button,
+  .reject-all-button {
+    min-width: auto;
+    width: 100%;
+  }
+}
+
+/* 动画效果 */
+@keyframes toolCallPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+  }
+}
+
+.tool-action-bar.pending {
+  animation: toolCallPulse 2s infinite;
+}
+
+/* 工具调用状态指示器 */
+.tool-call-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+
+.tool-call-status.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.tool-call-status.approved {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.tool-call-status.rejected {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.tool-call-status.executing {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.tool-call-status.completed {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+/* 自动批准相关样式 */
+.auto-approve-countdown {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  animation: countdownPulse 1s infinite;
+}
+
+.countdown-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #856404;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auto-approve-notice {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background-color: #d1ecf1;
+  border: 1px solid #bee5eb;
+  border-radius: 4px;
+}
+
+.notice-text {
+  font-size: 11px;
+  color: #0c5460;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@keyframes countdownPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(255, 193, 7, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+  }
+}
+
+/* 用户输入区域样式 */
+.user-input-section {
+  margin: 12px 0;
+}
+
+.user-input-section label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #495057;
+  font-weight: 500;
+}
+
+.tool-action-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.tool-action-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* 单个按钮样式 */
+.approve-button,
+.reject-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.approve-button {
+  background-color: #28a745;
+  color: white;
+}
+
+.approve-button:hover:not(:disabled) {
+  background-color: #218838;
+  transform: translateY(-1px);
+}
+
+.reject-button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.reject-button:hover:not(:disabled) {
+  background-color: #c82333;
+  transform: translateY(-1px);
+}

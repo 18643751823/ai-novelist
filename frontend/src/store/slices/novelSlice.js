@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import fileService from '../../services/fileService.js';
 
 // 提取文件名的辅助函数（浏览器环境兼容）
 const getFileName = (filePath) => {
@@ -6,7 +7,8 @@ const getFileName = (filePath) => {
   const cleanPath = filePath.replace(/^novel\//, '');
   // 提取文件名（不含扩展名）
   const baseName = cleanPath.split('/').pop().split('\\').pop();
-  return baseName.replace(/\.txt$/, '');
+  const lastDotIndex = baseName.lastIndexOf('.');
+  return lastDotIndex !== -1 ? baseName.substring(0, lastDotIndex) : baseName;
 };
 
 // 异步 action 来创建小说文件
@@ -14,20 +16,12 @@ export const createNovelFile = createAsyncThunk(
   'novel/createNovelFile',
   async ({ filePath }, { rejectWithValue }) => { // 接收 filePath 参数
     try {
-      // 假设 window.ipcRenderer 可用 (由 Electron 预加载脚本注入)
-      if (window.ipcRenderer) {
-        // 调用主进程，传入文件路径和空内容
-        const result = await window.ipcRenderer.invoke('create-novel-file', { filePath, content: '' });
-        if (result.success) {
-          return { newFilePath: result.newFilePath };
-        } else {
-          return rejectWithValue(result.error);
-        }
+      // 使用文件服务创建文件
+      const result = await fileService.createFile(filePath, '');
+      if (result.success) {
+        return { newFilePath: filePath };
       } else {
-        // 非Electron环境下的模拟或错误处理
-        console.warn('ipcRenderer is not available. Simulating file creation.');
-        // 在非Electron环境下，可以模拟成功
-        return { newFilePath: filePath }; // 模拟成功，返回传入的 filePath
+        return rejectWithValue(result.error);
       }
     } catch (error) {
       console.error('Failed to create novel file:', error);
@@ -35,22 +29,20 @@ export const createNovelFile = createAsyncThunk(
     }
   }
 );
-
 // 异步 action 来更新小说文件标题
 export const updateNovelTitle = createAsyncThunk(
   'novel/updateNovelTitle',
   async ({ oldFilePath, newTitle }, { rejectWithValue }) => {
     try {
-      if (window.ipcRenderer) {
-        const result = await window.ipcRenderer.invoke('update-novel-title', { oldFilePath, newTitle });
-        if (result.success) {
-          return { newFilePath: result.newFilePath };
-        } else {
-          return rejectWithValue(result.error);
-        }
+      // 使用文件服务重命名文件
+      const result = await fileService.renameItem(oldFilePath, newTitle);
+      if (result.success) {
+        // 确保返回的路径包含正确的扩展名，但不添加novel/前缀
+        const hasExtension = newTitle.includes('.');
+        const finalPath = hasExtension ? newTitle : `${newTitle}.md`;
+        return { newFilePath: finalPath };
       } else {
-        console.warn('ipcRenderer is not available. Simulating title update.');
-        return { newFilePath: `novel/${newTitle}.md` }; // 模拟新的文件路径
+        return rejectWithValue(result.error);
       }
     } catch (error) {
       console.error('Failed to update novel title:', error);
@@ -72,17 +64,12 @@ export const openTab = createAsyncThunk(
     }
 
     try {
-      if (window.ipcRenderer) {
-        // 修正：使用正确的 IPC 通道 'load-chapter-content'
-        const result = await window.ipcRenderer.invoke('load-chapter-content', filePath);
-        if (result.success) {
-          return { filePath, content: result.content, isExisting: false };
-        } else {
-          throw new Error(result.error);
-        }
+      // 使用文件服务读取文件内容
+      const result = await fileService.readFile(filePath);
+      if (result.success) {
+        return { filePath, content: result.content, isExisting: false };
       } else {
-        console.warn('ipcRenderer is not available. Simulating file open.');
-        return { filePath, content: `模拟内容 for ${filePath}`, isExisting: false };
+        throw new Error(result.error);
       }
     } catch (error) {
       console.error(`Failed to open or read file ${filePath}:`, error);
@@ -137,8 +124,13 @@ const novelSlice = createSlice({
       const tab = state.openTabs.find(t => t.id === tabId);
       if (tab) {
         tab.content = content;
-        // isDirty 可以被显式传递，例如在保存成功后设为 false
-        tab.isDirty = isDirty !== undefined ? isDirty : true;
+        // isDirty 可以被显式传递，如果没有传递则比较内容是否变化
+        if (isDirty !== undefined) {
+          tab.isDirty = isDirty;
+        } else {
+          // 只有当内容与原始内容不同时才标记为脏
+          tab.isDirty = content !== tab.originalContent;
+        }
       }
     },
     startDiff: (state, action) => {
@@ -207,7 +199,7 @@ const novelSlice = createSlice({
         // 如果是新文件，创建新标签页
         const newTab = {
           id: cleanFilePath,
-          title: cleanFilePath.replace(/\.txt$/, ''),
+          title: getFileName(cleanFilePath), // 使用统一的文件名获取函数
           content: content,
           originalContent: content,
           suggestedContent: null,
@@ -300,9 +292,9 @@ const novelSlice = createSlice({
           id: newFilePath,
           title: getFileName(newFilePath),
           content: '',
-          originalContent: null,
+          originalContent: '', // 设置原始内容为空字符串
           suggestedContent: null,
-          isDirty: false,
+          isDirty: false, // 新创建的文件不应标记为脏
           viewMode: 'edit',
         };
         state.openTabs.push(newTab);
@@ -352,9 +344,9 @@ const novelSlice = createSlice({
           id: filePath,
           title: getFileName(filePath),
           content: content,
-          originalContent: null, // This should be the content from disk
+          originalContent: content, // 设置原始内容，用于比较变更
           suggestedContent: null,
-          isDirty: false,
+          isDirty: false, // 新打开的文件不应标记为脏
           viewMode: 'edit',
         };
         state.openTabs.push(newTab);

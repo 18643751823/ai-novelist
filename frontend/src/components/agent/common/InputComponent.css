@@ -1,0 +1,66 @@
+.input-component {
+  margin-bottom: 20px;
+}
+
+.input-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #cccccc;
+}
+
+.input-container {
+  margin-bottom: 5px;
+}
+
+.input-field {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: #1a1a1a;
+  border: 1px solid #333333;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #00ff00;
+  box-shadow: 0 0 0 2px rgba(0, 255, 0, 0.1);
+}
+
+.input-field:hover {
+  border-color: #555555;
+}
+
+.input-field::placeholder {
+  color: #666666;
+}
+
+/* 数字输入框的特定样式 */
+.input-field[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.input-field[type="number"]::-webkit-outer-spin-button,
+.input-field[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-description {
+  font-size: 12px;
+  color: #999999;
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .input-field {
+    padding: 8px 10px;
+    font-size: 16px; /* 防止iOS缩放 */
+  }
+}

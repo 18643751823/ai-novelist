@@ -40,12 +40,6 @@
   flex: 1;
 }
 
-.dirty-indicator {
-  font-weight: bold;
-  color: #007acc;
-  margin-left: -4px;
-  margin-right: 8px;
-}
 
 .close-tab-button {
   background: none;
@@ -60,6 +54,12 @@
 .close-tab-button:hover {
   background-color: #555;
   color: #fff;
+}
+
+.close-tab-button.dirty-dot {
+  color: #4CAF50; /* 绿色 */
+  font-size: 20px; /* 更大的字体大小 */
+  font-weight: bold;
 }
 
 /* 已删除标签页的样式 */

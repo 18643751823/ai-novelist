@@ -10,7 +10,7 @@ const RenameKbFileModal = ({ isOpen, onClose, file, onRename }) => {
 
   useEffect(() => {
     if (isOpen && file) {
-      setNewFilename(file.filename);
+      setNewFilename(file.name || '');
       setError('');
     }
   }, [isOpen, file]);
@@ -23,7 +23,7 @@ const RenameKbFileModal = ({ isOpen, onClose, file, onRename }) => {
       return;
     }
 
-    if (newFilename === file.filename) {
+    if (newFilename === (file.name || '')) {
       setError('新文件名不能与原文件名相同');
       return;
     }
@@ -32,7 +32,7 @@ const RenameKbFileModal = ({ isOpen, onClose, file, onRename }) => {
     setError('');
 
     try {
-      await onRename(file.filename, newFilename.trim());
+      await onRename(file.id, newFilename.trim());
       onClose();
     } catch (err) {
       setError(err.message || '重命名失败');
@@ -62,8 +62,8 @@ const RenameKbFileModal = ({ isOpen, onClose, file, onRename }) => {
 
         <div className="rename-kb-modal-body">
           <div className="file-info">
-            <p><strong>原文件名:</strong> {file.filename}</p>
-            <p><strong>文档片段:</strong> {file.documentCount} 个</p>
+            <p><strong>原文件名:</strong> {file.name || '未知'}</p>
+            <p><strong>文档片段:</strong> {file.total_chunks || 0} 个</p>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -93,7 +93,7 @@ const RenameKbFileModal = ({ isOpen, onClose, file, onRename }) => {
               </button>
               <button
                 type="submit"
-                disabled={loading || !newFilename.trim() || newFilename === file.filename}
+                disabled={loading || !newFilename.trim() || newFilename === (file.name || '')}
                 className="confirm-btn"
               >
                 {loading ? '重命名中...' : '确认重命名'}

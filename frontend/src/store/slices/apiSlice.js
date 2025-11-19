@@ -18,13 +18,21 @@ const apiSlice = createSlice({
     selectedModel: '',
     selectedProvider: '',
     embeddingModel: '',
-    intentAnalysisModel: '',
     availableModels: [],
     
     // 自定义提供商
     customProviders: []
   },
   reducers: {
+    // 模型和提供商选择
+    setSelectedModel: (state, action) => {
+      state.selectedModel = action.payload;
+    },
+    
+    setSelectedProvider: (state, action) => {
+      state.selectedProvider = action.payload;
+    },
+    
     // API密钥设置
     setDeepseekApiKey: (state, action) => {
       state.deepseekApiKey = action.payload;
@@ -52,24 +60,8 @@ const apiSlice = createSlice({
     },
     
     // 模型配置设置
-    setSelectedModel: (state, action) => {
-      state.selectedModel = action.payload;
-    },
-    
-    setSelectedProvider: (state, action) => {
-      state.selectedProvider = action.payload;
-    },
-    
     setEmbeddingModel: (state, action) => {
       state.embeddingModel = action.payload;
-    },
-    
-    setIntentAnalysisModel: (state, action) => {
-      state.intentAnalysisModel = action.payload;
-    },
-    
-    setAvailableModels: (state, action) => {
-      state.availableModels = action.payload;
     },
     
     // 自定义提供商管理
@@ -117,11 +109,7 @@ const apiSlice = createSlice({
       state.aliyunApiKey = '';
       state.aliyunEmbeddingApiKey = '';
       state.ollamaBaseUrl = 'http://127.0.0.1:11434';
-      state.selectedModel = '';
-      state.selectedProvider = '';
       state.embeddingModel = '';
-      state.intentAnalysisModel = '';
-      state.availableModels = [];
       state.customProviders = [];
     },
     
@@ -147,11 +135,7 @@ export const {
   setAliyunApiKey,
   setAliyunEmbeddingApiKey,
   setOllamaBaseUrl,
-  setSelectedModel,
-  setSelectedProvider,
   setEmbeddingModel,
-  setIntentAnalysisModel,
-  setAvailableModels,
   setCustomProviders,
   addCustomProvider,
   updateCustomProvider,

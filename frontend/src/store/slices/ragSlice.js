@@ -6,7 +6,6 @@ const ragSlice = createSlice({
   initialState: {
     // 全局RAG状态
     ragRetrievalEnabled: false,
-    retrievalTopK: 3,
     
     // RAG统一状态管理
     ragState: {
@@ -20,16 +19,10 @@ const ragSlice = createSlice({
       knowledgeBaseFiles: [],
       knowledgeBaseLoading: false,
       
-      // 检索设置
-      retrievalTopK: 3,
       
       // 文本分段
       chunkSize: 400,
       chunkOverlap: 50,
-      
-      // 意图分析
-      intentAnalysisModel: '',
-      intentAnalysisPrompt: '',
       
       // 加载状态
       loading: {
@@ -46,7 +39,7 @@ const ragSlice = createSlice({
     
     // 模式特定的RAG设置
     modeFeatureSettings: {
-      general: {
+      outline: {
         ragRetrievalEnabled: false,
         ragTableNames: []
       },
@@ -70,9 +63,6 @@ const ragSlice = createSlice({
       state.ragRetrievalEnabled = action.payload;
     },
     
-    setRetrievalTopK: (state, action) => {
-      state.retrievalTopK = action.payload;
-    },
     
     // 模式特定的RAG设置
     setModeFeatureSetting: (state, action) => {
@@ -143,20 +133,11 @@ const ragSlice = createSlice({
       state.ragState.knowledgeBaseFiles = action.payload;
     },
     
-    setRagRetrievalTopK: (state, action) => {
-      state.ragState.retrievalTopK = action.payload;
-    },
     
     setRagChunkSettings: (state, action) => {
       const { chunkSize, chunkOverlap } = action.payload;
       state.ragState.chunkSize = chunkSize;
       state.ragState.chunkOverlap = chunkOverlap;
-    },
-    
-    setRagIntentAnalysisSettings: (state, action) => {
-      const { intentAnalysisModel, intentAnalysisPrompt } = action.payload;
-      state.ragState.intentAnalysisModel = intentAnalysisModel;
-      state.ragState.intentAnalysisPrompt = intentAnalysisPrompt;
     },
     
     setRagEmbeddingDimensions: (state, action) => {
@@ -168,7 +149,7 @@ const ragSlice = createSlice({
     // 批量更新所有模式的RAG设置
     setRagSettingsForAllModes: (state, action) => {
       const { settings } = action.payload;
-      for (const mode of ['general', 'outline', 'writing', 'adjustment']) {
+      for (const mode of ['outline', 'writing', 'adjustment']) {
         if (state.modeFeatureSettings[mode]) {
           state.modeFeatureSettings[mode] = { ...state.modeFeatureSettings[mode], ...settings };
         }
@@ -178,7 +159,6 @@ const ragSlice = createSlice({
     // 重置所有RAG设置
     resetAllRagSettings: (state) => {
       state.ragRetrievalEnabled = false;
-      state.retrievalTopK = 3;
       state.ragState = {
         embeddingModel: '',
         availableModels: [],
@@ -186,11 +166,8 @@ const ragSlice = createSlice({
         isCustomDimensions: false,
         knowledgeBaseFiles: [],
         knowledgeBaseLoading: false,
-        retrievalTopK: 3,
         chunkSize: 400,
         chunkOverlap: 50,
-        intentAnalysisModel: '',
-        intentAnalysisPrompt: '',
         loading: {
           allSettings: false,
           knowledgeBase: false
@@ -202,7 +179,7 @@ const ragSlice = createSlice({
       };
       
       // 重置所有模式的RAG设置
-      for (const mode of ['general', 'outline', 'writing', 'adjustment']) {
+      for (const mode of ['outline', 'writing', 'adjustment']) {
         state.modeFeatureSettings[mode] = {
           ragRetrievalEnabled: false,
           ragTableNames: []
@@ -214,7 +191,6 @@ const ragSlice = createSlice({
 
 export const {
   setRagRetrievalEnabled,
-  setRetrievalTopK,
   setModeFeatureSetting,
   resetModeFeatureSettings,
   setRagTableNames,
@@ -224,9 +200,7 @@ export const {
   setRagEmbeddingModel,
   setRagAvailableModels,
   setRagKnowledgeBaseFiles,
-  setRagRetrievalTopK,
   setRagChunkSettings,
-  setRagIntentAnalysisSettings,
   setRagEmbeddingDimensions,
   setRagSettingsForAllModes,
   resetAllRagSettings

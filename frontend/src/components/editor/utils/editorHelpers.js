@@ -1,37 +1,112 @@
 /**
  * 获取上下文菜单项
- * @param {Object} VditorEditorInstance - Vditor 编辑器实例
+ * @param {Object} TiptapEditorInstance - Tiptap 编辑器实例
  * @param {Function} handleMenuItemClick - 菜单项点击处理函数
  * @returns {Array} 菜单项数组
  */
-export const getContextMenuItems = (VditorEditorInstance, handleMenuItemClick) => {
-  // Vditor 编辑器自带完整的右键菜单功能
-  // 这里返回空数组，使用 Vditor 内置的右键菜单
-  return [];
+export const getContextMenuItems = (TiptapEditorInstance, handleMenuItemClick) => {
+  if (!TiptapEditorInstance) {
+    return [];
+  }
+
+  return [
+    {
+      label: '剪切',
+      action: 'cut',
+      disabled: !TiptapEditorInstance.state.selection.empty
+    },
+    {
+      label: '复制',
+      action: 'copy',
+      disabled: !TiptapEditorInstance.state.selection.empty
+    },
+    {
+      label: '粘贴',
+      action: 'paste'
+    },
+    {
+      type: 'separator'
+    },
+    {
+      label: '撤销',
+      action: 'undo',
+      disabled: !TiptapEditorInstance.can().undo()
+    },
+    {
+      label: '重做',
+      action: 'redo',
+      disabled: !TiptapEditorInstance.can().redo()
+    },
+    {
+      type: 'separator'
+    },
+    {
+      label: '全选',
+      action: 'selectAll'
+    },
+    {
+      type: 'separator'
+    },
+    {
+      label: '插入链接',
+      action: 'insertLink'
+    },
+    {
+      label: '插入图片',
+      action: 'insertImage'
+    }
+  ];
 };
 
 /**
  * 处理菜单项点击
- * @param {Object} editor - Vditor 编辑器实例
+ * @param {Object} editor - Tiptap 编辑器实例
  * @param {string} action - 操作类型
  */
 export const handleMenuItemClick = (editor, action) => {
   if (!editor) return;
 
-  // Vditor 编辑器自带完整的剪贴板操作
-  // 这里不需要额外处理
   switch (action) {
     case 'cut':
-      // Vditor 会自动处理剪切操作
+      document.execCommand('cut');
       break;
     case 'copy':
-      // Vditor 会自动处理复制操作
+      document.execCommand('copy');
       break;
     case 'paste':
-      // Vditor 会自动处理粘贴操作
+      document.execCommand('paste');
       break;
-    case 'insert':
-      console.log('Insert clicked (functionality not yet implemented)');
+    case 'undo':
+      if (editor.can().undo()) {
+        editor.chain().focus().undo().run();
+      }
+      break;
+    case 'redo':
+      if (editor.can().redo()) {
+        editor.chain().focus().redo().run();
+      }
+      break;
+    case 'selectAll':
+      editor.commands.selectAll();
+      break;
+    case 'insertLink':
+      const url = window.prompt('输入链接地址:');
+      if (url) {
+        editor.chain().focus().setLink({ href: url }).run();
+      }
+      break;
+    case 'insertImage':
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          // 这里需要调用图片上传服务
+          console.log('图片上传功能需要实现');
+        }
+      };
+      input.click();
       break;
     default:
       break;

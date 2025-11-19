@@ -3,8 +3,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   setShowRagSettingsModal,
   setEmbeddingModel,
-  setAvailableModels,
-  setIntentAnalysisModel,
   // 新增：RAG统一状态管理actions
   setRagLoading,
   setRagError,
@@ -18,8 +16,6 @@ import EmbeddingModelSelector from './ragsettingsTab/EmbeddingModelSelector';
 import EmbeddingDimensionsSettings from './ragsettingsTab/EmbeddingDimensionsSettings';
 import TextChunkingSettings from './ragsettingsTab/TextChunkingSettings';
 import KnowledgeBaseSettings from './knowledgebaseTab/KnowledgeBaseSettings';
-import RetrievalSettings from './knowledgebaseTab/RetrievalSettings';
-import IntentAnalysisSettings from './knowledgebaseTab/IntentAnalysisSettings';
 import NotificationModal from '../others/NotificationModal';
 import useIpcRenderer from '../../hooks/useIpcRenderer';
 import './RagManagementPanel.css';
@@ -52,38 +48,36 @@ const RagManagementPanel = forwardRef(({ isOpen, onClose, onSaveComplete }, ref)
       const [
         embeddingModelResult,
         availableModelsResult,
+        embeddingModelsResult,
         knowledgeBaseFilesResult,
-        retrievalSettingsResult,
-        chunkSettingsResult,
-        intentSettingsResult,
-        embeddingDimensionsResult
+        chunkSettingsResult
       ] = await Promise.all([
         invoke('get-store-value', 'embeddingModel'),
         invoke('get-available-models'),
+        invoke('get-embedding-models'),
         invoke('list-kb-files'),
-        invoke('get-retrieval-top-k'),
-        invoke('get-rag-chunk-settings'),
-        invoke('get-intent-analysis-settings'),
-        invoke('get-embedding-dimensions')
+        invoke('get-rag-chunk-settings')
       ]);
+      // 合并普通模型和嵌入模型
+      const allModels = [
+        ...(availableModelsResult.models || []),
+        ...(embeddingModelsResult.models || [])
+      ];
       // 批量更新Redux状态
+      console.log('从API获取的chunkSettingsResult:', chunkSettingsResult);
+      const finalChunkSize = chunkSettingsResult.chunkSize !== undefined ? chunkSettingsResult.chunkSize : 100;
+      const finalChunkOverlap = chunkSettingsResult.chunkOverlap !== undefined ? chunkSettingsResult.chunkOverlap : 20;
+      console.log('最终设置的chunkSize:', finalChunkSize, 'chunkOverlap:', finalChunkOverlap);
+      
       dispatch(setAllRagSettings({
         embeddingModel: embeddingModelResult || '',
-        availableModels: availableModelsResult.models || [],
+        availableModels: allModels,
         knowledgeBaseFiles: knowledgeBaseFilesResult.files || [],
-        retrievalTopK: retrievalSettingsResult.topK || 3,
-        chunkSize: chunkSettingsResult.chunkSize || 400,
-        chunkOverlap: chunkSettingsResult.chunkOverlap || 50,
-        intentAnalysisModel: intentSettingsResult.model || '',
-        intentAnalysisPrompt: intentSettingsResult.prompt || '',
-        embeddingDimensions: embeddingDimensionsResult.dimensions || 1024,
+        chunkSize: finalChunkSize,
+        chunkOverlap: finalChunkOverlap,
+        embeddingDimensions: 1024, // 使用默认维度
         isCustomDimensions: false // 默认使用模型维度
       }));
-      
-      // 同时更新根级别的意图分析模型状态，确保状态同步
-      if (intentSettingsResult.model) {
-        dispatch(setIntentAnalysisModel(intentSettingsResult.model));
-      }
       // 同时更新根级别的嵌入模型状态，确保状态同步
       if (embeddingModelResult) {
         dispatch(setEmbeddingModel(embeddingModelResult));
@@ -120,7 +114,11 @@ const RagManagementPanel = forwardRef(({ isOpen, onClose, onSaveComplete }, ref)
   // 初始化加载所有设置
   useEffect(() => {
     if (isOpen) {
-      loadAllRagSettings();
+      // 添加防抖，避免频繁加载
+      const timeoutId = setTimeout(() => {
+        loadAllRagSettings();
+      }, 300);
+      return () => clearTimeout(timeoutId);
     }
   }, [isOpen, loadAllRagSettings]);
 
@@ -173,38 +171,8 @@ const RagManagementPanel = forwardRef(({ isOpen, onClose, onSaveComplete }, ref)
         chunkSize: ragState.chunkSize,
         chunkOverlap: ragState.chunkOverlap,
         retrievalTopK: ragState.retrievalTopK,
-        intentAnalysisModel: ragState.intentAnalysisModel,
-        intentAnalysisPrompt: ragState.intentAnalysisPrompt,
         embeddingDimensions: ragState.embeddingDimensions
       });
-
-      // 保存意图分析模型到后端
-      if (ragState.intentAnalysisModel) {
-        try {
-          const modelResult = await invoke('set-intent-analysis-model', ragState.intentAnalysisModel);
-          if (!modelResult.success) {
-            throw new Error(modelResult.error || '设置意图分析模型失败');
-          }
-          console.log('[RAG设置保存] 意图分析模型已保存到后端');
-        } catch (error) {
-          console.error('保存意图分析模型到后端失败:', error);
-          throw error;
-        }
-      }
-
-      // 保存意图分析提示词（如果有自定义）
-      if (ragState.intentAnalysisPrompt && ragState.intentAnalysisPrompt.trim()) {
-        try {
-          const promptResult = await invoke('set-intent-analysis-prompt', ragState.intentAnalysisPrompt.trim());
-          if (!promptResult.success) {
-            throw new Error(promptResult.error || '设置意图分析提示词失败');
-          }
-          console.log('[RAG设置保存] 意图分析提示词已保存');
-        } catch (error) {
-          console.error('保存意图分析提示词时出错:', error);
-          throw error;
-        }
-      }
 
       // 保存所有RAG相关设置到持久化存储
       await Promise.all([
@@ -212,10 +180,8 @@ const RagManagementPanel = forwardRef(({ isOpen, onClose, onSaveComplete }, ref)
         setStoreValue('ragChunkSize', ragState.chunkSize),
         setStoreValue('ragChunkOverlap', ragState.chunkOverlap),
         setStoreValue('retrievalTopK', ragState.retrievalTopK),
-        setStoreValue('intentAnalysisModel', ragState.intentAnalysisModel),
         setStoreValue('embeddingDimensions', ragState.embeddingDimensions)
       ]);
-
       console.log('[RAG设置保存] 存储保存完成');
 
       // 重新初始化嵌入函数以确保新设置立即生效
@@ -232,8 +198,11 @@ const RagManagementPanel = forwardRef(({ isOpen, onClose, onSaveComplete }, ref)
       console.log('[RAG设置保存] 保存流程完成');
       
       // 保存后重新加载设置以确保状态同步
-      loadAllRagSettings();
-      console.log('[RAG设置保存] 设置重新加载已触发');
+      // 添加防抖，避免频繁加载
+      const timeoutId = setTimeout(() => {
+        loadAllRagSettings();
+        console.log('[RAG设置保存] 设置重新加载已触发');
+      }, 500);
       
     } catch (error) {
       console.error('RAG设置保存失败:', error);
@@ -283,7 +252,7 @@ const RagManagementPanel = forwardRef(({ isOpen, onClose, onSaveComplete }, ref)
                   showCurrentSelection={true}
                 />
                 <div className="setting-description">
-                  用于RAG功能的文本嵌入模型
+                  用于RAG功能的文本嵌入模型（仅显示嵌入模型）
                 </div>
               </div>
 
@@ -294,7 +263,6 @@ const RagManagementPanel = forwardRef(({ isOpen, onClose, onSaveComplete }, ref)
                 onSaveComplete={onSaveComplete}
               />
             </div>
-
             {/* 文本分段参数配置 */}
             <div className="settings-section">
               <TextChunkingSettings
@@ -322,24 +290,7 @@ const RagManagementPanel = forwardRef(({ isOpen, onClose, onSaveComplete }, ref)
               </div>
             </div>
 
-            {/* 检索设置 */}
-            <div className="settings-section">
-              <h5>检索设置</h5>
-              <RetrievalSettings
-                retrievalTopK={ragState.retrievalTopK}
-              />
-            </div>
 
-            {/* 意图分析设置 */}
-            <div className="settings-section">
-              <IntentAnalysisSettings
-                ref={ref}
-                onSaveComplete={onSaveComplete}
-                intentAnalysisModel={ragState.intentAnalysisModel}
-                intentAnalysisPrompt={ragState.intentAnalysisPrompt}
-                availableModels={ragState.availableModels}
-              />
-            </div>
           </div>
         );
       default:

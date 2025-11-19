@@ -76,11 +76,45 @@
 
 .history-text {
     flex-grow: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     padding-right: 10px; /* 为删除按钮留出空间 */
     color: #eeeeee; /* 浅色文字 */
+    cursor: pointer;
+}
+
+.session-id {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: #ffffff;
+}
+
+.session-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #cccccc;
+}
+
+.message-count {
+    font-weight: 500;
+}
+
+.created-time {
+    color: #aaaaaa;
+}
+
+.current-session {
+    border: 2px solid #4CAF50;
+    background-color: #444444;
+}
+
+.current-badge {
+    background-color: #4CAF50;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
 }
 
 .delete-button {

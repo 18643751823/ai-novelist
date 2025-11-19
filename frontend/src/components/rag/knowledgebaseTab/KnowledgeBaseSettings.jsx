@@ -74,13 +74,13 @@ const KnowledgeBaseSettings = ({
   };
 
   // 处理文件重命名
-  const handleRenameFile = async (oldFilename, newFilename) => {
+  const handleRenameFile = async (fileId, newFilename) => {
     try {
-      const result = await invoke('rename-kb-file', oldFilename, newFilename);
+      const result = await invoke('rename-kb-file', fileId, newFilename);
       if (result.success) {
         setNotification({
           type: 'success',
-          message: `文件 "${oldFilename}" 已成功重命名为 "${newFilename}"`,
+          message: `文件已成功重命名为 "${newFilename}"`,
           duration: 3000
         });
         // 通知父组件更新文件列表
@@ -130,7 +130,7 @@ const KnowledgeBaseSettings = ({
   const confirmDelete = () => {
     console.log('确认删除文件:', fileToDelete);
     if (fileToDelete) {
-      handleDeleteFile(fileToDelete.filename);
+      handleDeleteFile(fileToDelete.id);
     } else {
       // 如果fileToDelete为null，仍然关闭模态框
       closeDeleteConfirm();
@@ -151,22 +151,52 @@ const KnowledgeBaseSettings = ({
   // 添加文件到知识库
   const handleAddFile = async () => {
     try {
-      const result = await invoke('add-file-to-kb');
-      if (result.success) {
-        setNotification({
-          type: 'success',
-          message: result.message || '文件添加成功',
-          duration: 3000
-        });
-        // 通知父组件更新文件列表
-        if (onUpdate) onUpdate();
-      } else {
-        setNotification({
-          type: 'error',
-          message: `添加失败: ${result.error || result.message}`,
-          duration: 5000
-        });
-      }
+      // 创建隐藏的文件输入元素
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.txt,.md,.pdf,.docx';
+      fileInput.style.display = 'none';
+      
+      // 添加文件选择事件监听
+      fileInput.addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+          return; // 用户取消了选择
+        }
+        
+        try {
+          const result = await invoke('add-file-to-kb', file);
+          if (result.success) {
+            setNotification({
+              type: 'success',
+              message: result.message || '文件添加成功',
+              duration: 3000
+            });
+            // 通知父组件更新文件列表
+            if (onUpdate) onUpdate();
+          } else {
+            setNotification({
+              type: 'error',
+              message: `添加失败: ${result.error || result.message}`,
+              duration: 5000
+            });
+          }
+        } catch (err) {
+          setNotification({
+            type: 'error',
+            message: `添加操作失败: ${err.message}`,
+            duration: 5000
+          });
+        } finally {
+          // 清理文件输入元素
+          document.body.removeChild(fileInput);
+        }
+      });
+      
+      // 添加到DOM并触发点击
+      document.body.appendChild(fileInput);
+      fileInput.click();
+      
     } catch (err) {
       setNotification({
         type: 'error',
@@ -218,12 +248,12 @@ const KnowledgeBaseSettings = ({
           </div>
         ) : (
           files.map((file) => (
-            <div key={file.tableName} className="kb-file-item">
+            <div key={file.id} className="kb-file-item">
               <div className="file-info">
-                <div className="file-name">{file.filename}</div>
+                <div className="file-name">{file.name}</div>
                 <div className="file-details">
-                  <span className="document-count">{file.documentCount} 片段</span>
-                  <span className="embedding-dimensions">{file.embeddingDimensions} 维</span>
+                  <span className="document-count">{file.total_chunks} 片段</span>
+                  <span className="embedding-dimensions">创建时间: {file.created_at}</span>
                 </div>
               </div>
               <div className="file-actions">
@@ -254,7 +284,7 @@ const KnowledgeBaseSettings = ({
         <ConfirmationModal
           message={
             fileToDelete ?
-            `确定要删除文件 "${fileToDelete.filename}" 的知识库吗？\n此操作将永久删除该文件的所有嵌入向量数据，且无法恢复。`
+            `确定要删除文件 "${fileToDelete.name}" 的知识库吗？\n此操作将永久删除该文件的所有嵌入向量数据，且无法恢复。`
             : '确定要删除吗？'
           }
           onConfirm={confirmDelete}

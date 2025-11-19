@@ -7,37 +7,33 @@
 ![项目截图](images/示例图片.jpg)
 ## 项目介绍
 
-青烛（正式名） 是一个基于 Electron 框架构建的桌面应用程序，旨在做一个写作版ai ide。
+青烛(正式名)是一个智能写作辅助工具，采用 Python 后端和 JavaScript 前端架构，提供全方位的写作支持。
 
 **核心功能**:
-*   **AI 智能交互**: 与AI进行实时对话，从提供灵感到正文写作，修改润色等，写作全流程的智能辅助。
-*   **章节管理**: 用户/AI直观地创建、编辑、删除和组织小说的章节，清晰呈现作品结构。
-*   **内容编辑器**: 提供基础的文本编辑界面，支持小说内容的撰写和修改。
-*   **文风模仿**: 基于rag技术，分析文本片段并模仿文风。
-*   **工具调用**: 支持像vibecoding一样，调用工具解决问题。 
+*   **AI 智能交互**: 与AI进行实时对话，辅助创作。
+*   **章节管理**: 创建、编辑、删除和组织章节。
+*   **内容编辑器**: 基于 Tiptap 的富文本编辑器。
+*   **文风模仿**: 基于 RAG 技术，检索文本片段，增强ai能力。
+*   **工具调用**: 支持类似 vibecoding 的工具调用解决问题，目前部分功能仍在完善中。
 
 ## 技术栈
 
-*   **Electron**: 用于构建跨平台的桌面应用程序，结合了Web技术（HTML、CSS、JavaScript）和原生能力。
-*   **React.js**: 前端用户界面框架，提供高效的组件化开发模式和出色的用户体验。
-*   **Node.js**: 后端服务运行时环境，负责处理与AI的交互、文件系统操作以及与前端的IPC通信。
-*   **AI API集成**: 支持 DeepSeek、Open Router、Ollama、硅基流动模型提供商，提供统一的接口调用体验。
-*   **LanceDB**: 向量数据库，用于RAG（检索增强生成）功能，提供语义搜索和知识库管理。
-*   **Redux**: 前端状态管理库，用于统一管理应用程序的复杂状态。
-*   **Tiptap**: 优秀的富文本编辑器。
-*   **electron-store**: 轻量级的Electron配置存储库，用于持久化应用程序设置，例如API Key。
-*   **LangChain**: 用于构建AI应用的工具链，目前已有简单应用，后续将进一步扩展LangChain功能实现。
+### 前端技术
+*   **React**: 前端用户界面框架
+*   **Redux**: 前端状态管理库
+*   **Tiptap**: 富文本编辑器框架
+
+### 后端技术
+*   **LangChain**: 用于构建AI应用的工具链
+*   **LangGraph**: 基于图的AI工作流编排框架
+*   **LiteLLM**: 统一的AI模型调用接口
+*   **LanceDB**: 向量数据库，提供语义搜索和知识库管理
 
 
 
 ## 快速开始
 
-### 先决条件
-
-*   Node.js (推荐 LTS 版本)
-*   npm 或 yarn
-
-### 安装
+### 安装&启动
 
 1.  **克隆仓库**:
     ```bash
@@ -46,34 +42,38 @@
     ```
 
 
-2.  **安装依赖**:
-    在项目根目录 (`ai-novelist/`) 下执行：
-    ```bash
-    npm install
-    ```
-
-
-3.  **安装前端依赖**:
-    进入前端目录 (`frontend/`) 并安装依赖：
+2.  **安装前端依赖**:
+    进入前端目录 (`frontend/`) 并安装依赖,构建前端，启动：
     ```bash
     cd frontend
     npm install
-    ```
-
-4.  **构建前端应用**:
-    回到项目根目录 (`ai-novelist/`) 并执行构建：
-    ```bash
-    cd ..
     npm run build
+    npm start
     ```
 
-### 运行应用
 
-**启动 Electron 应用**:
-项目根目录 (`ai-novelist/`) 执行：
-```bash
-npm run start:full
-```
+3.  **安装后端依赖**:
+    从根目录(`ai-novelist`)创建虚拟环境，激活，并安装后端依赖，启动：
+    ```bash
+    python -m venv backend_env
+    backend_env\Scripts\activate
+    cd backend
+    pip install -r requirements.txt
+    python main.py
+    ```
+
+4.  **安装litellm网关**
+    进入根目录(`ai-novelist`)，创建虚拟环境(名称随意)，并安装litellm，启动。(backend/api_provider/config.yaml自行配置)
+    ```bash
+    python -m venv litellm_env
+    litellm_env\Scripts\activate
+    pip install 'litellm[proxy]'
+    litellm --config backend/api_provider/config.yaml --port 4000 --host 0.0.0.0 --debug
+    ```
+
+5. **浏览器访问**：
+    浏览器访问localhost:3000
+
 
 
 

@@ -1,0 +1,350 @@
+.tiptap-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--editor-bg-color, #1e1e1e);
+  color: var(--editor-text-color, #d4d4d4);
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--toolbar-bg-color, #2d2d2d);
+  border-bottom: 1px solid var(--border-color, #3e3e3e);
+  align-items: center;
+}
+
+.toolbar-group {
+  display: flex;
+  gap: 4px;
+  padding: 0 8px;
+  border-right: 1px solid var(--border-color, #3e3e3e);
+}
+
+.toolbar-group:last-child {
+  border-right: none;
+}
+
+.toolbar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background-color: transparent;
+  color: var(--toolbar-text-color, #d4d4d4);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.toolbar-button:hover {
+  background-color: var(--toolbar-hover-bg, #3e3e3e);
+}
+
+.toolbar-button:active {
+  background-color: var(--toolbar-active-bg, #4e4e4e);
+}
+
+.toolbar-button.is-active {
+  background-color: var(--primary-color, #007acc);
+  color: white;
+}
+
+.toolbar-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.editor-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0; /* 移除padding，让ProseMirror填满整个容器 */
+  position: relative; /* 添加相对定位 */
+}
+
+/* 编辑器内容样式 */
+.ProseMirror {
+  outline: none;
+  min-height: 100%;
+  height: 100%; /* 确保填满整个容器高度 */
+  font-size: 16px;
+  line-height: 1.0;
+  box-sizing: border-box; /* 确保padding不会增加总高度 */
+}
+
+/* 移除段落之间的间距 */
+.ProseMirror p {
+  margin: 0;
+}
+
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.ProseMirror h1 {
+  font-size: 2em;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5em;
+}
+
+.ProseMirror h3 {
+  font-size: 1.25em;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 24px;
+}
+
+
+.ProseMirror blockquote {
+  padding-left: 16px;
+  border-left: 4px solid var(--blockquote-border, #3e3e3e);
+  color: var(--blockquote-text, #a0a0a0);
+  font-style: italic;
+}
+
+.ProseMirror pre {
+  padding: 16px;
+  background-color: var(--code-bg, #2d2d2d);
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.ProseMirror code {
+  background-color: var(--inline-code-bg, #2d2d2d);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9em;
+}
+
+.ProseMirror pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+.ProseMirror a {
+  color: var(--link-color, #4a9eff);
+  text-decoration: none;
+}
+
+.ProseMirror a:hover {
+  text-decoration: underline;
+}
+
+.ProseMirror mark {
+  background-color: var(--highlight-bg, #ffd700);
+  color: var(--highlight-text, #000);
+  padding: 1px 2px;
+  border-radius: 2px;
+}
+
+/* 表格样式 */
+.ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.ProseMirror table td,
+.ProseMirror table th {
+  border: 1px solid var(--table-border, #3e3e3e);
+  padding: 8px 12px;
+  vertical-align: top;
+}
+
+.ProseMirror table th {
+  background-color: var(--table-header-bg, #2d2d2d);
+  font-weight: 600;
+}
+
+.ProseMirror .tableWrapper {
+  overflow-x: auto;
+}
+
+.ProseMirror .resize-cursor {
+  cursor: ew-resize;
+  cursor: col-resize;
+}
+
+/* 任务列表样式 */
+.ProseMirror .task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.ProseMirror .task-item {
+  display: flex;
+  align-items: flex-start;
+  margin: 4px 0;
+}
+
+.ProseMirror .task-item label {
+  flex: 0 0 auto;
+  margin-right: 8px;
+  user-select: none;
+}
+
+.ProseMirror .task-item input[type="checkbox"] {
+  margin: 0;
+}
+
+.ProseMirror .task-item p {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+/* 图片样式 */
+.ProseMirror .editor-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 分割线样式 */
+.ProseMirror .horizontal-rule {
+  border: none;
+  border-top: 2px solid var(--hr-color, #3e3e3e);
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--hr-color, #3e3e3e), transparent);
+  position: relative;
+}
+
+.ProseMirror .horizontal-rule::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--hr-gradient, linear-gradient(to right, transparent, var(--primary-color, #007acc), transparent));
+  opacity: 0.6;
+}
+
+/* 占位符样式 */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--placeholder-color, #8a8a8a);
+  pointer-events: none;
+  height: 0;
+}
+
+/* 选中状态样式 */
+.ProseMirror ::selection {
+  background-color: var(--selection-bg, #264f78);
+}
+
+.ProseMirror ::-moz-selection {
+  background-color: var(--selection-bg, #264f78);
+}
+
+/* 拖拽状态样式 */
+.ProseMirror .ProseMirror-selectednode {
+  outline: 2px solid var(--selection-border, #007acc);
+  outline-offset: 2px;
+}
+
+/* 代码高亮样式 */
+.ProseMirror .hljs {
+  color: var(--code-text, #d4d4d4);
+}
+
+.ProseMirror .hljs-comment,
+.ProseMirror .hljs-quote {
+  color: var(--code-comment, #6a9955);
+  font-style: italic;
+}
+
+.ProseMirror .hljs-keyword,
+.ProseMirror .hljs-selector-tag,
+.ProseMirror .hljs-subst {
+  color: var(--code-keyword, #569cd6);
+}
+
+.ProseMirror .hljs-number,
+.ProseMirror .hljs-literal,
+.ProseMirror .hljs-variable,
+.ProseMirror .hljs-template-variable,
+.ProseMirror .hljs-tag .hljs-attr {
+  color: var(--code-number, #b5cea8);
+}
+
+.ProseMirror .hljs-string,
+.ProseMirror .hljs-doctag {
+  color: var(--code-string, #ce9178);
+}
+
+.ProseMirror .hljs-title,
+.ProseMirror .hljs-section,
+.ProseMirror .hljs-selector-id {
+  color: var(--code-title, #dcdcaa);
+}
+
+.ProseMirror .hljs-type,
+.ProseMirror .hljs-class .hljs-title {
+  color: var(--code-type, #4ec9b0);
+}
+
+.ProseMirror .hljs-tag,
+.ProseMirror .hljs-name,
+.ProseMirror .hljs-attribute {
+  color: var(--code-tag, #92c5f8);
+  font-weight: normal;
+}
+
+.ProseMirror .hljs-regexp,
+.ProseMirror .hljs-link {
+  color: var(--code-regexp, #d16969);
+}
+
+.ProseMirror .hljs-symbol,
+.ProseMirror .hljs-bullet {
+  color: var(--code-symbol, #4ec9b0);
+}
+
+.ProseMirror .hljs-built_in,
+.ProseMirror .hljs-builtin-name {
+  color: var(--code-builtin, #dcdcaa);
+}
+
+.ProseMirror .hljs-meta {
+  color: var(--code-meta, #9cdcfe);
+}
+
+.ProseMirror .hljs-deletion {
+  background: var(--code-deletion, #420b09);
+}
+
+.ProseMirror .hljs-addition {
+  background: var(--code-addition, #0d4d1f);
+}
+
+.ProseMirror .hljs-emphasis {
+  font-style: italic;
+}
+
+.ProseMirror .hljs-strong {
+  font-weight: bold;
+}

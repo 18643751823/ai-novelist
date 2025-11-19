@@ -7,7 +7,7 @@ import { faSync } from '@fortawesome/free-solid-svg-icons';
 import './TextChunkingSettings.css';
 
 // 文本分段参数组件
-const TextChunkingSettings = forwardRef(({ onSaveComplete, chunkSize = 400, chunkOverlap = 50 }, ref) => {
+const TextChunkingSettings = forwardRef(({ onSaveComplete, chunkSize = 100, chunkOverlap = 20 }, ref) => {
   const dispatch = useDispatch();
   const { invoke, setStoreValue } = useIpcRenderer();
   
